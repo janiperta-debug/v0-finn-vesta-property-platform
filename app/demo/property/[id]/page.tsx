@@ -1,33 +1,52 @@
 import { properties, formatEur, formatEurPerM2, getKlaBgColor, getKlaColor } from "@/lib/mock-data"
+import { samplePropertyKuntoarvio, categories, getCategoriesForBuildingType } from "@/lib/kuntoarvio-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import {
   MapPin,
   Calendar,
   Ruler,
   User,
-  Component,
+  ClipboardCheck,
   Target,
   FileText,
+  History,
+  TrendingUp,
+  AlertTriangle,
+  ChevronRight,
 } from "lucide-react"
+import { CategoryGrid, CategorySummaryStats } from "@/components/kuntoarvio/category-card"
+import { BuildingTypeBadge } from "@/components/kuntoarvio/building-type-selector"
+import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const property = properties.find((p) => p.id === id) || properties[0]
+  
+  // Use sample kuntoarvio data for demo
+  const kuntoarvio = samplePropertyKuntoarvio
+  const enabledCategories = getCategoriesForBuildingType(kuntoarvio.buildingType)
 
   const korjausVelka = property.jalleenhankintaArvo - property.tekninenArvo
   const korjausVelkaPerM2 = korjausVelka / property.squareMeters
 
+  // Calculate urgency counts from evaluations
+  const urgentItems = kuntoarvio.evaluations.filter(e => e.overallScore <= 2).length
+  const warningItems = kuntoarvio.evaluations.filter(e => e.overallScore === 3).length
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="font-heading text-2xl font-bold text-foreground">{property.name}</h1>
             <Badge variant="secondary" className={`${getKlaBgColor(property.kuntoluokka)} border-0 font-mono`}>
               Kla {property.kuntoluokka}%
             </Badge>
+            <BuildingTypeBadge type={kuntoarvio.buildingType} />
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
@@ -40,11 +59,17 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Link href={`/demo/components/${property.id}`}>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/demo/property/${property.id}/arviointi`}>
+            <Button size="sm" className="gap-1.5">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              Kuntoarvio
+            </Button>
+          </Link>
+          <Link href={`/demo/property/${property.id}/historia`}>
             <Button variant="outline" size="sm" className="gap-1.5 border-primary/30 text-foreground hover:bg-primary/10 bg-transparent">
-              <Component className="h-3.5 w-3.5" />
-              Komponentit
+              <History className="h-3.5 w-3.5" />
+              Historia
             </Button>
           </Link>
           <Link href={`/demo/target/${property.id}`}>
@@ -55,6 +80,27 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           </Link>
         </div>
       </div>
+
+      {/* Alert Banner for Urgent Items */}
+      {urgentItems > 0 && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium text-red-400">
+              {urgentItems} kategoriaa vaatii kiireellisiä toimenpiteitä
+            </p>
+            <p className="text-sm text-red-400/80 mt-0.5">
+              Ikkunat ja LVI-vesi vaativat välitöntä huomiota
+            </p>
+          </div>
+          <Link href={`/demo/property/${property.id}/arviointi`}>
+            <Button variant="outline" size="sm" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+              Tarkastele
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Key metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -97,93 +143,218 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Condition & Debt */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-border/50 bg-card p-5">
-          <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Kuntoluokka</h3>
-          <div className="flex items-end gap-4">
-            <div className={`font-heading text-5xl font-bold ${getKlaColor(property.kuntoluokka)}`}>
-              {property.kuntoluokka}%
-            </div>
-            <div className="pb-1 text-sm text-muted-foreground">
-              {property.kuntoluokka >= 75 ? "Erinomainen kunto" : property.kuntoluokka >= 60 ? "Tyydyttävä kunto" : "Heikko kunto - toimenpiteitä tarvitaan"}
+      {/* Tabs for different views */}
+      <Tabs defaultValue="kuntoarvio" className="space-y-4">
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="kuntoarvio" className="gap-2">
+            <ClipboardCheck className="h-4 w-4" />
+            Kuntoarvio
+          </TabsTrigger>
+          <TabsTrigger value="kuntoluokka" className="gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Kuntoluokka
+          </TabsTrigger>
+          <TabsTrigger value="korjausvelka" className="gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Korjausvelka
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Kuntoarvio Tab - New 17-category system */}
+        <TabsContent value="kuntoarvio" className="space-y-6">
+          {/* Summary Stats */}
+          <div className="rounded-xl border border-border/50 bg-card p-5">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex-1">
+                <h3 className="font-heading text-base font-semibold text-foreground mb-4">Arvioinnin yhteenveto</h3>
+                <CategorySummaryStats 
+                  evaluations={kuntoarvio.evaluations}
+                  totalCategories={enabledCategories.length}
+                />
+              </div>
+              <div className="lg:text-right">
+                <p className="text-xs text-muted-foreground mb-1">Viimeisin täysi arviointi</p>
+                <p className="font-medium">{kuntoarvio.lastFullEvaluation}</p>
+                <p className="text-xs text-muted-foreground mt-3 mb-1">Seuraava aikataulutettu</p>
+                <p className="font-medium">{kuntoarvio.nextScheduledEvaluation}</p>
+              </div>
             </div>
           </div>
-          <div className="mt-4 h-3 overflow-hidden rounded-full bg-secondary">
-            <div
-              className={`h-full rounded-full ${property.kuntoluokka >= 75 ? "bg-emerald-400" : property.kuntoluokka >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-              style={{ width: `${Math.min(property.kuntoluokka, 100)}%` }}
+
+          {/* Category Grid */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-semibold text-foreground">
+                Arviointikohteet ({enabledCategories.length})
+              </h3>
+              <Link href={`/demo/property/${property.id}/arviointi`}>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  Muokkaa arviointeja
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            <CategoryGrid
+              categoryIds={enabledCategories.map(c => c.id)}
+              evaluations={kuntoarvio.evaluations}
             />
           </div>
-          <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-            <span>0%</span>
-            <span>60% (tyydyttävä)</span>
-            <span>75% (hyvä)</span>
-            <span>100%</span>
-          </div>
-        </div>
 
-        <div className="rounded-xl border border-border/50 bg-card p-5">
-          <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausvelka</h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Korjausvelka yhteensä</span>
-                <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
+          {/* Urgent Items */}
+          {(urgentItems > 0 || warningItems > 0) && (
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="font-heading text-base font-semibold text-foreground mb-4">Huomioitavat kohteet</h3>
+              <div className="space-y-3">
+                {kuntoarvio.evaluations
+                  .filter(e => e.overallScore <= 3)
+                  .sort((a, b) => a.overallScore - b.overallScore)
+                  .map(evaluation => {
+                    const category = categories.find(c => c.id === evaluation.categoryId)
+                    return (
+                      <div 
+                        key={evaluation.categoryId}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <ConditionBadge score={evaluation.overallScore} size="sm" />
+                          <div>
+                            <p className="font-medium text-sm">{category?.name}</p>
+                            {evaluation.notes && (
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                {evaluation.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Link href={`/demo/property/${property.id}/arviointi?category=${evaluation.categoryId}`}>
+                          <Button variant="ghost" size="sm">
+                            Tarkastele
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </Link>
+                      </div>
+                    )
+                  })}
               </div>
-              <p className="mt-0.5 text-right text-xs text-muted-foreground">{formatEurPerM2(korjausVelkaPerM2)}</p>
             </div>
-            <div className="space-y-2 border-t border-border/50 pt-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Kunnossapitotarve</span>
-                <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Peruskorjaustarve</span>
-                <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Perusparannustarve</span>
-                <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+          )}
+        </TabsContent>
 
-      {/* Inspection info */}
-      <div className="rounded-xl border border-border/50 bg-card p-5">
-        <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Katselmointitiedot</h3>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Calendar className="h-5 w-5 text-primary" />
+        {/* Kuntoluokka Tab */}
+        <TabsContent value="kuntoluokka" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Kuntoluokka</h3>
+              <div className="flex items-end gap-4">
+                <div className={`font-heading text-5xl font-bold ${getKlaColor(property.kuntoluokka)}`}>
+                  {property.kuntoluokka}%
+                </div>
+                <div className="pb-1 text-sm text-muted-foreground">
+                  {property.kuntoluokka >= 75 ? "Erinomainen kunto" : property.kuntoluokka >= 60 ? "Tyydyttävä kunto" : "Heikko kunto - toimenpiteitä tarvitaan"}
+                </div>
+              </div>
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-secondary">
+                <div
+                  className={`h-full rounded-full ${property.kuntoluokka >= 75 ? "bg-emerald-400" : property.kuntoluokka >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                  style={{ width: `${Math.min(property.kuntoluokka, 100)}%` }}
+                />
+              </div>
+              <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>0%</span>
+                <span>60% (tyydyttävä)</span>
+                <span>75% (hyvä)</span>
+                <span>100%</span>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Viimeisin katselmointi</p>
-              <p className="text-sm font-medium text-foreground">{new Date(property.lastInspectionDate).toLocaleDateString("fi-FI")}</p>
+
+            {/* Inspection info */}
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Katselmointitiedot</h3>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Viimeisin katselmointi</p>
+                    <p className="text-sm font-medium text-foreground">{new Date(property.lastInspectionDate).toLocaleDateString("fi-FI")}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Katselmoija</p>
+                    <p className="text-sm font-medium text-foreground">{property.inspector}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tyyppi</p>
+                    <p className="text-sm font-medium text-foreground">{property.type}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <User className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Katselmoija</p>
-              <p className="text-sm font-medium text-foreground">{property.inspector}</p>
+        </TabsContent>
+
+        {/* Korjausvelka Tab */}
+        <TabsContent value="korjausvelka" className="space-y-4">
+          <div className="rounded-xl border border-border/50 bg-card p-5">
+            <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausvelka</h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Korjausvelka yhteensä</span>
+                  <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
+                </div>
+                <p className="mt-0.5 text-right text-xs text-muted-foreground">{formatEurPerM2(korjausVelkaPerM2)}</p>
+              </div>
+              <div className="space-y-2 border-t border-border/50 pt-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Kunnossapitotarve</span>
+                  <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Peruskorjaustarve</span>
+                  <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Perusparannustarve</span>
+                  <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Tyyppi</p>
-              <p className="text-sm font-medium text-foreground">{property.type}</p>
+
+          {/* Cost estimates from evaluations */}
+          <div className="rounded-xl border border-border/50 bg-card p-5">
+            <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Kustannusarviot kategorioittain</h3>
+            <div className="space-y-2">
+              {kuntoarvio.evaluations
+                .filter(e => e.subItemEvaluations?.some(s => s.estimatedCost))
+                .map(evaluation => {
+                  const category = categories.find(c => c.id === evaluation.categoryId)
+                  const totalCost = evaluation.subItemEvaluations?.reduce((sum, s) => sum + (s.estimatedCost || 0), 0) || 0
+                  return (
+                    <div key={evaluation.categoryId} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <ConditionBadge score={evaluation.overallScore} size="sm" />
+                        <span className="text-sm">{category?.name}</span>
+                      </div>
+                      <span className="font-medium">{formatEur(totalCost)}</span>
+                    </div>
+                  )
+                })}
             </div>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
