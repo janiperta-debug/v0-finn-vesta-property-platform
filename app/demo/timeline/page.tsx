@@ -1,7 +1,15 @@
 "use client"
 
+import Link from "next/link"
 import { ptsTimeline, investmentProjects, properties, formatEur } from "@/lib/mock-data"
+import { MOCK_PTS_ITEMS, CATEGORY_DEFINITIONS, type PTSItem } from "@/lib/kuntoarvio-data"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
+import { UrgencyBadge } from "@/components/kuntoarvio/urgency-badge"
+import { AlertTriangle, CheckCircle, Clock, ArrowRight } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -55,7 +63,29 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
+// Group PTS items by urgency
+function groupByUrgency(items: PTSItem[]) {
+  return {
+    immediate: items.filter(i => i.urgency === "immediate"),
+    short: items.filter(i => i.urgency === "short"),
+    medium: items.filter(i => i.urgency === "medium"),
+    long: items.filter(i => i.urgency === "long"),
+  }
+}
+
+const urgencyLabels: Record<string, { label: string; color: string; years: string }> = {
+  immediate: { label: "Välitön", color: "text-red-500", years: "0-1v" },
+  short: { label: "Lyhyt aikaväli", color: "text-amber-500", years: "1-3v" },
+  medium: { label: "Keskipitkä", color: "text-yellow-500", years: "3-5v" },
+  long: { label: "Pitkä aikaväli", color: "text-blue-500", years: "5-10v" },
+}
+
 export default function TimelinePage() {
+  const ptsGrouped = groupByUrgency(MOCK_PTS_ITEMS)
+  const totalPtsCost = MOCK_PTS_ITEMS.reduce((sum, item) => sum + item.estimatedCost, 0)
+  const immediateCount = ptsGrouped.immediate.length
+  const shortTermCount = ptsGrouped.short.length
+  
   return (
     <div className="space-y-6">
       <div>
@@ -64,6 +94,44 @@ export default function TimelinePage() {
           15-vuotinen pitkän tähtäimen suunnitelma koko portfoliolle
         </p>
       </div>
+
+      {/* Kuntoarvio-based PTS Alert */}
+      {immediateCount > 0 && (
+        <Card className="border-red-500/30 bg-red-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full bg-red-500/10 p-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Välittömiä korjaustarpeita kuntoarviosta</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {immediateCount} kohdetta vaatii välitöntä huomiota. Yhteensä {shortTermCount + immediateCount} kohdetta lähivuosina.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {ptsGrouped.immediate.slice(0, 3).map(item => {
+                    const category = CATEGORY_DEFINITIONS[item.categoryId as keyof typeof CATEGORY_DEFINITIONS]
+                    return (
+                      <Badge key={item.id} variant="outline" className="border-red-500/30 text-red-500">
+                        {category?.name || item.categoryId}
+                      </Badge>
+                    )
+                  })}
+                  {ptsGrouped.immediate.length > 3 && (
+                    <Badge variant="outline">+{ptsGrouped.immediate.length - 3} muuta</Badge>
+                  )}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/demo/property/1/arviointi">
+                  Tarkastele
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary metrics */}
       <div className="grid gap-4 sm:grid-cols-4">
@@ -121,6 +189,95 @@ export default function TimelinePage() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Kuntoarvio-based PTS Items */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Kuntoarviosta johdettu PTS</CardTitle>
+          <CardDescription>
+            Automaattisesti luotu investointisuunnitelma kuntoarvioiden perusteella
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="immediate" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="immediate" className="gap-2">
+                Välitön
+                {ptsGrouped.immediate.length > 0 && (
+                  <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
+                    {ptsGrouped.immediate.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="short" className="gap-2">
+                1-3v
+                {ptsGrouped.short.length > 0 && (
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                    {ptsGrouped.short.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="medium">3-5v</TabsTrigger>
+              <TabsTrigger value="long">5-10v</TabsTrigger>
+            </TabsList>
+            
+            {Object.entries(ptsGrouped).map(([urgency, items]) => (
+              <TabsContent key={urgency} value={urgency} className="space-y-3">
+                {items.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground">
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Ei korjaustarpeita tässä aikaikkunassa
+                  </div>
+                ) : (
+                  items.map(item => {
+                    const category = CATEGORY_DEFINITIONS[item.categoryId as keyof typeof CATEGORY_DEFINITIONS]
+                    const Icon = category?.icon
+                    return (
+                      <div 
+                        key={item.id}
+                        className="flex items-center gap-4 rounded-lg border bg-card p-4"
+                      >
+                        {Icon && (
+                          <div className="rounded-lg bg-muted p-2">
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{item.description}</p>
+                            <ConditionBadge condition={item.currentCondition} size="sm" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {category?.name || item.categoryId}
+                            {item.subItemId && ` - ${item.subItemId}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">{formatEur(item.estimatedCost)}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {urgencyLabels[item.urgency]?.years}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+                
+                {items.length > 0 && (
+                  <div className="flex items-center justify-between border-t pt-4">
+                    <span className="text-sm text-muted-foreground">
+                      {items.length} kohdetta
+                    </span>
+                    <span className="font-semibold">
+                      {formatEur(items.reduce((sum, i) => sum + i.estimatedCost, 0))}
+                    </span>
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Project list */}
       <div className="rounded-xl border border-border/50 bg-card p-5">
