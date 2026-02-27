@@ -1,66 +1,171 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Save, CheckCircle, AlertTriangle, Clock, ChevronDown, ChevronUp, Plus, X, Camera, FileText } from "lucide-react"
+import { ArrowLeft, Save, CheckCircle, AlertTriangle, Clock, ChevronDown, ChevronUp, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
-import { UrgencyBadge } from "@/components/kuntoarvio/urgency-badge"
 import { BuildingTypeSelector } from "@/components/kuntoarvio/building-type-selector"
 import { 
-  CATEGORY_DEFINITIONS, 
-  MOCK_PROPERTY_EVALUATION,
-  type CategoryEvaluation,
-  type SubItemEvaluation,
-  type ConditionRating,
-  type UrgencyLevel
+  categories,
+  samplePropertyKuntoarvio,
+  getCategoryById,
+  getConditionInfo,
+  buildingTypeTemplates,
 } from "@/lib/kuntoarvio-data"
+import type { 
+  ConditionScore, 
+  UrgencyClass,
+  CategoryEvaluation,
+  SubItemEvaluation,
+  EvaluationMode,
+  Category,
+} from "@/lib/kuntoarvio-types"
 import { properties } from "@/lib/mock-data"
+import {
+  Building,
+  Building2,
+  Home,
+  CloudRain,
+  Square,
+  DoorOpen,
+  Droplets,
+  Thermometer,
+  Pipette,
+  Wind,
+  Zap,
+  MoveVertical,
+  Trees,
+  Construction,
+  PaintBucket,
+  Armchair,
+  Layers,
+} from 'lucide-react'
 
-// Condition rating options
-const CONDITION_OPTIONS: { value: ConditionRating; label: string; description: string }[] = [
-  { value: 1, label: "1 - Uusi/Erinomainen", description: "Äskettäin uusittu tai uudenveroinen" },
-  { value: 2, label: "2 - Hyvä", description: "Hyväkuntoinen, ei korjaustarpeita" },
-  { value: 3, label: "3 - Tyydyttävä", description: "Toimiva, huoltoa tarvitseva" },
-  { value: 4, label: "4 - Välttävä", description: "Korjaustarve lähivuosina" },
-  { value: 5, label: "5 - Heikko", description: "Välitön korjaustarve" },
+// Icon mapping
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  foundation: Layers,
+  building: Building,
+  'building-2': Building2,
+  home: Home,
+  'cloud-rain': CloudRain,
+  square: Square,
+  'door-open': DoorOpen,
+  droplets: Droplets,
+  thermometer: Thermometer,
+  pipette: Pipette,
+  wind: Wind,
+  zap: Zap,
+  'move-vertical': MoveVertical,
+  trees: Trees,
+  construction: Construction,
+  'paint-bucket': PaintBucket,
+  armchair: Armchair,
+}
+
+// Condition rating options (5 = best, 1 = worst)
+const CONDITION_OPTIONS: { value: ConditionScore; label: string; description: string }[] = [
+  { value: 5, label: "5 - Erinomainen", description: "Uudenveroinen, ei toimenpiteitä" },
+  { value: 4, label: "4 - Hyvä", description: "Normaali kuluminen, huolto riittää" },
+  { value: 3, label: "3 - Tyydyttävä", description: "Korjaustarve 5-10v sisällä" },
+  { value: 2, label: "2 - Välttävä", description: "Korjaustarve 1-5v sisällä" },
+  { value: 1, label: "1 - Heikko", description: "Välitön korjaustarve" },
 ]
 
-const URGENCY_OPTIONS: { value: UrgencyLevel; label: string }[] = [
-  { value: "immediate", label: "Välitön (0-1v)" },
-  { value: "short", label: "Lyhyt (1-3v)" },
-  { value: "medium", label: "Keskipitkä (3-5v)" },
-  { value: "long", label: "Pitkä (5-10v)" },
-  { value: "none", label: "Ei kiireellistä" },
+const URGENCY_OPTIONS: { value: UrgencyClass; label: string }[] = [
+  { value: 1, label: "Välitön (heti)" },
+  { value: 2, label: "Kiireellinen (1-2v)" },
+  { value: 3, label: "Suunniteltava (3-5v)" },
+  { value: 4, label: "Seurattava (ei akuuttia)" },
 ]
+
+// Internal state types for the form
+interface FormCategoryEvaluation {
+  categoryId: string
+  overallScore: ConditionScore | null
+  notes: string
+  urgency: UrgencyClass | null
+  mode: EvaluationMode
+  subItems: FormSubItemEvaluation[]
+}
+
+interface FormSubItemEvaluation {
+  subItemId: string
+  score: ConditionScore | null
+  notes: string
+  urgency: UrgencyClass | null
+}
+
+// Group categories
+const categoryGroups: Record<string, { label: string; categoryIds: string[] }> = {
+  piha: {
+    label: "Piha-alueet",
+    categoryIds: ["piha"],
+  },
+  rakenne: {
+    label: "Rakenteet", 
+    categoryIds: ["perustukset", "runko", "julkisivut", "ikkunat", "ovet", "katto", "vesikate"],
+  },
+  talotekniikka: {
+    label: "Talotekniikka",
+    categoryIds: ["lvi-lammitys", "lvi-vesi", "lvi-ilmanvaihto", "sahko", "hissi"],
+  },
+  sisatilat: {
+    label: "Sisätilat",
+    categoryIds: ["sisatilat-pinnat", "sisatilat-kalusteet", "markatilat", "erityisrakenteet"],
+  },
+}
 
 export default function ArviointiPage() {
   const params = useParams()
-  const router = useRouter()
   const propertyId = params.id as string
   
   const property = properties.find(p => p.id === propertyId)
   
-  // State for evaluation data
-  const [evaluations, setEvaluations] = useState<Record<string, CategoryEvaluation>>(
-    MOCK_PROPERTY_EVALUATION.categories
-  )
+  // Initialize form state from mock data
+  const initialEvaluations = useMemo(() => {
+    const formData: Record<string, FormCategoryEvaluation> = {}
+    
+    categories.forEach(cat => {
+      const existingEval = samplePropertyKuntoarvio.evaluations.find(e => e.categoryId === cat.id)
+      
+      formData[cat.id] = {
+        categoryId: cat.id,
+        overallScore: existingEval?.overallScore || null,
+        notes: existingEval?.notes || "",
+        urgency: existingEval?.subItemEvaluations?.[0]?.urgency || null,
+        mode: existingEval?.mode || "basic",
+        subItems: cat.subItems.map(sub => {
+          const existingSubEval = existingEval?.subItemEvaluations?.find(s => s.subItemId === sub.id)
+          return {
+            subItemId: sub.id,
+            score: existingSubEval?.score || null,
+            notes: existingSubEval?.notes || "",
+            urgency: existingSubEval?.urgency || null,
+          }
+        })
+      }
+    })
+    
+    return formData
+  }, [])
+  
+  const [evaluations, setEvaluations] = useState<Record<string, FormCategoryEvaluation>>(initialEvaluations)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState("all")
-  const [buildingType, setBuildingType] = useState<string>("kerrostalo")
+  const [buildingType, setBuildingType] = useState<string>(samplePropertyKuntoarvio.buildingType)
   const [enabledCategories, setEnabledCategories] = useState<Set<string>>(
-    new Set(Object.keys(CATEGORY_DEFINITIONS))
+    new Set(samplePropertyKuntoarvio.enabledCategories)
   )
   const [showBuildingTypeSelector, setShowBuildingTypeSelector] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -69,26 +174,22 @@ export default function ArviointiPage() {
   // Calculate progress
   const progress = useMemo(() => {
     const enabledCats = Array.from(enabledCategories)
-    const evaluated = enabledCats.filter(catId => evaluations[catId]?.condition).length
-    return Math.round((evaluated / enabledCats.length) * 100)
+    const evaluated = enabledCats.filter(catId => evaluations[catId]?.overallScore !== null).length
+    return enabledCats.length > 0 ? Math.round((evaluated / enabledCats.length) * 100) : 0
   }, [evaluations, enabledCategories])
   
-  // Group categories by type
+  // Group enabled categories
   const categoriesByGroup = useMemo(() => {
-    const groups: Record<string, typeof CATEGORY_DEFINITIONS[keyof typeof CATEGORY_DEFINITIONS][]> = {
-      piha: [],
-      rakenne: [],
-      talotekniikka: [],
-      sisatilat: [],
-    }
+    const result: Record<string, Category[]> = {}
     
-    Object.values(CATEGORY_DEFINITIONS).forEach(cat => {
-      if (enabledCategories.has(cat.id)) {
-        groups[cat.group]?.push(cat)
-      }
+    Object.entries(categoryGroups).forEach(([groupKey, group]) => {
+      result[groupKey] = group.categoryIds
+        .filter(id => enabledCategories.has(id))
+        .map(id => getCategoryById(id))
+        .filter((cat): cat is Category => cat !== undefined)
     })
     
-    return groups
+    return result
   }, [enabledCategories])
   
   const toggleExpanded = (categoryId: string) => {
@@ -103,16 +204,12 @@ export default function ArviointiPage() {
     })
   }
   
-  const updateCategoryCondition = (categoryId: string, condition: ConditionRating) => {
+  const updateCategoryScore = (categoryId: string, score: ConditionScore) => {
     setEvaluations(prev => ({
       ...prev,
       [categoryId]: {
         ...prev[categoryId],
-        categoryId,
-        condition,
-        evaluationDate: new Date().toISOString(),
-        evaluator: "Demo User",
-        subItems: prev[categoryId]?.subItems || [],
+        overallScore: score,
       }
     }))
   }
@@ -127,7 +224,7 @@ export default function ArviointiPage() {
     }))
   }
   
-  const updateCategoryUrgency = (categoryId: string, urgency: UrgencyLevel) => {
+  const updateCategoryUrgency = (categoryId: string, urgency: UrgencyClass) => {
     setEvaluations(prev => ({
       ...prev,
       [categoryId]: {
@@ -137,48 +234,21 @@ export default function ArviointiPage() {
     }))
   }
   
-  const updateSubItem = (categoryId: string, subItemId: string, updates: Partial<SubItemEvaluation>) => {
+  const updateSubItem = (categoryId: string, subItemId: string, updates: Partial<FormSubItemEvaluation>) => {
     setEvaluations(prev => {
       const category = prev[categoryId]
       if (!category) return prev
       
-      const subItems = category.subItems?.map(item => 
+      const subItems = category.subItems.map(item => 
         item.subItemId === subItemId ? { ...item, ...updates } : item
-      ) || []
+      )
       
       return {
         ...prev,
         [categoryId]: {
           ...category,
           subItems,
-        }
-      }
-    })
-  }
-  
-  const initializeSubItems = (categoryId: string) => {
-    const categoryDef = CATEGORY_DEFINITIONS[categoryId as keyof typeof CATEGORY_DEFINITIONS]
-    if (!categoryDef) return
-    
-    setEvaluations(prev => {
-      const existing = prev[categoryId]
-      if (existing?.subItems && existing.subItems.length > 0) return prev
-      
-      const subItems: SubItemEvaluation[] = categoryDef.subItems.map(subItem => ({
-        subItemId: subItem.id,
-        condition: null,
-        notes: "",
-      }))
-      
-      return {
-        ...prev,
-        [categoryId]: {
-          ...existing,
-          categoryId,
-          condition: existing?.condition || null,
-          subItems,
-          evaluationDate: new Date().toISOString(),
-          evaluator: "Demo User",
+          mode: "thorough" as EvaluationMode,
         }
       }
     })
@@ -192,9 +262,9 @@ export default function ArviointiPage() {
     setIsSaving(false)
   }
   
-  const handleBuildingTypeSelect = (type: string, categories: Set<string>) => {
+  const handleBuildingTypeSelect = (type: string, selectedCategories: string[]) => {
     setBuildingType(type)
-    setEnabledCategories(categories)
+    setEnabledCategories(new Set(selectedCategories))
     setShowBuildingTypeSelector(false)
   }
 
@@ -206,18 +276,19 @@ export default function ArviointiPage() {
     )
   }
   
-  const renderCategoryCard = (category: typeof CATEGORY_DEFINITIONS[keyof typeof CATEGORY_DEFINITIONS]) => {
+  const renderCategoryCard = (category: Category) => {
     const evaluation = evaluations[category.id]
     const isExpanded = expandedCategories.has(category.id)
-    const Icon = category.icon
+    const Icon = iconMap[category.icon] || Building
+    const conditionInfo = evaluation?.overallScore ? getConditionInfo(evaluation.overallScore) : null
     
     return (
       <Card key={category.id} className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-muted">
-                <Icon className="h-5 w-5 text-muted-foreground" />
+              <div className={`p-2 rounded-lg ${conditionInfo ? conditionInfo.bgColor : 'bg-muted'}`}>
+                <Icon className={`h-5 w-5 ${conditionInfo ? conditionInfo.color : 'text-muted-foreground'}`} />
               </div>
               <div>
                 <CardTitle className="text-base">{category.name}</CardTitle>
@@ -226,8 +297,8 @@ export default function ArviointiPage() {
                 </CardDescription>
               </div>
             </div>
-            {evaluation?.condition && (
-              <ConditionBadge condition={evaluation.condition} size="sm" />
+            {evaluation?.overallScore && (
+              <ConditionBadge score={evaluation.overallScore} size="sm" />
             )}
           </div>
         </CardHeader>
@@ -240,9 +311,9 @@ export default function ArviointiPage() {
               {CONDITION_OPTIONS.map(option => (
                 <button
                   key={option.value}
-                  onClick={() => updateCategoryCondition(category.id, option.value)}
+                  onClick={() => updateCategoryScore(category.id, option.value)}
                   className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                    evaluation?.condition === option.value
+                    evaluation?.overallScore === option.value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background hover:bg-muted border-border"
                   }`}
@@ -264,20 +335,20 @@ export default function ArviointiPage() {
             />
           </div>
           
-          {/* Urgency Selection */}
-          {evaluation?.condition && evaluation.condition >= 3 && (
+          {/* Urgency Selection - show if condition is 3 or worse */}
+          {evaluation?.overallScore && evaluation.overallScore <= 3 && (
             <div className="space-y-2">
               <Label className="text-sm">Kiireellisyys</Label>
               <Select
-                value={evaluation?.urgency || "none"}
-                onValueChange={(value) => updateCategoryUrgency(category.id, value as UrgencyLevel)}
+                value={evaluation?.urgency?.toString() || ""}
+                onValueChange={(value) => updateCategoryUrgency(category.id, parseInt(value) as UrgencyClass)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Valitse kiireellisyys" />
                 </SelectTrigger>
                 <SelectContent>
                   {URGENCY_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem key={option.value} value={option.value.toString()}>
                       {option.label}
                     </SelectItem>
                   ))}
@@ -287,12 +358,7 @@ export default function ArviointiPage() {
           )}
           
           {/* Tarkenna Button - Expand to Thorough Mode */}
-          <Collapsible open={isExpanded} onOpenChange={() => {
-            if (!isExpanded) {
-              initializeSubItems(category.id)
-            }
-            toggleExpanded(category.id)
-          }}>
+          <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(category.id)}>
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm" className="w-full">
                 {isExpanded ? (
@@ -316,18 +382,16 @@ export default function ArviointiPage() {
               <div className="space-y-3">
                 {category.subItems.map(subItem => {
                   const subEval = evaluation?.subItems?.find(s => s.subItemId === subItem.id)
+                  const subConditionInfo = subEval?.score ? getConditionInfo(subEval.score) : null
                   
                   return (
                     <div key={subItem.id} className="p-3 rounded-lg bg-muted/50 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm font-medium">{subItem.name}</p>
-                          {subItem.description && (
-                            <p className="text-xs text-muted-foreground">{subItem.description}</p>
-                          )}
                         </div>
-                        {subEval?.condition && (
-                          <ConditionBadge condition={subEval.condition} size="sm" />
+                        {subEval?.score && (
+                          <ConditionBadge score={subEval.score} size="sm" />
                         )}
                       </div>
                       
@@ -336,9 +400,9 @@ export default function ArviointiPage() {
                         {CONDITION_OPTIONS.map(option => (
                           <button
                             key={option.value}
-                            onClick={() => updateSubItem(category.id, subItem.id, { condition: option.value })}
+                            onClick={() => updateSubItem(category.id, subItem.id, { score: option.value })}
                             className={`px-2 py-1 text-xs rounded border transition-colors ${
-                              subEval?.condition === option.value
+                              subEval?.score === option.value
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : "bg-background hover:bg-muted border-border"
                             }`}
@@ -356,18 +420,23 @@ export default function ArviointiPage() {
                         className="text-sm h-8"
                       />
                       
-                      {/* Sub-item Year Input */}
-                      {subItem.requiresYear && (
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs text-muted-foreground whitespace-nowrap">Asennusvuosi:</Label>
-                          <Input
-                            type="number"
-                            placeholder="YYYY"
-                            value={subEval?.year || ""}
-                            onChange={(e) => updateSubItem(category.id, subItem.id, { year: parseInt(e.target.value) || undefined })}
-                            className="w-24 text-sm h-8"
-                          />
-                        </div>
+                      {/* Sub-item Urgency - show if score <= 3 */}
+                      {subEval?.score && subEval.score <= 3 && (
+                        <Select
+                          value={subEval?.urgency?.toString() || ""}
+                          onValueChange={(value) => updateSubItem(category.id, subItem.id, { urgency: parseInt(value) as UrgencyClass })}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Kiireellisyys" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {URGENCY_OPTIONS.map(option => (
+                              <SelectItem key={option.value} value={option.value.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                   )
@@ -378,13 +447,6 @@ export default function ArviointiPage() {
         </CardContent>
       </Card>
     )
-  }
-  
-  const groupLabels: Record<string, string> = {
-    piha: "Piha-alueet",
-    rakenne: "Rakenteet",
-    talotekniikka: "Talotekniikka",
-    sisatilat: "Sisätilat",
   }
   
   return (
@@ -434,7 +496,9 @@ export default function ArviointiPage() {
           </div>
           <Progress value={progress} className="h-2" />
           <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>{Array.from(enabledCategories).filter(id => evaluations[id]?.condition).length} / {enabledCategories.size} kategoriaa arvioitu</span>
+            <span>
+              {Array.from(enabledCategories).filter(id => evaluations[id]?.overallScore !== null).length} / {enabledCategories.size} kategoriaa arvioitu
+            </span>
             <Button 
               variant="link" 
               size="sm" 
@@ -484,12 +548,12 @@ export default function ArviointiPage() {
         
         <TabsContent value="all" className="mt-6">
           <div className="space-y-8">
-            {Object.entries(categoriesByGroup).map(([groupKey, categories]) => (
-              categories.length > 0 && (
+            {Object.entries(categoriesByGroup).map(([groupKey, cats]) => (
+              cats.length > 0 && (
                 <div key={groupKey} className="space-y-4">
-                  <h2 className="text-lg font-semibold">{groupLabels[groupKey]}</h2>
+                  <h2 className="text-lg font-semibold">{categoryGroups[groupKey]?.label}</h2>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {categories.map(cat => renderCategoryCard(cat))}
+                    {cats.map(cat => renderCategoryCard(cat))}
                   </div>
                 </div>
               )
@@ -497,10 +561,10 @@ export default function ArviointiPage() {
           </div>
         </TabsContent>
         
-        {Object.entries(categoriesByGroup).map(([groupKey, categories]) => (
+        {Object.entries(categoriesByGroup).map(([groupKey, cats]) => (
           <TabsContent key={groupKey} value={groupKey} className="mt-6">
             <div className="grid gap-4 md:grid-cols-2">
-              {categories.map(cat => renderCategoryCard(cat))}
+              {cats.map(cat => renderCategoryCard(cat))}
             </div>
           </TabsContent>
         ))}
@@ -514,25 +578,26 @@ export default function ArviointiPage() {
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span className="text-sm">
-                  {Object.values(evaluations).filter(e => e.condition && e.condition <= 2).length} hyvässä kunnossa
+                  {Object.values(evaluations).filter(e => e.overallScore && e.overallScore >= 4).length} hyvässä kunnossa
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
                 <span className="text-sm">
-                  {Object.values(evaluations).filter(e => e.condition && e.condition >= 4).length} korjaustarpeita
+                  {Object.values(evaluations).filter(e => e.overallScore && e.overallScore <= 2).length} korjaustarpeita
                 </span>
               </div>
             </div>
-            <div className="flex gap-2">
+            
+            <div className="flex items-center gap-2">
               <Button variant="outline" asChild>
-                <Link href={`/demo/property/${propertyId}`}>
-                  Peruuta
+                <Link href={`/demo/property/${propertyId}/historia`}>
+                  Katso historia
                 </Link>
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>
                 <Save className="h-4 w-4 mr-2" />
-                Tallenna ja jatka
+                Tallenna arvio
               </Button>
             </div>
           </div>
