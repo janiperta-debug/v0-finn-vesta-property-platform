@@ -2,14 +2,14 @@
 
 import Link from "next/link"
 import { ptsTimeline, investmentProjects, properties, formatEur } from "@/lib/mock-data"
-import { MOCK_PTS_ITEMS, CATEGORY_DEFINITIONS, type PTSItem } from "@/lib/kuntoarvio-data"
+import { categories, samplePropertyKuntoarvio } from "@/lib/kuntoarvio-data"
+import type { ConditionScore } from "@/lib/kuntoarvio-types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
-import { UrgencyBadge } from "@/components/kuntoarvio/urgency-badge"
-import { AlertTriangle, CheckCircle, Clock, ArrowRight } from "lucide-react"
+import { AlertTriangle, CheckCircle, ArrowRight } from "lucide-react"
 import {
   BarChart,
   Bar,
@@ -63,6 +63,93 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   )
 }
 
+// Mock PTS items derived from kuntoarvio evaluations
+type PTSItem = {
+  id: string
+  categoryId: string
+  subItemId?: string
+  description: string
+  urgency: "immediate" | "short" | "medium" | "long"
+  estimatedCost: number
+  currentCondition: ConditionScore
+}
+
+// Generate PTS items from sample evaluations
+const MOCK_PTS_ITEMS: PTSItem[] = [
+  {
+    id: "pts-1",
+    categoryId: "ikkunat",
+    subItemId: "ikkunat-puitteet",
+    description: "Ikkunoiden uusiminen - puuosat lahonneet",
+    urgency: "short",
+    estimatedCost: 85000,
+    currentCondition: 2,
+  },
+  {
+    id: "pts-2",
+    categoryId: "julkisivut",
+    subItemId: "julkisivut-saumaukset",
+    description: "Elementtisaumausten uusiminen",
+    urgency: "short",
+    estimatedCost: 28000,
+    currentCondition: 2,
+  },
+  {
+    id: "pts-3",
+    categoryId: "lvi-vesi",
+    subItemId: "lvi-vesi-viemari",
+    description: "Viemäriputkiston sukitus/uusiminen",
+    urgency: "immediate",
+    estimatedCost: 120000,
+    currentCondition: 2,
+  },
+  {
+    id: "pts-4",
+    categoryId: "julkisivut",
+    subItemId: "julkisivut-rappaus",
+    description: "Paikkarappaus ja maalaus",
+    urgency: "medium",
+    estimatedCost: 45000,
+    currentCondition: 3,
+  },
+  {
+    id: "pts-5",
+    categoryId: "vesikate",
+    subItemId: "vesikate-kate",
+    description: "Vesikaton uusiminen",
+    urgency: "medium",
+    estimatedCost: 65000,
+    currentCondition: 3,
+  },
+  {
+    id: "pts-6",
+    categoryId: "perustukset",
+    subItemId: "perustukset-salaojat",
+    description: "Salaojien huuhtelu ja tarkistus",
+    urgency: "medium",
+    estimatedCost: 3500,
+    currentCondition: 3,
+  },
+  {
+    id: "pts-7",
+    categoryId: "lvi-lammitys",
+    subItemId: "lvi-lammitys-putkistot",
+    description: "Lämmitysputkiston huolto",
+    urgency: "long",
+    estimatedCost: 15000,
+    currentCondition: 3,
+  },
+  {
+    id: "pts-8",
+    categoryId: "piha",
+    subItemId: "piha-asfaltti",
+    description: "Pihan asfaltoinnin uusiminen",
+    urgency: "long",
+    estimatedCost: 25000,
+    currentCondition: 4,
+  },
+]
+
 // Group PTS items by urgency
 function groupByUrgency(items: PTSItem[]) {
   return {
@@ -82,7 +169,6 @@ const urgencyLabels: Record<string, { label: string; color: string; years: strin
 
 export default function TimelinePage() {
   const ptsGrouped = groupByUrgency(MOCK_PTS_ITEMS)
-  const totalPtsCost = MOCK_PTS_ITEMS.reduce((sum, item) => sum + item.estimatedCost, 0)
   const immediateCount = ptsGrouped.immediate.length
   const shortTermCount = ptsGrouped.short.length
   
@@ -110,7 +196,7 @@ export default function TimelinePage() {
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {ptsGrouped.immediate.slice(0, 3).map(item => {
-                    const category = CATEGORY_DEFINITIONS[item.categoryId as keyof typeof CATEGORY_DEFINITIONS]
+                    const category = categories.find(c => c.id === item.categoryId)
                     return (
                       <Badge key={item.id} variant="outline" className="border-red-500/30 text-red-500">
                         {category?.name || item.categoryId}
@@ -230,22 +316,16 @@ export default function TimelinePage() {
                   </div>
                 ) : (
                   items.map(item => {
-                    const category = CATEGORY_DEFINITIONS[item.categoryId as keyof typeof CATEGORY_DEFINITIONS]
-                    const Icon = category?.icon
+                    const category = categories.find(c => c.id === item.categoryId)
                     return (
                       <div 
                         key={item.id}
                         className="flex items-center gap-4 rounded-lg border bg-card p-4"
                       >
-                        {Icon && (
-                          <div className="rounded-lg bg-muted p-2">
-                            <Icon className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-medium truncate">{item.description}</p>
-                            <ConditionBadge condition={item.currentCondition} size="sm" />
+                            <ConditionBadge score={item.currentCondition} size="sm" />
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {category?.name || item.categoryId}

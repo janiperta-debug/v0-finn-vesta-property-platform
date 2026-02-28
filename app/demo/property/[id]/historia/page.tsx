@@ -7,15 +7,10 @@ import { ArrowLeft, TrendingUp, TrendingDown, Minus, Calendar, User, FileText, D
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
-import { 
-  CATEGORY_DEFINITIONS,
-  MOCK_EVALUATION_HISTORY,
-  type ConditionRating 
-} from "@/lib/kuntoarvio-data"
+import { categories, samplePropertyKuntoarvio } from "@/lib/kuntoarvio-data"
+import type { ConditionScore } from "@/lib/kuntoarvio-types"
 import { properties } from "@/lib/mock-data"
 import { 
   LineChart, 
@@ -24,7 +19,6 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend, 
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -39,6 +33,79 @@ const CHART_COLORS = {
   warning: "hsl(48, 96%, 53%)",
   bad: "hsl(0, 84%, 60%)",
 }
+
+// Mock evaluation history for demo (simulating multiple evaluations over time)
+const MOCK_EVALUATION_HISTORY = [
+  {
+    date: "2022-03-15",
+    evaluator: "Pekka Korhonen",
+    categories: {
+      perustukset: { condition: 4 },
+      runko: { condition: 5 },
+      julkisivut: { condition: 4 },
+      ikkunat: { condition: 3 },
+      ovet: { condition: 4 },
+      katto: { condition: 4 },
+      vesikate: { condition: 4 },
+      "sisatilat-pinnat": { condition: 3 },
+      "sisatilat-kalusteet": { condition: 3 },
+      markatilat: { condition: 3 },
+      "lvi-lammitys": { condition: 4 },
+      "lvi-vesi": { condition: 3 },
+      "lvi-ilmanvaihto": { condition: 4 },
+      sahko: { condition: 4 },
+      hissi: { condition: 3 },
+      piha: { condition: 4 },
+      erityisrakenteet: { condition: 4 },
+    } as Record<string, { condition: number }>,
+  },
+  {
+    date: "2023-06-20",
+    evaluator: "Matti Virtanen",
+    categories: {
+      perustukset: { condition: 4 },
+      runko: { condition: 5 },
+      julkisivut: { condition: 3 },
+      ikkunat: { condition: 3 },
+      ovet: { condition: 4 },
+      katto: { condition: 4 },
+      vesikate: { condition: 3 },
+      "sisatilat-pinnat": { condition: 3 },
+      "sisatilat-kalusteet": { condition: 3 },
+      markatilat: { condition: 3 },
+      "lvi-lammitys": { condition: 4 },
+      "lvi-vesi": { condition: 2 },
+      "lvi-ilmanvaihto": { condition: 4 },
+      sahko: { condition: 4 },
+      hissi: { condition: 3 },
+      piha: { condition: 3 },
+      erityisrakenteet: { condition: 3 },
+    } as Record<string, { condition: number }>,
+  },
+  {
+    date: "2024-11-15",
+    evaluator: "Matti Virtanen",
+    categories: {
+      perustukset: { condition: 4 },
+      runko: { condition: 5 },
+      julkisivut: { condition: 3 },
+      ikkunat: { condition: 2 },
+      ovet: { condition: 4 },
+      katto: { condition: 4 },
+      vesikate: { condition: 3 },
+      "sisatilat-pinnat": { condition: 3 },
+      "sisatilat-kalusteet": { condition: 4 },
+      markatilat: { condition: 3 },
+      "lvi-lammitys": { condition: 3 },
+      "lvi-vesi": { condition: 2 },
+      "lvi-ilmanvaihto": { condition: 4 },
+      sahko: { condition: 4 },
+      hissi: { condition: 4 },
+      piha: { condition: 4 },
+      erityisrakenteet: { condition: 4 },
+    } as Record<string, { condition: number }>,
+  },
+]
 
 export default function HistoriaPage() {
   const params = useParams()
@@ -79,17 +146,17 @@ export default function HistoriaPage() {
       const current = MOCK_EVALUATION_HISTORY[MOCK_EVALUATION_HISTORY.length - 1]
       const previous = MOCK_EVALUATION_HISTORY[MOCK_EVALUATION_HISTORY.length - 2]
       
-      Object.keys(CATEGORY_DEFINITIONS).forEach(catId => {
-        const currentVal = current.categories[catId]?.condition
-        const previousVal = previous.categories[catId]?.condition
+      categories.forEach(cat => {
+        const currentVal = current.categories[cat.id]?.condition
+        const previousVal = previous.categories[cat.id]?.condition
         
         let trend: "up" | "down" | "stable" = "stable"
         if (currentVal && previousVal) {
-          if (currentVal < previousVal) trend = "up" // Lower is better
-          else if (currentVal > previousVal) trend = "down"
+          if (currentVal > previousVal) trend = "up" // Higher is better (5=best, 1=worst)
+          else if (currentVal < previousVal) trend = "down"
         }
         
-        trends[catId] = {
+        trends[cat.id] = {
           current: currentVal || null,
           previous: previousVal || null,
           trend,
@@ -104,16 +171,16 @@ export default function HistoriaPage() {
   const distributionData = useMemo(() => {
     const latest = MOCK_EVALUATION_HISTORY[MOCK_EVALUATION_HISTORY.length - 1]
     const distribution = [
-      { rating: "1", count: 0, label: "Erinomainen", color: CHART_COLORS.good },
-      { rating: "2", count: 0, label: "Hyvä", color: CHART_COLORS.good },
+      { rating: "5", count: 0, label: "Erinomainen", color: CHART_COLORS.good },
+      { rating: "4", count: 0, label: "Hyvä", color: CHART_COLORS.good },
       { rating: "3", count: 0, label: "Tyydyttävä", color: CHART_COLORS.warning },
-      { rating: "4", count: 0, label: "Välttävä", color: CHART_COLORS.bad },
-      { rating: "5", count: 0, label: "Heikko", color: CHART_COLORS.bad },
+      { rating: "2", count: 0, label: "Välttävä", color: CHART_COLORS.bad },
+      { rating: "1", count: 0, label: "Heikko", color: CHART_COLORS.bad },
     ]
     
     Object.values(latest.categories).forEach(cat => {
       if (cat.condition) {
-        const idx = cat.condition - 1
+        const idx = 5 - cat.condition // Reverse index (5 is first, 1 is last)
         if (distribution[idx]) {
           distribution[idx].count++
         }
@@ -197,7 +264,7 @@ export default function HistoriaPage() {
                 {chartData[chartData.length - 1]?.avgCondition?.toFixed(1) || "-"}
               </div>
               <ConditionBadge 
-                condition={Math.round(chartData[chartData.length - 1]?.avgCondition || 3) as ConditionRating} 
+                score={Math.round(chartData[chartData.length - 1]?.avgCondition || 3) as ConditionScore} 
                 size="sm" 
               />
             </div>
@@ -215,7 +282,7 @@ export default function HistoriaPage() {
                 const previous = chartData[chartData.length - 2]?.avgCondition
                 if (!current || !previous) return <span className="text-2xl font-bold">-</span>
                 
-                const diff = previous - current
+                const diff = current - previous
                 if (diff > 0.2) return (
                   <>
                     <TrendingUp className="h-6 w-6 text-green-500" />
@@ -256,7 +323,6 @@ export default function HistoriaPage() {
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis 
                     domain={[1, 5]} 
-                    reversed 
                     ticks={[1, 2, 3, 4, 5]}
                     className="text-xs"
                   />
@@ -326,38 +392,28 @@ export default function HistoriaPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Kategoria</TableHead>
-                <TableHead>Ryhmä</TableHead>
                 <TableHead className="text-center">Edellinen</TableHead>
                 <TableHead className="text-center">Nykyinen</TableHead>
                 <TableHead className="text-center">Muutos</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(CATEGORY_DEFINITIONS).map(([catId, category]) => {
-                const trend = categoryTrends[catId]
-                const groupLabels: Record<string, string> = {
-                  piha: "Piha-alueet",
-                  rakenne: "Rakenteet",
-                  talotekniikka: "Talotekniikka",
-                  sisatilat: "Sisätilat",
-                }
+              {categories.map(category => {
+                const trend = categoryTrends[category.id]
                 
                 return (
-                  <TableRow key={catId}>
+                  <TableRow key={category.id}>
                     <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{groupLabels[category.group]}</Badge>
-                    </TableCell>
                     <TableCell className="text-center">
                       {trend?.previous ? (
-                        <ConditionBadge condition={trend.previous as ConditionRating} size="sm" />
+                        <ConditionBadge score={trend.previous as ConditionScore} size="sm" />
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-center">
                       {trend?.current ? (
-                        <ConditionBadge condition={trend.current as ConditionRating} size="sm" />
+                        <ConditionBadge score={trend.current as ConditionScore} size="sm" />
                       ) : (
                         <span className="text-muted-foreground">-</span>
                       )}
@@ -381,7 +437,7 @@ export default function HistoriaPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {MOCK_EVALUATION_HISTORY.slice().reverse().map((evaluation, idx) => (
+            {MOCK_EVALUATION_HISTORY.slice().reverse().map((evaluation) => (
               <div 
                 key={evaluation.date} 
                 className="flex items-center justify-between p-4 rounded-lg border bg-card"
@@ -415,12 +471,12 @@ export default function HistoriaPage() {
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground">Keskiarvo</p>
                     <ConditionBadge 
-                      condition={Math.round(
+                      score={Math.round(
                         Object.values(evaluation.categories)
                           .filter(c => c.condition)
                           .reduce((sum, c) => sum + (c.condition || 0), 0) /
                         Object.values(evaluation.categories).filter(c => c.condition).length
-                      ) as ConditionRating}
+                      ) as ConditionScore}
                       size="sm"
                     />
                   </div>

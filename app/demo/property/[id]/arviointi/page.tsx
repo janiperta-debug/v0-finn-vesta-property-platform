@@ -528,8 +528,8 @@ export default function ArviointiPage() {
             </CardHeader>
             <CardContent>
               <BuildingTypeSelector
-                selectedType={buildingType}
-                onSelect={handleBuildingTypeSelect}
+                value={buildingType as any}
+                onChange={handleBuildingTypeSelect as any}
               />
             </CardContent>
           </Card>
