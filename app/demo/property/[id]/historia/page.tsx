@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
-import { categories, samplePropertyKuntoarvio } from "@/lib/kuntoarvio-data"
+import { categories } from "@/lib/kuntoarvio-data"
 import type { ConditionScore } from "@/lib/kuntoarvio-types"
 import { properties } from "@/lib/mock-data"
 import { 

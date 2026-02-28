@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { ptsTimeline, investmentProjects, properties, formatEur } from "@/lib/mock-data"
-import { categories, samplePropertyKuntoarvio } from "@/lib/kuntoarvio-data"
+import { categories } from "@/lib/kuntoarvio-data"
 import type { ConditionScore } from "@/lib/kuntoarvio-types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
