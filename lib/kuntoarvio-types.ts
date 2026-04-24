@@ -121,3 +121,43 @@ export interface PTSItem {
   status: 'planned' | 'in-progress' | 'completed'
   notes?: string
 }
+
+// Apartment/Unit for multi-unit buildings
+export interface Apartment {
+  id: string
+  buildingId: string
+  number: string           // e.g., "A 12", "B 3"
+  floor: number
+  squareMeters: number
+  rooms: string            // e.g., "2h+k", "3h+k+s"
+  tenant?: string          // Optional tenant info
+  rentEndDate?: string     // Lease end date
+  lastInspection?: string
+  overallCondition: ConditionScore
+  notes?: string
+}
+
+// Apartment-level evaluation (simplified subset of categories)
+export interface ApartmentEvaluation {
+  apartmentId: string
+  date: string
+  evaluatedBy?: string
+  overallScore: ConditionScore
+  categoryScores: {
+    categoryId: 'sisatilat-pinnat' | 'sisatilat-kalusteet' | 'markatilat' | 'sahko' | 'ovet' | 'ikkunat'
+    score: ConditionScore
+    notes?: string
+    estimatedCost?: number
+  }[]
+  notes?: string
+  photos?: string[]
+}
+
+// Summary of apartments for a building
+export interface BuildingApartmentSummary {
+  totalUnits: number
+  occupiedUnits: number
+  avgCondition: number
+  needsAttention: number   // Units with condition <= 2
+  upcomingRenovations: number
+}

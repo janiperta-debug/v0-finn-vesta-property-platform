@@ -1,5 +1,5 @@
 import { properties, formatEur, formatEurPerM2, getKlaBgColor, getKlaColor } from "@/lib/mock-data"
-import { samplePropertyKuntoarvio, categories, getCategoriesForBuildingType } from "@/lib/kuntoarvio-data"
+import { samplePropertyKuntoarvio, categories, getCategoriesForBuildingType, sampleApartments, sampleApartmentEvaluations, getApartmentSummary } from "@/lib/kuntoarvio-data"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -16,8 +16,10 @@ import {
   TrendingUp,
   AlertTriangle,
   ChevronRight,
+  LayoutGrid,
 } from "lucide-react"
 import { CategoryGrid, CategorySummaryStats } from "@/components/kuntoarvio/category-card"
+import { ApartmentSummaryCards, ApartmentGrid, ApartmentFloorPlan } from "@/components/kuntoarvio/apartment-grid"
 import { BuildingTypeBadge } from "@/components/kuntoarvio/building-type-selector"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
 
@@ -35,6 +37,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   // Calculate urgency counts from evaluations
   const urgentItems = kuntoarvio.evaluations.filter(e => e.overallScore <= 2).length
   const warningItems = kuntoarvio.evaluations.filter(e => e.overallScore === 3).length
+
+  // Apartment data (only for multi-unit buildings like kerrostalo, rivitalo)
+  const hasApartments = ['kerrostalo', 'rivitalo'].includes(kuntoarvio.buildingType)
+  const apartmentSummary = hasApartments ? getApartmentSummary(sampleApartments) : null
 
   return (
     <div className="space-y-6">
@@ -150,6 +156,17 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             <ClipboardCheck className="h-4 w-4" />
             Kuntoarvio
           </TabsTrigger>
+          {hasApartments && (
+            <TabsTrigger value="huoneistot" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Huoneistot
+              {apartmentSummary && apartmentSummary.needsAttention > 0 && (
+                <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500/20 text-xs text-red-400">
+                  {apartmentSummary.needsAttention}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
           <TabsTrigger value="kuntoluokka" className="gap-2">
             <TrendingUp className="h-4 w-4" />
             Kuntoluokka
@@ -239,6 +256,70 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             </div>
           )}
         </TabsContent>
+
+        {/* Kuntoluokka Tab */}
+        {/* Huoneistot Tab - Apartment-level tracking */}
+        {hasApartments && apartmentSummary && (
+          <TabsContent value="huoneistot" className="space-y-6">
+            {/* Summary Cards */}
+            <ApartmentSummaryCards summary={apartmentSummary} />
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Floor Plan Visualization */}
+              <div className="lg:col-span-1">
+                <ApartmentFloorPlan apartments={sampleApartments} />
+              </div>
+
+              {/* Apartment Grid */}
+              <div className="lg:col-span-2">
+                <div className="rounded-xl border border-border/50 bg-card p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-heading text-base font-semibold text-foreground">
+                      Huoneistot ({sampleApartments.length})
+                    </h3>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      Lisää huoneisto
+                    </Button>
+                  </div>
+                  <ApartmentGrid 
+                    apartments={sampleApartments} 
+                    evaluations={sampleApartmentEvaluations}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Apartments needing attention */}
+            {apartmentSummary.needsAttention > 0 && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
+                <h3 className="font-heading text-base font-semibold text-red-400 mb-4">
+                  Huoneistot jotka vaativat toimenpiteitä ({apartmentSummary.needsAttention})
+                </h3>
+                <div className="space-y-3">
+                  {sampleApartments
+                    .filter(a => a.overallCondition <= 2)
+                    .map(apt => (
+                      <div key={apt.id} className="flex items-center justify-between p-3 rounded-lg bg-card">
+                        <div className="flex items-center gap-3">
+                          <ConditionBadge score={apt.overallCondition} size="sm" />
+                          <div>
+                            <p className="font-medium text-sm">{apt.number}</p>
+                            <p className="text-xs text-muted-foreground">{apt.rooms} &bull; {apt.squareMeters} m²</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {apt.notes && (
+                            <p className="text-sm text-muted-foreground max-w-xs truncate">{apt.notes}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground">{apt.tenant ? 'Vuokrattu' : 'Vapaa'}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        )}
 
         {/* Kuntoluokka Tab */}
         <TabsContent value="kuntoluokka" className="space-y-4">

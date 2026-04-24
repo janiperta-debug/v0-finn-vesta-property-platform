@@ -709,3 +709,80 @@ export const evaluationHistory = [
     evaluatedBy: 'Matti Virtanen',
   },
 ]
+
+// Sample apartments for demo building (kerrostalo)
+import type { Apartment, ApartmentEvaluation, BuildingApartmentSummary } from './kuntoarvio-types'
+
+export const sampleApartments: Apartment[] = [
+  { id: 'apt-a1', buildingId: 'prop-1', number: 'A 1', floor: 1, squareMeters: 45, rooms: '2h+k', tenant: 'Vuokralainen', rentEndDate: '2025-12-31', lastInspection: '2024-10-15', overallCondition: 4, notes: 'Hyvässä kunnossa' },
+  { id: 'apt-a2', buildingId: 'prop-1', number: 'A 2', floor: 1, squareMeters: 32, rooms: '1h+k', tenant: 'Vuokralainen', lastInspection: '2024-10-15', overallCondition: 3 },
+  { id: 'apt-a3', buildingId: 'prop-1', number: 'A 3', floor: 1, squareMeters: 65, rooms: '3h+k', lastInspection: '2024-10-15', overallCondition: 5 },
+  { id: 'apt-a4', buildingId: 'prop-1', number: 'A 4', floor: 2, squareMeters: 45, rooms: '2h+k', tenant: 'Vuokralainen', lastInspection: '2024-08-20', overallCondition: 2, notes: 'Keittiöremontti tarpeen' },
+  { id: 'apt-a5', buildingId: 'prop-1', number: 'A 5', floor: 2, squareMeters: 32, rooms: '1h+k', tenant: 'Vuokralainen', lastInspection: '2024-08-20', overallCondition: 4 },
+  { id: 'apt-a6', buildingId: 'prop-1', number: 'A 6', floor: 2, squareMeters: 65, rooms: '3h+k', tenant: 'Vuokralainen', rentEndDate: '2025-06-30', lastInspection: '2024-08-20', overallCondition: 3, notes: 'Kylpyhuoneen silikonit uusittava' },
+  { id: 'apt-a7', buildingId: 'prop-1', number: 'A 7', floor: 3, squareMeters: 45, rooms: '2h+k', tenant: 'Vuokralainen', lastInspection: '2024-11-01', overallCondition: 4 },
+  { id: 'apt-a8', buildingId: 'prop-1', number: 'A 8', floor: 3, squareMeters: 32, rooms: '1h+k', lastInspection: '2024-11-01', overallCondition: 2, notes: 'Märkätilaremontti kiireellinen' },
+  { id: 'apt-a9', buildingId: 'prop-1', number: 'A 9', floor: 3, squareMeters: 65, rooms: '3h+k', tenant: 'Vuokralainen', lastInspection: '2024-11-01', overallCondition: 5 },
+  { id: 'apt-b1', buildingId: 'prop-1', number: 'B 1', floor: 1, squareMeters: 55, rooms: '2h+k+s', tenant: 'Vuokralainen', lastInspection: '2024-09-15', overallCondition: 4 },
+  { id: 'apt-b2', buildingId: 'prop-1', number: 'B 2', floor: 1, squareMeters: 75, rooms: '3h+k+s', tenant: 'Vuokralainen', rentEndDate: '2025-08-31', lastInspection: '2024-09-15', overallCondition: 3 },
+  { id: 'apt-b3', buildingId: 'prop-1', number: 'B 3', floor: 2, squareMeters: 55, rooms: '2h+k+s', lastInspection: '2024-09-15', overallCondition: 1, notes: 'Vesivahinko, täysremontti tarpeen' },
+  { id: 'apt-b4', buildingId: 'prop-1', number: 'B 4', floor: 2, squareMeters: 75, rooms: '3h+k+s', tenant: 'Vuokralainen', lastInspection: '2024-09-15', overallCondition: 4 },
+  { id: 'apt-b5', buildingId: 'prop-1', number: 'B 5', floor: 3, squareMeters: 55, rooms: '2h+k+s', tenant: 'Vuokralainen', lastInspection: '2024-07-10', overallCondition: 3, notes: 'Lattian uusiminen suositeltava' },
+  { id: 'apt-b6', buildingId: 'prop-1', number: 'B 6', floor: 3, squareMeters: 75, rooms: '3h+k+s', tenant: 'Vuokralainen', lastInspection: '2024-07-10', overallCondition: 4 },
+]
+
+export const sampleApartmentEvaluations: ApartmentEvaluation[] = [
+  {
+    apartmentId: 'apt-a4',
+    date: '2024-08-20',
+    evaluatedBy: 'Demo Tarkastaja',
+    overallScore: 2,
+    categoryScores: [
+      { categoryId: 'sisatilat-pinnat', score: 3, notes: 'Seinämaalit kulunut' },
+      { categoryId: 'sisatilat-kalusteet', score: 2, notes: 'Keittiökalusteet käyttöikänsä päässä', estimatedCost: 8500 },
+      { categoryId: 'markatilat', score: 3 },
+      { categoryId: 'sahko', score: 4 },
+    ],
+    notes: 'Keittiöremontti suositeltava ennen seuraavaa vuokralaista',
+  },
+  {
+    apartmentId: 'apt-a8',
+    date: '2024-11-01',
+    evaluatedBy: 'Demo Tarkastaja',
+    overallScore: 2,
+    categoryScores: [
+      { categoryId: 'sisatilat-pinnat', score: 4 },
+      { categoryId: 'sisatilat-kalusteet', score: 4 },
+      { categoryId: 'markatilat', score: 1, notes: 'Vedeneristys pettänyt, laatat irti', estimatedCost: 12000 },
+      { categoryId: 'sahko', score: 3 },
+    ],
+    notes: 'Märkätilaremontti kiireellinen - kosteusvaurioriski',
+  },
+  {
+    apartmentId: 'apt-b3',
+    date: '2024-09-15',
+    evaluatedBy: 'Demo Tarkastaja',
+    overallScore: 1,
+    categoryScores: [
+      { categoryId: 'sisatilat-pinnat', score: 1, notes: 'Vesivahingon jäljet, homevaurio', estimatedCost: 15000 },
+      { categoryId: 'sisatilat-kalusteet', score: 1, notes: 'Kaikki kalusteet uusittava', estimatedCost: 10000 },
+      { categoryId: 'markatilat', score: 1, notes: 'Täysremontti', estimatedCost: 14000 },
+      { categoryId: 'sahko', score: 2, notes: 'Sähköt tarkistettava', estimatedCost: 3000 },
+    ],
+    notes: 'Vesivahinko yläkerran vuodosta. Asunto tyhjillään, täysremontti vaaditaan.',
+  },
+]
+
+export function getApartmentSummary(apartments: Apartment[]): BuildingApartmentSummary {
+  const needsAttention = apartments.filter(a => a.overallCondition <= 2).length
+  const avgCondition = apartments.reduce((sum, a) => sum + a.overallCondition, 0) / apartments.length
+  const occupiedUnits = apartments.filter(a => a.tenant).length
+  
+  return {
+    totalUnits: apartments.length,
+    occupiedUnits,
+    avgCondition: Math.round(avgCondition * 10) / 10,
+    needsAttention,
+    upcomingRenovations: needsAttention,
+  }
+}
