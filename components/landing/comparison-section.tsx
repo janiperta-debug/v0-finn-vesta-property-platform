@@ -44,16 +44,16 @@ export function ComparisonSection() {
             </div>
             <h3 className="mb-1 font-heading text-lg font-semibold text-foreground">FinnVesta SaaS</h3>
             <p className="mb-6 text-2xl font-bold text-primary">
-              490 - 890 &euro;/kk
-              <span className="ml-1 text-sm font-normal text-muted-foreground">kaikki sisältyy</span>
+              Reilu hinnoittelu
+              <span className="ml-1 text-sm font-normal text-muted-foreground">maksat vain käytöstä</span>
             </p>
             <ul className="space-y-3">
               {[
                 "Ei toimittajaloukkua",
                 "Aina ajan tasalla",
                 "Automaattiset päivitykset",
-                "Pieni kuukausimaksu",
-                "8-10 viikon käyttöönotto",
+                "Maksat käyttäjistä + kiinteistöistä",
+                "4-6 viikon käyttöönotto",
               ].map((item) => (
                 <li key={item} className="flex items-center gap-2 text-sm text-foreground">
                   <Check className="h-4 w-4 shrink-0 text-emerald-400" />
