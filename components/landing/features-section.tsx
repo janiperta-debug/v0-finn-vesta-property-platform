@@ -5,6 +5,7 @@ import {
   Building2,
   Target,
   CalendarRange,
+  LayoutGrid,
 } from "lucide-react"
 
 const features = [
@@ -27,6 +28,11 @@ const features = [
     icon: Building2,
     title: "Portfolio-hallinta",
     description: "Näe kaikki kiinteistösi yhdellä silmäyksellä. Aggregoidut mittarit ja analytiikka.",
+  },
+  {
+    icon: LayoutGrid,
+    title: "Huoneistotason seuranta",
+    description: "Jaa rakennus huoneistoihin ja seuraa kuntoa asuntokohtaisesti. Ideaali vuokrataloyhtiöille.",
   },
   {
     icon: Target,
