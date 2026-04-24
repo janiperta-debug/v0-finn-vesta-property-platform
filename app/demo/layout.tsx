@@ -14,7 +14,7 @@ export default function DemoLayout({ children }: { children: React.ReactNode }) 
 
       {/* Demo banner */}
       <div className="sticky top-0 z-30 border-b border-primary/20 bg-primary/5 px-4 py-2 text-center text-xs font-medium text-primary lg:top-0 lg:pl-64">
-        Tämä on demoympäristö esimerkkidatalla. Data perustuu Hyvinkään kaupungin kiinteistöihin.
+        Tämä on demoympäristö esimerkkidatalla.
       </div>
 
       <div className="lg:pl-64">

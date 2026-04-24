@@ -33,8 +33,13 @@ export function SiteHeader() {
               Katso demo
             </Button>
           </Link>
-          <Link href="/demo">
-            <Button size="sm">Ota yhteytta</Button>
+          <Link href="/app">
+            <Button variant="outline" size="sm" className="border-primary/30 text-foreground hover:bg-primary/10 bg-transparent">
+              Avaa sovellus
+            </Button>
+          </Link>
+          <Link href="/#contact">
+            <Button size="sm">Ota yhteyttä</Button>
           </Link>
         </nav>
 
@@ -65,8 +70,13 @@ export function SiteHeader() {
                 Katso demo
               </Button>
             </Link>
-            <Link href="/demo" onClick={() => setMobileOpen(false)}>
-              <Button className="w-full">Ota yhteytta</Button>
+            <Link href="/app" onClick={() => setMobileOpen(false)}>
+              <Button variant="outline" className="w-full border-primary/30 text-foreground bg-transparent">
+                Avaa sovellus
+              </Button>
+            </Link>
+            <Link href="/#contact" onClick={() => setMobileOpen(false)}>
+              <Button className="w-full">Ota yhteyttä</Button>
             </Link>
           </nav>
         </div>

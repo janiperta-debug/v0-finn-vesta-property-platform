@@ -42,8 +42,8 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (
-    // if the user is not logged in and the demo app is accessed, redirect to the login page
-    request.nextUrl.pathname.startsWith('/demo') &&
+    // if the user is not logged in and the app is accessed, redirect to the login page
+    request.nextUrl.pathname.startsWith('/app') &&
     !user
   ) {
     // no user, redirect to the login page

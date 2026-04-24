@@ -8,7 +8,7 @@ export default function DemoPage() {
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Portfolio-kojelauta</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Hyvinkaan kaupunki &mdash; 156 kiinteistoa
+          Esimerkkiportfolio &mdash; 156 kiinteistöä
         </p>
       </div>
 

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import Link from 'next/link'
+
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -39,7 +39,7 @@ export default function Page() {
         },
       })
       if (error) throw error
-      router.push('/demo')
+      router.push('/app')
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -57,16 +57,16 @@ export default function Page() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Kirjaudu sisaan</CardTitle>
+              <CardTitle className="text-2xl">Kirjaudu sisään</CardTitle>
               <CardDescription>
-                Syota sahkopostiosoitteesi ja salasanasi
+                Syötä sähköpostiosoitteesi ja salasanasi
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Sahkoposti</Label>
+                    <Label htmlFor="email">Sähköposti</Label>
                     <Input
                       id="email"
                       type="email"
@@ -91,14 +91,8 @@ export default function Page() {
                     {isLoading ? 'Kirjaudutaan...' : 'Kirjaudu'}
                   </Button>
                 </div>
-                <div className="mt-4 text-center text-sm">
-                  Eiko sinulla ole tilia?{' '}
-                  <Link
-                    href="/auth/sign-up"
-                    className="underline underline-offset-4"
-                  >
-                    Rekisteroidy
-                  </Link>
+                <div className="mt-4 text-center text-sm text-muted-foreground">
+                  Käyttäjätunnukset saat pääkäyttäjältäsi
                 </div>
               </form>
             </CardContent>
