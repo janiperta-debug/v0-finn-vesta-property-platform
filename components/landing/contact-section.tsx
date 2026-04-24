@@ -1,6 +1,6 @@
 "use client"
 
-import { Mail, Phone, Globe } from "lucide-react"
+import { Mail, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -38,7 +38,7 @@ export function ContactSection() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-foreground">
-                    Sahkoposti
+                    Sähköposti
                   </label>
                   <Input id="email" type="email" placeholder="nimi@esimerkki.fi" className="border-border/50 bg-card text-foreground" />
                 </div>
@@ -51,7 +51,7 @@ export function ContactSection() {
               </div>
               <div>
                 <label htmlFor="properties" className="mb-1.5 block text-sm font-medium text-foreground">
-                  Kiinteistojen maara
+                  Kiinteistöjen määrä
                 </label>
                 <Input id="properties" placeholder="esim. 25" className="border-border/50 bg-card text-foreground" />
               </div>
@@ -67,7 +67,7 @@ export function ContactSection() {
                 />
               </div>
               <Button type="submit" className="w-full sm:w-auto">
-                Laheta viesti
+                Lähetä viesti
               </Button>
             </form>
           </div>
@@ -77,29 +77,22 @@ export function ContactSection() {
               <div>
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
                   <Mail className="h-4 w-4 text-primary" />
-                  Sahkoposti
+                  Sähköposti
                 </div>
-                <p className="text-sm text-muted-foreground">hello@finnvesta.fi</p>
+                <a href="mailto:info@janope.fi" className="text-sm text-muted-foreground hover:text-primary">info@janope.fi</a>
               </div>
               <div>
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
                   <Phone className="h-4 w-4 text-primary" />
                   Puhelin
                 </div>
-                <p className="text-sm text-muted-foreground">+358 40 123 4567</p>
-              </div>
-              <div>
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Globe className="h-4 w-4 text-primary" />
-                  Verkkosivut
-                </div>
-                <p className="text-sm text-muted-foreground">finnvesta.fi</p>
+                <a href="tel:+358400982177" className="text-sm text-muted-foreground hover:text-primary">+358 (0)400 982177</a>
               </div>
 
               <div className="border-t border-border/50 pt-4">
                 <h4 className="mb-2 text-sm font-semibold text-foreground">Varaa demo</h4>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Nae FinnVesta toiminnassa henkilokohtaisella demolla, joka on raataloidaan tarpeisiisi.
+                  Näe FinnVesta toiminnassa henkilökohtaisella demolla, joka räätälöidään tarpeisiisi.
                 </p>
               </div>
             </div>
