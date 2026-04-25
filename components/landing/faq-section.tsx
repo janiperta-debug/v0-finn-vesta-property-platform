@@ -12,9 +12,9 @@ const faqs = [
       "Perinteiset konsulttiraportit ovat staattisia PDF-dokumentteja, jotka vanhenevat heti. FinnVesta on elavaa kiinteistohallintaa - data paivittyy reaaliajassa, voit kokeilla eri skenaarioita ja seurata kunnon kehitysta ajan yli.",
   },
   {
-    question: "Onko FinnVesta yhteensopiva Trellum PTS 2040 -standardin kanssa?",
+    question: "Mitä standardeja FinnVesta noudattaa?",
     answer:
-      "Kylla. FinnVesta kayttaa samoja suomalaisia standardeja ja kasitteita: Kuntoluokka, Korjausvelka, Jälleenhankinta-arvo ja 9 rakennusosan komponenttiarviointi.",
+      "FinnVesta perustuu RT-kortiston ohjeisiin ja Talo 2000 -nimikkeistöön. Käytämme tuttuja suomalaisia käsitteitä: kuntoluokka, korjausvelka, jälleenhankinta-arvo sekä 17 rakennusosan komponenttiarviointi.",
   },
   {
     question: "Kuinka kauan kayttoonotto kestaa?",

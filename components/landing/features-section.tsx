@@ -17,7 +17,7 @@ const features = [
   {
     icon: Flag,
     title: "Suomalaiset standardit",
-    description: "Kuntoluokka, korjausvelka, PTS 2040 - kaikki tutut käsitteet sisäänrakennettuina.",
+    description: "RT-kortisto, Talo 2000 -nimikkeistö, kuntoluokka ja korjausvelka sisäänrakennettuina.",
   },
   {
     icon: PiggyBank,
@@ -42,7 +42,7 @@ const features = [
   {
     icon: CalendarRange,
     title: "15v PTS-suunnittelu",
-    description: "Trellum PTS 2040 -yhteensopiva pitkän tähtäimen suunnittelu ja visualisointi.",
+    description: "RT 18-11131 -mukainen pitkän tähtäimen suunnittelu ja visualisointi.",
   },
 ]
 
