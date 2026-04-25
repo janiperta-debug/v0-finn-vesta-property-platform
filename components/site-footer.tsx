@@ -35,14 +35,14 @@ export function SiteFooter() {
           <div>
             <h4 className="mb-3 text-sm font-semibold text-foreground">Laki</h4>
             <nav className="flex flex-col gap-2">
-              <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/tietosuoja" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
                 Tietosuojaseloste
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                Kayttoehdot
+              <Link href="/kayttoehdot" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Käyttöehdot
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
-                Evastekaytanto
+              <Link href="/evasteet" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Evästekäytäntö
               </Link>
             </nav>
           </div>
@@ -72,7 +72,7 @@ export function SiteFooter() {
 
         <div className="mt-8 border-t border-border/50 pt-6">
           <p className="text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} FinnVesta. Kaikki oikeudet pidatetaan.
+            &copy; {new Date().getFullYear()} FinnVesta. Kaikki oikeudet pidätetään.
           </p>
         </div>
       </div>
