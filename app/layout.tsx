@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 
 import './globals.css'
+import { CookieConsent } from '@/components/cookie-consent'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="fi">
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`}>
         {children}
+        <CookieConsent />
       </body>
     </html>
   )
