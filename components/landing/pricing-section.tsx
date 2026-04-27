@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Users, Building2, User } from "lucide-react"
+import { Check, Users, Building2, User, Warehouse } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -8,39 +8,61 @@ const pricingComponents = [
   {
     icon: User,
     title: "Pääkäyttäjä",
-    price: "XX",
-    unit: "/kk",
+    price: "200",
+    unit: "€/kk",
+    yearlyPrice: "2 400 €/vuosi",
     description: "Organisaation hallinnoija, joka hallinnoi käyttäjiä ja asetuksia",
   },
   {
     icon: Users,
     title: "Lisäkäyttäjä",
-    price: "XX",
-    unit: "/käyttäjä/kk",
+    price: "100",
+    unit: "€/kk",
+    yearlyPrice: "1 200 €/vuosi",
     description: "Jokainen pääkäyttäjän lisäämä käyttäjä",
-  },
-  {
-    icon: Building2,
-    title: "Kiinteistöt",
-    price: "Portaittain",
-    unit: "",
-    description: "Hinnoittelu kiinteistöjen määrän mukaan",
   },
 ]
 
-const propertyTiers = [
-  { tier: "S", range: "1-XX kiinteistöä", price: "XX €/kk" },
-  { tier: "M", range: "XX-XX kiinteistöä", price: "XX €/kk" },
-  { tier: "L", range: "XX+ kiinteistöä", price: "XX €/kk" },
+const buildingTiers = [
+  { 
+    tier: "S", 
+    label: "Pieni",
+    range: "< 1 000 m²", 
+    price: "19",
+    unit: "€/kk/rakennus"
+  },
+  { 
+    tier: "M", 
+    label: "Keskikoko",
+    range: "1 000 – 5 000 m²", 
+    price: "29",
+    unit: "€/kk/rakennus"
+  },
+  { 
+    tier: "L", 
+    label: "Suuri",
+    range: "> 5 000 m²", 
+    price: "39",
+    unit: "€/kk/rakennus"
+  },
+  { 
+    tier: "P", 
+    label: "Piharakennus",
+    range: "Varastot yms.", 
+    price: "~4",
+    unit: "€/kk (20% pienestä)"
+  },
 ]
 
 const includedFeatures = [
   "Kaikki ominaisuudet käytössä",
   "17-kategorian kuntoarviojärjestelmä",
+  "Huoneistotason seuranta",
   "Automaattinen PTS-suunnittelu",
   "Raportit ja analytiikka",
   "Käyttöönottokoulutus",
   "Tekninen tuki",
+  "Jatkuva kehitys",
 ]
 
 export function PricingSection() {
@@ -52,48 +74,65 @@ export function PricingSection() {
             Selkeä ja reilu hinnoittelu
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Maksat vain käyttäjistä ja kiinteistöistä. Ei piilokustannuksia.
+            Maksat käyttäjistä ja rakennuksista. Ei piilokustannuksia, ei toimittajaloukkua.
           </p>
         </div>
 
-        {/* Pricing components */}
-        <div className="mx-auto mb-12 grid max-w-4xl gap-6 md:grid-cols-3">
-          {pricingComponents.map((component) => (
-            <div
-              key={component.title}
-              className="flex flex-col rounded-xl border border-border/50 bg-card p-6"
-            >
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                <component.icon className="h-6 w-6 text-primary" />
+        {/* User licenses */}
+        <div className="mx-auto mb-12 max-w-3xl">
+          <h3 className="mb-4 text-center font-heading text-xl font-semibold text-foreground">
+            Käyttäjälisenssit
+          </h3>
+          <div className="grid gap-6 md:grid-cols-2">
+            {pricingComponents.map((component) => (
+              <div
+                key={component.title}
+                className="flex flex-col rounded-xl border border-border/50 bg-card p-6"
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                  <component.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-heading text-lg font-semibold text-foreground">
+                  {component.title}
+                </h4>
+                <p className="mb-4 text-sm text-muted-foreground">{component.description}</p>
+                <div className="mt-auto">
+                  <p className="text-3xl font-bold text-foreground">
+                    {component.price}
+                    <span className="text-base font-normal text-muted-foreground"> {component.unit}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">{component.yearlyPrice}</p>
+                </div>
               </div>
-              <h3 className="font-heading text-lg font-semibold text-foreground">
-                {component.title}
-              </h3>
-              <p className="mb-4 text-sm text-muted-foreground">{component.description}</p>
-              <p className="mt-auto text-2xl font-bold text-foreground">
-                {component.price}
-                {component.unit && (
-                  <span className="text-sm font-normal text-muted-foreground"> {component.unit}</span>
-                )}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        {/* Property tiers */}
-        <div className="mx-auto mb-12 max-w-2xl">
+        {/* Building tiers */}
+        <div className="mx-auto mb-12 max-w-4xl">
           <h3 className="mb-4 text-center font-heading text-xl font-semibold text-foreground">
-            Kiinteistöportaat
+            <Building2 className="mr-2 inline-block h-5 w-5 text-primary" />
+            Rakennusten seuranta
           </h3>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {propertyTiers.map((tier) => (
+          <p className="mb-6 text-center text-sm text-muted-foreground">
+            Hinnoittelu perustuu rakennuksen kokoon neliömetreinä
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {buildingTiers.map((tier) => (
               <div
                 key={tier.tier}
-                className="flex flex-col items-center rounded-lg border border-border/50 bg-card p-4 text-center"
+                className="flex flex-col items-center rounded-xl border border-border/50 bg-card p-5 text-center"
               >
-                <span className="mb-1 text-2xl font-bold text-primary">{tier.tier}</span>
+                <span className="mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                  {tier.tier}
+                </span>
+                <span className="mt-2 font-semibold text-foreground">{tier.label}</span>
                 <span className="text-sm text-muted-foreground">{tier.range}</span>
-                <span className="mt-2 font-semibold text-foreground">{tier.price}</span>
+                <p className="mt-3 text-2xl font-bold text-foreground">
+                  {tier.price}
+                  <span className="text-sm font-normal text-muted-foreground"> €</span>
+                </p>
+                <span className="text-xs text-muted-foreground">{tier.unit}</span>
               </div>
             ))}
           </div>
@@ -119,9 +158,13 @@ export function PricingSection() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-muted-foreground">
-          Hinnat päivitetään pian. Ota yhteyttä niin sovitaan juuri teille sopiva ratkaisu.
-        </p>
+        {/* Example calculation */}
+        <div className="mx-auto mt-8 max-w-xl rounded-lg border border-border/30 bg-muted/30 p-4">
+          <p className="text-center text-sm text-muted-foreground">
+            <strong className="text-foreground">Esimerkki:</strong> 1 pääkäyttäjä + 2 lisäkäyttäjää + 10 keskikokoista rakennusta = 
+            <span className="text-primary font-semibold"> 690 €/kk</span>
+          </p>
+        </div>
       </div>
     </section>
   )
