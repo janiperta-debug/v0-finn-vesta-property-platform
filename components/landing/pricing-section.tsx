@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Users, Building2, User, Warehouse } from "lucide-react"
+import { Check, Users, Building2, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -8,17 +8,17 @@ const pricingComponents = [
   {
     icon: User,
     title: "Pääkäyttäjä",
-    price: "200",
+    price: "79",
     unit: "€/kk",
-    yearlyPrice: "2 400 €/vuosi",
+    yearlyPrice: "948 €/vuosi",
     description: "Organisaation hallinnoija, joka hallinnoi käyttäjiä ja asetuksia",
   },
   {
     icon: Users,
     title: "Lisäkäyttäjä",
-    price: "100",
+    price: "49",
     unit: "€/kk",
-    yearlyPrice: "1 200 €/vuosi",
+    yearlyPrice: "588 €/vuosi",
     description: "Jokainen pääkäyttäjän lisäämä käyttäjä",
   },
 ]
@@ -28,29 +28,22 @@ const buildingTiers = [
     tier: "S", 
     label: "Pieni",
     range: "< 1 000 m²", 
-    price: "19",
+    price: "9",
     unit: "€/kk/rakennus"
   },
   { 
     tier: "M", 
     label: "Keskikoko",
     range: "1 000 – 5 000 m²", 
-    price: "29",
+    price: "15",
     unit: "€/kk/rakennus"
   },
   { 
     tier: "L", 
     label: "Suuri",
     range: "> 5 000 m²", 
-    price: "39",
+    price: "25",
     unit: "€/kk/rakennus"
-  },
-  { 
-    tier: "P", 
-    label: "Piharakennus",
-    range: "Varastot yms.", 
-    price: "~4",
-    unit: "€/kk (20% pienestä)"
   },
 ]
 
@@ -117,7 +110,7 @@ export function PricingSection() {
           <p className="mb-6 text-center text-sm text-muted-foreground">
             Hinnoittelu perustuu rakennuksen kokoon neliömetreinä
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-3">
             {buildingTiers.map((tier) => (
               <div
                 key={tier.tier}
@@ -162,7 +155,7 @@ export function PricingSection() {
         <div className="mx-auto mt-8 max-w-xl rounded-lg border border-border/30 bg-muted/30 p-4">
           <p className="text-center text-sm text-muted-foreground">
             <strong className="text-foreground">Esimerkki:</strong> 1 pääkäyttäjä + 2 lisäkäyttäjää + 10 keskikokoista rakennusta = 
-            <span className="text-primary font-semibold"> 690 €/kk</span>
+            <span className="text-primary font-semibold"> 327 €/kk</span>
           </p>
         </div>
       </div>
