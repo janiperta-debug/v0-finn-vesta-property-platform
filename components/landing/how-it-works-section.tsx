@@ -1,4 +1,4 @@
-import { MessageSquare, ClipboardCheck, LogIn, RefreshCw } from "lucide-react"
+import { MessageSquare, FileSpreadsheet, LogIn, RefreshCw } from "lucide-react"
 
 const steps = [
   {
@@ -8,16 +8,16 @@ const steps = [
     description: "Kerro kiinteistöistäsi ja tarpeistasi. Suunnittelemme yhdessä parhaan ratkaisun.",
   },
   {
-    icon: ClipboardCheck,
+    icon: FileSpreadsheet,
     step: "02",
-    title: "Katselmointi",
-    description: "Teemme ammattimaiset kuntoarviot kaikista kiinteistöistäsi paikan päällä.",
+    title: "Toimita kiinteistölista",
+    description: "Lähetä meille listaus kiinteistöistäsi. Me perustamme ne valmiiksi järjestelmään.",
   },
   {
     icon: LogIn,
     step: "03",
     title: "Käyttöönotto",
-    description: "Saat kirjautumistiedot ja pääsit alkuun. Kaikki data valmiina alustalla.",
+    description: "Saat kirjautumistiedot ja pääset alkuun. Kaikki data valmiina alustalla.",
   },
   {
     icon: RefreshCw,
