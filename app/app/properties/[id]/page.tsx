@@ -299,7 +299,7 @@ export default function PropertyDetailPage() {
 
       {/* Main content */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+        <TabsList className="w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="overview" className="gap-2">
             <Building2 className="h-4 w-4" />
             Yleiskatsaus

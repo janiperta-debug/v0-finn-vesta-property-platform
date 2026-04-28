@@ -151,7 +151,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
       {/* Tabs for different views */}
       <Tabs defaultValue="kuntoarvio" className="space-y-4">
-        <TabsList className="bg-muted/50">
+        <TabsList className="bg-muted/50 w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="kuntoarvio" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
             Kuntoarvio

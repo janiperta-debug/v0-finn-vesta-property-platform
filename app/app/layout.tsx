@@ -12,8 +12,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <AppNav />
 
-      <div className="lg:pl-64">
-        <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <div className="lg:pl-64 overflow-x-hidden">
+        <main className="mx-auto max-w-7xl px-4 py-6 overflow-x-hidden">{children}</main>
       </div>
     </div>
   )
