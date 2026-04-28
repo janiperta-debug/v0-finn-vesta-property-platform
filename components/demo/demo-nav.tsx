@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 // Main navigation items - mirrors app structure
 const mainNavItems = [
   { href: "/demo", label: "Portfolio", icon: LayoutDashboard },
-  { href: "/demo/properties", label: "Rakennukset", icon: Building2 },
+  { href: "/demo/rakennukset", label: "Rakennukset", icon: Building2 },
   { href: "/demo/kuntoarviot", label: "Kuntoarviot", icon: ClipboardCheck },
   { href: "/demo/huoltohistoria", label: "Huoltohistoria", icon: Wrench },
   { href: "/demo/timeline", label: "Investointiaikajana", icon: CalendarRange },
