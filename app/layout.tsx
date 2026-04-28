@@ -18,10 +18,24 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: 'FinnVesta - Elävä kiinteistöhallinta',
   description: 'Korvaa kalliit konsultit reaaliaikaisella kiinteistöjen kuntoarvio- ja PTS-alustalla.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'FinnVesta',
+  },
+  icons: {
+    icon: '/finnvesta-logo.png',
+    apple: '/apple-touch-icon.png',
+  },
 }
 
 export const viewport: Viewport = {
   themeColor: '#0f1624',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
