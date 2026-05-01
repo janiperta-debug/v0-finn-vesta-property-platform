@@ -126,22 +126,21 @@ export default function NewPropertyPage() {
 
       if (!orgUser) throw new Error("Organisaatiota ei löytynyt")
 
-      // Insert property
+      // Insert property into kiinteistot table
       const { data: property, error: propError } = await supabase
-        .from("properties")
+        .from("kiinteistot")
         .insert({
           organization_id: orgUser.organization_id,
-          name: formData.name,
-          address: formData.address,
-          postal_code: formData.postalCode,
-          city: formData.city,
-          building_type: formData.buildingType,
-          build_year: parseInt(formData.buildYear) || null,
-          square_meters: parseFloat(formData.squareMeters) || null,
-          floors: parseInt(formData.floors) || null,
-          tunnus: formData.tunnus || null,
-          notes: formData.notes || null,
-          has_sub_spaces: hasSubSpaces,
+          nimi: formData.name,
+          katuosoite: formData.address,
+          postinumero: formData.postalCode || null,
+          kaupunki: formData.city || null,
+          rakennustyyppi: formData.buildingType,
+          rakennusvuosi: parseInt(formData.buildYear) || null,
+          bruttopintaala: parseFloat(formData.squareMeters) || null,
+          kerrosluku: parseInt(formData.floors) || null,
+          kiinteistotunnus: formData.tunnus || null,
+          lisatiedot: formData.notes || null,
         })
         .select()
         .single()

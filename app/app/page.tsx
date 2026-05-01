@@ -79,27 +79,29 @@ export default async function AppPage() {
 
       if (properties && properties.length > 0) {
         hasData = true
-        const totalSqm = properties.reduce((sum, p) => sum + (p.square_meters || 0), 0)
-        const totalValue = properties.reduce((sum, p) => sum + (p.replacement_value || 0), 0)
-        const totalTechnical = properties.reduce((sum, p) => sum + (p.technical_value || 0), 0)
-        const avgCondition = properties.reduce((sum, p) => sum + (p.condition_class || 0), 0) / properties.length
+        const totalSqm = properties.reduce((sum, p) => sum + (p.bruttopintaala || p.square_meters || 0), 0)
+        const totalValue = properties.reduce((sum, p) => sum + (p.jalleenhankintaarvo || 0), 0)
+        const totalTechnical = properties.reduce((sum, p) => sum + (p.tekninennykyarvo || 0), 0)
+        // kuntoluokka is 1-5 scale, convert to percentage
+        const avgConditionRaw = properties.reduce((sum, p) => sum + (p.kuntoluokka || 3), 0) / properties.length
+        const avgCondition = Math.round((avgConditionRaw / 5) * 100)
 
         stats = {
           totalProperties: properties.length,
           totalSquareMeters: totalSqm,
-          avgCondition: Math.round(avgCondition),
+          avgCondition: avgCondition,
           totalValue: totalValue,
           repairDebt: totalValue - totalTechnical,
-          urgentItems: properties.filter(p => (p.condition_class || 100) < 40).length,
+          urgentItems: properties.filter(p => (p.kuntoluokka || 3) <= 2).length,
           upcomingInspections: 0,
         }
 
         recentProperties = properties.slice(0, 5).map(p => ({
           id: p.id,
-          name: p.name,
-          address: p.address || '',
-          condition: p.condition_class || 50,
-          type: p.building_type || 'muu',
+          name: p.nimi || p.name,
+          address: p.katuosoite || p.address || '',
+          condition: Math.round(((p.kuntoluokka || 3) / 5) * 100),
+          type: p.rakennustyyppi || p.building_type || 'muu',
         }))
       }
     }
