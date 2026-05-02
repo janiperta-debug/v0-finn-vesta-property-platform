@@ -65,29 +65,29 @@ export default async function TimelinePage() {
         .from('investment_plans')
         .select(`
           id,
-          property_id,
-          title,
-          category,
-          scheduled_year,
-          estimated_cost,
-          priority,
-          status,
-          kiinteistot (name)
+          kiinteisto_id,
+          otsikko,
+          kategoria,
+          vuosi,
+          arvioitu_kustannus,
+          prioriteetti,
+          tila,
+          kiinteistot (nimi)
         `)
         .eq('organization_id', orgUser.organization_id)
-        .order('scheduled_year', { ascending: true })
+        .order('vuosi', { ascending: true })
 
       if (invData) {
         investments = invData.map((i: any) => ({
           id: i.id,
-          propertyId: i.property_id,
-          propertyName: i.kiinteistot?.name || 'Tuntematon',
-          title: i.title,
-          category: i.category || 'other',
-          year: i.scheduled_year,
-          estimatedCost: i.estimated_cost || 0,
-          priority: i.priority || 'medium',
-          status: i.status || 'planned',
+          propertyId: i.kiinteisto_id,
+          propertyName: i.kiinteistot?.nimi || 'Tuntematon',
+          title: i.otsikko || '-',
+          category: i.kategoria || 'other',
+          year: i.vuosi,
+          estimatedCost: i.arvioitu_kustannus || 0,
+          priority: i.prioriteetti || 'medium',
+          status: i.tila || 'planned',
         }))
       }
     }

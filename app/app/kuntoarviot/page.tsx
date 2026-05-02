@@ -60,38 +60,38 @@ export default async function KuntoarviotPage() {
       // Fetch properties for "new inspection" selection
       const { data: propsData } = await supabase
         .from('kiinteistot')
-        .select('id, name')
+        .select('id, nimi')
         .eq('organization_id', orgUser.organization_id)
-        .order('name')
+        .order('nimi')
 
       if (propsData) {
-        properties = propsData
+        properties = propsData.map(p => ({ id: p.id, name: p.nimi || '' }))
       }
 
-      // Fetch inspections
+      // Fetch inspections from kuntotarkastukset table
       const { data: inspectionsData } = await supabase
         .from('kuntotarkastukset')
         .select(`
           id,
-          property_id,
-          inspection_date,
-          inspector_name,
-          status,
-          overall_condition,
-          kiinteistot (name)
+          kiinteisto_id,
+          tarkastuspvm,
+          tarkastaja,
+          tila,
+          yleiskunto,
+          kiinteistot (nimi)
         `)
         .eq('organization_id', orgUser.organization_id)
-        .order('inspection_date', { ascending: false })
+        .order('tarkastuspvm', { ascending: false })
 
       if (inspectionsData) {
         inspections = inspectionsData.map((i: any) => ({
           id: i.id,
-          propertyId: i.property_id,
-          propertyName: i.kiinteistot?.name || 'Tuntematon',
-          date: i.inspection_date,
-          inspector: i.inspector_name || '-',
-          status: i.status || 'draft',
-          overallCondition: i.overall_condition || 0,
+          propertyId: i.kiinteisto_id,
+          propertyName: i.kiinteistot?.nimi || 'Tuntematon',
+          date: i.tarkastuspvm,
+          inspector: i.tarkastaja || '-',
+          status: i.tila || 'draft',
+          overallCondition: i.yleiskunto ? Math.round((i.yleiskunto / 5) * 100) : 0,
           urgentItems: 0,
         }))
       }

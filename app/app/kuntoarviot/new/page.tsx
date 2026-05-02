@@ -45,14 +45,14 @@ export default function NewKuntoarvioPage() {
       }
 
       const { error } = await supabase
-        .from('inspections')
+        .from('kuntotarkastukset')
         .insert({
           organization_id: orgUser.organization_id,
-          property_id: selectedProperty,
-          inspection_type: inspectionType,
-          status: 'scheduled',
-          notes: notes,
-          scheduled_date: new Date().toISOString(),
+          kiinteisto_id: selectedProperty,
+          tarkastustyyppi: inspectionType,
+          tila: 'scheduled',
+          muistiinpanot: notes,
+          tarkastuspvm: new Date().toISOString().split('T')[0],
         })
 
       if (error) throw error

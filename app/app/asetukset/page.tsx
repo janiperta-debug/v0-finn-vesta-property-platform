@@ -70,14 +70,14 @@ export default async function AsetuksetPage() {
 
       // Count buildings by size for billing stats
       const { data: buildings } = await supabase
-        .from('buildings')
-        .select('square_meters')
+        .from('kiinteistot')
+        .select('bruttopintaala')
         .eq('organization_id', orgUser.organization_id)
 
       if (buildings) {
-        buildingStats.small = buildings.filter(b => (b.square_meters || 0) < 1000).length
-        buildingStats.medium = buildings.filter(b => (b.square_meters || 0) >= 1000 && (b.square_meters || 0) < 5000).length
-        buildingStats.large = buildings.filter(b => (b.square_meters || 0) >= 5000).length
+        buildingStats.small = buildings.filter(b => (b.bruttopintaala || 0) < 1000).length
+        buildingStats.medium = buildings.filter(b => (b.bruttopintaala || 0) >= 1000 && (b.bruttopintaala || 0) < 5000).length
+        buildingStats.large = buildings.filter(b => (b.bruttopintaala || 0) >= 5000).length
       }
     }
   } catch (error) {

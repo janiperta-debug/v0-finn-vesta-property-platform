@@ -82,31 +82,31 @@ export default async function HuoltohistoriaPage() {
         .from('huoltotyot')
         .select(`
           id,
-          property_id,
-          title,
-          description,
-          category,
-          scheduled_date,
-          cost,
-          status,
-          contractor,
-          kiinteistot (name)
+          kiinteisto_id,
+          otsikko,
+          kuvaus,
+          kategoria,
+          pvm,
+          kustannus,
+          tila,
+          urakoitsija,
+          kiinteistot (nimi)
         `)
         .eq('organization_id', orgUser.organization_id)
-        .order('scheduled_date', { ascending: false })
+        .order('pvm', { ascending: false })
 
       if (tasksData) {
         tasks = tasksData.map((t: any) => ({
           id: t.id,
-          propertyId: t.property_id,
-          propertyName: t.kiinteistot?.name || 'Tuntematon',
-          title: t.title,
-          description: t.description || '',
-          category: t.category || 'other',
-          date: t.scheduled_date,
-          cost: t.cost || 0,
-          status: t.status || 'planned',
-          contractor: t.contractor,
+          propertyId: t.kiinteisto_id,
+          propertyName: t.kiinteistot?.nimi || 'Tuntematon',
+          title: t.otsikko || '-',
+          description: t.kuvaus || '',
+          category: t.kategoria || 'other',
+          date: t.pvm,
+          cost: t.kustannus || 0,
+          status: t.tila || 'planned',
+          contractor: t.urakoitsija,
         }))
 
         totalCost = tasks.reduce((sum, t) => sum + t.cost, 0)
