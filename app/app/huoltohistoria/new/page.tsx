@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, Wrench } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+
+interface Property {
+  id: string
+  nimi: string
+}
 
 const categories = [
   { value: "lvi", label: "LVI" },
@@ -26,6 +31,7 @@ const categories = [
 export default function NewHuoltotyoPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [properties, setProperties] = useState<Property[]>([])
   const [formData, setFormData] = useState({
     property_id: "",
     title: "",
@@ -35,6 +41,31 @@ export default function NewHuoltotyoPage() {
     completed_date: new Date().toISOString().split('T')[0],
     contractor: "",
   })
+
+  useEffect(() => {
+    async function fetchProperties() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: orgUser } = await supabase
+        .from('org_users')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!orgUser) return
+
+      const { data } = await supabase
+        .from('kiinteistot')
+        .select('id, nimi')
+        .eq('organization_id', orgUser.organization_id)
+        .order('nimi')
+
+      if (data) setProperties(data)
+    }
+    fetchProperties()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,17 +92,17 @@ export default function NewHuoltotyoPage() {
       }
 
       const { error } = await supabase
-        .from('maintenance_tasks')
+        .from('huoltotyot')
         .insert({
           organization_id: orgUser.organization_id,
-          property_id: formData.property_id,
-          title: formData.title,
-          category: formData.category,
-          description: formData.description,
-          cost: formData.cost ? parseFloat(formData.cost) : null,
-          completed_date: formData.completed_date,
-          contractor: formData.contractor,
-          status: 'completed',
+          kiinteisto_id: formData.property_id,
+          otsikko: formData.title,
+          kategoria: formData.category,
+          kuvaus: formData.description,
+          kustannus: formData.cost ? parseFloat(formData.cost) : null,
+          pvm: formData.completed_date,
+          urakoitsija: formData.contractor,
+          tila: 'completed',
         })
 
       if (error) throw error
@@ -123,7 +154,13 @@ export default function NewHuoltotyoPage() {
                     <SelectValue placeholder="Valitse kiinteistö" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="placeholder">Lisää ensin kiinteistöjä</SelectItem>
+                    {properties.length === 0 ? (
+                      <SelectItem value="placeholder" disabled>Ei kiinteistöjä</SelectItem>
+                    ) : (
+                      properties.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.nimi}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

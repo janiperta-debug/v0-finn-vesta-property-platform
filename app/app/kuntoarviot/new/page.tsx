@@ -1,23 +1,53 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, ClipboardCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
+interface Property {
+  id: string
+  nimi: string
+}
+
 export default function NewKuntoarvioPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [properties, setProperties] = useState<Property[]>([])
   const [selectedProperty, setSelectedProperty] = useState("")
   const [inspectionType, setInspectionType] = useState("perus")
   const [notes, setNotes] = useState("")
+
+  useEffect(() => {
+    async function fetchProperties() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: orgUser } = await supabase
+        .from('org_users')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!orgUser) return
+
+      const { data } = await supabase
+        .from('kiinteistot')
+        .select('id, nimi')
+        .eq('organization_id', orgUser.organization_id)
+        .order('nimi')
+
+      if (data) setProperties(data)
+    }
+    fetchProperties()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,7 +130,13 @@ export default function NewKuntoarvioPage() {
                     <SelectValue placeholder="Valitse kiinteistö" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="placeholder">Lisää ensin kiinteistöjä</SelectItem>
+                    {properties.length === 0 ? (
+                      <SelectItem value="placeholder" disabled>Ei kiinteistöjä</SelectItem>
+                    ) : (
+                      properties.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.nimi}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
