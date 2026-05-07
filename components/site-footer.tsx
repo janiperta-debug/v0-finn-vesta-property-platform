@@ -72,7 +72,7 @@ export function SiteFooter() {
 
         <div className="mt-8 border-t border-border/50 pt-6">
           <p className="text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} FinnVesta. Kaikki oikeudet pidätetään.
+            &copy; 2025 FinnVesta. Kaikki oikeudet pidätetään.
           </p>
         </div>
       </div>
