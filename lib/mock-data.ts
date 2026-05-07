@@ -36,8 +36,8 @@ export interface InvestmentProject {
   kestoVuotta: number
   investointiEur: number
   investointiEurPerM2: number
-  priority: "kriittinen" | "tarkea" | "normaali"
-  status: "suunniteltu" | "aloitettu" | "valmis" | "lykatty"
+  priority: "kriittinen" | "tärkeä" | "normaali"
+  status: "suunniteltu" | "aloitettu" | "valmis" | "lykätty"
 }
 
 export const portfolioSummary = {
