@@ -224,19 +224,7 @@ export default function PropertiesPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <LayoutGrid className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalApartments}</p>
-                <p className="text-sm text-muted-foreground">Huoneistoa</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
