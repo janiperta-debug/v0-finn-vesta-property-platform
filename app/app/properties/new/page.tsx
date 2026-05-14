@@ -112,39 +112,46 @@ export default function NewPropertyPage() {
 
     try {
       const supabase = createClient()
+      console.log("[v0] Starting property save...")
       
       // Get current user's organization
       const { data: { user } } = await supabase.auth.getUser()
+      console.log("[v0] User:", user?.id)
       if (!user) throw new Error("Ei kirjautunut sisään")
 
       // Get user's organization
-      const { data: orgUser } = await supabase
+      const { data: orgUser, error: orgError } = await supabase
         .from("org_users")
         .select("organization_id")
         .eq("user_id", user.id)
         .single()
 
+      console.log("[v0] OrgUser:", orgUser, "Error:", orgError)
       if (!orgUser) throw new Error("Organisaatiota ei löytynyt")
 
       // Insert property into kiinteistot table
+      const insertData = {
+        organization_id: orgUser.organization_id,
+        nimi: formData.name,
+        katuosoite: formData.address,
+        postinumero: formData.postalCode || null,
+        kaupunki: formData.city || null,
+        rakennustyyppi: formData.buildingType,
+        rakennusvuosi: parseInt(formData.buildYear) || null,
+        bruttopintaala: parseFloat(formData.squareMeters) || null,
+        kerrosluku: parseInt(formData.floors) || null,
+        kiinteistotunnus: formData.tunnus || null,
+        lisatiedot: formData.notes || null,
+      }
+      console.log("[v0] Insert data:", insertData)
+
       const { data: property, error: propError } = await supabase
         .from("kiinteistot")
-        .insert({
-          organization_id: orgUser.organization_id,
-          nimi: formData.name,
-          katuosoite: formData.address,
-          postinumero: formData.postalCode || null,
-          kaupunki: formData.city || null,
-          rakennustyyppi: formData.buildingType,
-          rakennusvuosi: parseInt(formData.buildYear) || null,
-          bruttopintaala: parseFloat(formData.squareMeters) || null,
-          kerrosluku: parseInt(formData.floors) || null,
-          kiinteistotunnus: formData.tunnus || null,
-          lisatiedot: formData.notes || null,
-        })
+        .insert(insertData)
         .select()
         .single()
 
+      console.log("[v0] Property result:", property, "Error:", propError)
       if (propError) throw propError
 
       // Insert sub-spaces if any
