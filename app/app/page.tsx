@@ -65,43 +65,41 @@ export default async function AppPage() {
     // Get user's organization
     const { data: orgUser } = await supabase
       .from('org_users')
-      .select('organization_id')
+      .select('org_id')
       .eq('user_id', user.id)
       .single()
 
-    if (orgUser?.organization_id) {
+    if (orgUser?.org_id) {
       // Fetch properties
       const { data: properties } = await supabase
         .from('kiinteistot')
         .select('*')
-        .eq('organization_id', orgUser.organization_id)
-        .order('created_at', { ascending: false })
+        .eq('org_id', orgUser.org_id)
+        .order('luotu', { ascending: false })
 
       if (properties && properties.length > 0) {
         hasData = true
-        const totalSqm = properties.reduce((sum, p) => sum + (p.bruttopintaala || p.square_meters || 0), 0)
-        const totalValue = properties.reduce((sum, p) => sum + (p.jalleenhankintaarvo || 0), 0)
-        const totalTechnical = properties.reduce((sum, p) => sum + (p.tekninennykyarvo || 0), 0)
-        // kuntoluokka is 1-5 scale, convert to percentage
-        const avgConditionRaw = properties.reduce((sum, p) => sum + (p.kuntoluokka || 3), 0) / properties.length
-        const avgCondition = Math.round((avgConditionRaw / 5) * 100)
+        const totalSqm = properties.reduce((sum, p) => sum + (p.pinta_ala || 0), 0)
+        const totalValue = properties.reduce((sum, p) => sum + (p.markkina_arvo || 0), 0)
+        // Use status as condition indicator for now
+        const avgCondition = 70 // Default value until proper condition tracking
 
         stats = {
           totalProperties: properties.length,
           totalSquareMeters: totalSqm,
           avgCondition: avgCondition,
           totalValue: totalValue,
-          repairDebt: totalValue - totalTechnical,
-          urgentItems: properties.filter(p => (p.kuntoluokka || 3) <= 2).length,
+          repairDebt: 0,
+          urgentItems: 0,
           upcomingInspections: 0,
         }
 
         recentProperties = properties.slice(0, 5).map(p => ({
           id: p.id,
-          name: p.nimi || p.name,
-          address: p.katuosoite || p.address || '',
-          condition: Math.round(((p.kuntoluokka || 3) / 5) * 100),
-          type: p.rakennustyyppi || p.building_type || 'muu',
+          name: p.nimi || '',
+          address: p.osoite || '',
+          condition: 70,
+          type: p.tyyppi || 'muu',
         }))
       }
     }

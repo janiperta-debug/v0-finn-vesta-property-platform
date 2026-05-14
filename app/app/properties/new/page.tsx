@@ -112,46 +112,36 @@ export default function NewPropertyPage() {
 
     try {
       const supabase = createClient()
-      console.log("[v0] Starting property save...")
       
       // Get current user's organization
       const { data: { user } } = await supabase.auth.getUser()
-      console.log("[v0] User:", user?.id)
       if (!user) throw new Error("Ei kirjautunut sisään")
 
-      // Get user's organization
+      // Get user's organization - note: user_id is text type, org_id is the org field
       const { data: orgUser, error: orgError } = await supabase
         .from("org_users")
-        .select("organization_id")
+        .select("org_id")
         .eq("user_id", user.id)
         .single()
 
-      console.log("[v0] OrgUser:", orgUser, "Error:", orgError)
-      if (!orgUser) throw new Error("Organisaatiota ei löytynyt")
+      if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt")
 
-      // Insert property into kiinteistot table
-      const insertData = {
-        organization_id: orgUser.organization_id,
-        nimi: formData.name,
-        katuosoite: formData.address,
-        postinumero: formData.postalCode || null,
-        kaupunki: formData.city || null,
-        rakennustyyppi: formData.buildingType,
-        rakennusvuosi: parseInt(formData.buildYear) || null,
-        bruttopintaala: parseFloat(formData.squareMeters) || null,
-        kerrosluku: parseInt(formData.floors) || null,
-        kiinteistotunnus: formData.tunnus || null,
-        lisatiedot: formData.notes || null,
-      }
-      console.log("[v0] Insert data:", insertData)
-
+      // Insert property into kiinteistot table with correct column names
       const { data: property, error: propError } = await supabase
         .from("kiinteistot")
-        .insert(insertData)
+        .insert({
+          org_id: orgUser.org_id,
+          nimi: formData.name,
+          osoite: formData.address,
+          postinumero: formData.postalCode || null,
+          kaupunki: formData.city || null,
+          tyyppi: formData.buildingType,
+          rakennusvuosi: parseInt(formData.buildYear) || null,
+          pinta_ala: parseFloat(formData.squareMeters) || null,
+        })
         .select()
         .single()
 
-      console.log("[v0] Property result:", property, "Error:", propError)
       if (propError) throw propError
 
       // Insert sub-spaces if any
