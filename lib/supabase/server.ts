@@ -10,14 +10,14 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)?.trim()
 
   if (!supabaseUrl || supabaseUrl.length === 0 || !supabaseAnonKey || supabaseAnonKey.length === 0) {
     console.error('[v0] Supabase env vars missing or empty:', { 
       hasUrl: !!supabaseUrl, 
       hasKey: !!supabaseAnonKey 
     })
-    throw new Error('Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your Vercel project settings.')
+    throw new Error('Missing Supabase environment variables.')
   }
 
   return createServerClient(
