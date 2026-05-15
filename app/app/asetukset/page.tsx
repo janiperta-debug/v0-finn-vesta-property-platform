@@ -41,43 +41,43 @@ export default async function AsetuksetPage() {
   try {
     const { data: orgUser } = await supabase
       .from('org_users')
-      .select('organization_id, role, organizations (name)')
+      .select('org_id, rooli, organizations (nimi)')
       .eq('user_id', user.id)
       .single()
 
-    if (orgUser?.organization_id) {
+    if (orgUser?.org_id) {
       organization = {
-        id: orgUser.organization_id,
-        name: (orgUser.organizations as any)?.name || 'Organisaatio',
+        id: orgUser.org_id,
+        name: (orgUser.organizations as any)?.nimi || 'Organisaatio',
       }
-      isPaakayttaja = orgUser.role === 'paakayttaja'
+      isPaakayttaja = orgUser.rooli === 'paakayttaja'
 
       // Fetch users in organization
       const { data: users } = await supabase
         .from('org_users')
-        .select('id, user_id, role')
-        .eq('organization_id', orgUser.organization_id)
+        .select('id, user_id, rooli')
+        .eq('org_id', orgUser.org_id)
 
       if (users) {
         orgUsers = users.map(u => ({
           id: u.id,
           email: u.user_id === user.id ? user.email || '' : 'käyttäjä@esimerkki.fi',
-          role: u.role || 'kayttaja',
+          role: u.rooli || 'kayttaja',
         }))
-        userStats.paakayttajat = users.filter(u => u.role === 'paakayttaja').length
-        userStats.kayttajat = users.filter(u => u.role !== 'paakayttaja').length
+        userStats.paakayttajat = users.filter(u => u.rooli === 'paakayttaja').length
+        userStats.kayttajat = users.filter(u => u.rooli !== 'paakayttaja').length
       }
 
       // Count buildings by size for billing stats
       const { data: buildings } = await supabase
         .from('kiinteistot')
-        .select('bruttopintaala')
-        .eq('organization_id', orgUser.organization_id)
+        .select('pinta_ala')
+        .eq('org_id', orgUser.org_id)
 
       if (buildings) {
-        buildingStats.small = buildings.filter(b => (b.bruttopintaala || 0) < 1000).length
-        buildingStats.medium = buildings.filter(b => (b.bruttopintaala || 0) >= 1000 && (b.bruttopintaala || 0) < 5000).length
-        buildingStats.large = buildings.filter(b => (b.bruttopintaala || 0) >= 5000).length
+        buildingStats.small = buildings.filter(b => (b.pinta_ala || 0) < 1000).length
+        buildingStats.medium = buildings.filter(b => (b.pinta_ala || 0) >= 1000 && (b.pinta_ala || 0) < 5000).length
+        buildingStats.large = buildings.filter(b => (b.pinta_ala || 0) >= 5000).length
       }
     }
   } catch (error) {

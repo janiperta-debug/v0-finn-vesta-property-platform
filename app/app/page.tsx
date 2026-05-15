@@ -60,16 +60,18 @@ export default async function AppPage() {
   let stats = mockStats
   let recentProperties: Array<{ id: string; name: string; address: string; condition: number; type: string }> = []
   let hasData = false
+  let hasOrganization = false
 
   try {
     // Get user's organization
     const { data: orgUser } = await supabase
       .from('org_users')
-      .select('org_id')
+      .select('org_id, rooli')
       .eq('user_id', user.id)
       .single()
 
     if (orgUser?.org_id) {
+      hasOrganization = true
       // Fetch properties
       const { data: properties } = await supabase
         .from('kiinteistot')
@@ -131,7 +133,28 @@ export default async function AppPage() {
         </div>
       </div>
 
-      {!hasData ? (
+      {!hasOrganization ? (
+        /* No organization state */
+        <Card className="border-dashed border-amber-500/50">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="rounded-full bg-amber-500/10 p-4 mb-4">
+              <AlertTriangle className="h-8 w-8 text-amber-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Ei organisaatiota</h3>
+            <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
+              Käyttäjätiliäsi ei ole vielä liitetty mihinkään organisaatioon. Ota yhteyttä organisaatiosi pääkäyttäjään tai FinnVestan tukeen.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" asChild>
+                <Link href="mailto:info@janope.fi">Ota yhteyttä tukeen</Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link href="/auth/logout">Kirjaudu ulos</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : !hasData ? (
         /* Empty state */
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-16">
