@@ -112,7 +112,7 @@ export default function PropertyDetailPage() {
       setProperty(prop)
 
       // Load sub-spaces if property has them
-      if (prop.has_sub_spaces) {
+      if (prop.is_sub_building) {
         const { data: spaces, error: spacesError } = await supabase
           .from("sub_spaces")
           .select("*")
@@ -306,7 +306,7 @@ export default function PropertyDetailPage() {
             <Building2 className="h-4 w-4" />
             Yleiskatsaus
           </TabsTrigger>
-          {property.has_sub_spaces && (
+          {property.is_sub_building && (
             <TabsTrigger value="subspaces" className="gap-2">
               <LayoutGrid className="h-4 w-4" />
               Huoneistot
@@ -337,34 +337,28 @@ export default function PropertyDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  {property.tunnus && (
-                    <>
-                      <span className="text-muted-foreground">Tunnus</span>
-                      <span className="font-medium">{property.tunnus}</span>
-                    </>
-                  )}
                   <span className="text-muted-foreground">Tyyppi</span>
-                  <span className="font-medium">{buildingTypeLabels[property.building_type]}</span>
-                  {property.build_year && (
+                  <span className="font-medium">{buildingTypeLabels[property.building_type || ''] || property.building_type || '-'}</span>
+                  {property.construction_year && property.construction_year > 0 && (
                     <>
                       <span className="text-muted-foreground">Rakennusvuosi</span>
-                      <span className="font-medium">{property.build_year}</span>
+                      <span className="font-medium">{property.construction_year}</span>
                     </>
                   )}
-                  {property.square_meters && (
+                  {property.area_m2 && property.area_m2 > 0 && (
                     <>
                       <span className="text-muted-foreground">Pinta-ala</span>
-                      <span className="font-medium">{property.square_meters.toLocaleString("fi-FI")} m²</span>
+                      <span className="font-medium">{property.area_m2.toLocaleString("fi-FI")} m²</span>
                     </>
                   )}
-                  {property.floors && (
+                  {property.usage_category && (
                     <>
-                      <span className="text-muted-foreground">Kerroksia</span>
-                      <span className="font-medium">{property.floors}</span>
+                      <span className="text-muted-foreground">Käyttöluokka</span>
+                      <span className="font-medium">{property.usage_category}</span>
                     </>
                   )}
-                  <span className="text-muted-foreground">Huoneistot</span>
-                  <span className="font-medium">{property.has_sub_spaces ? `${subSpaces.length} kpl` : "Ei jaettu"}</span>
+                  <span className="text-muted-foreground">Alatilat</span>
+                  <span className="font-medium">{property.is_sub_building ? `${subSpaces.length} kpl` : "Ei jaettu"}</span>
                 </div>
                 {property.notes && (
                   <div className="pt-4 border-t">
@@ -405,7 +399,7 @@ export default function PropertyDetailPage() {
         </TabsContent>
 
         {/* Sub-spaces Tab */}
-        {property.has_sub_spaces && (
+        {property.is_sub_building && (
           <TabsContent value="subspaces" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>

@@ -109,24 +109,26 @@ export default function PropertiesPage() {
     setLoading(true)
     const supabase = createClient()
     
-    // Try to fetch from kiinteistot or properties table
+    // Get user's org first
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setLoading(false); return }
+
+    const { data: orgUsers } = await supabase
+      .from("org_users")
+      .select("org_id")
+      .eq("user_id", user.id)
+      .limit(1)
+
+    const orgUser = orgUsers?.[0]
+    if (!orgUser) { setLoading(false); return }
+
     const { data, error } = await supabase
       .from("buildings")
       .select("*")
+      .eq("org_id", orgUser.org_id)
       .order("name", { ascending: true })
 
-    if (error) {
-      console.log("[v0] Error fetching properties:", error.message)
-      // Try alternate table name
-      const { data: altData, error: altError } = await supabase
-        .from("properties")
-        .select("*")
-        .order("name", { ascending: true })
-      
-      if (!altError && altData) {
-        setProperties(altData)
-      }
-    } else if (data) {
+    if (!error && data) {
       setProperties(data)
     }
     
