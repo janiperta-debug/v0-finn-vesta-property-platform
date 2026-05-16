@@ -37,9 +37,9 @@ const mainNavItems = [
 
 // Property-specific navigation (shown when a property is selected)
 const propertyNavItems = [
-  { href: "/app/property/[id]", label: "Yleiskatsaus", icon: Eye },
-  { href: "/app/property/[id]/komponentit", label: "Komponentit", icon: Grid3X3 },
-  { href: "/app/property/[id]/tavoitesuunnittelu", label: "Tavoitesuunnittelu", icon: Target },
+  { href: "/app/properties/[id]", label: "Yleiskatsaus", icon: Eye },
+  { href: "/app/properties/[id]/komponentit", label: "Komponentit", icon: Grid3X3 },
+  { href: "/app/properties/[id]/tavoitesuunnittelu", label: "Tavoitesuunnittelu", icon: Target },
 ]
 
 // Admin navigation
