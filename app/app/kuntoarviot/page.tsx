@@ -70,7 +70,7 @@ export default async function KuntoarviotPage() {
       }
 
       // Fetch inspections from inspections table
-      const { data: inspectionsData } = await supabase
+      const { data: inspectionsData, error: inspError } = await supabase
         .from('inspections')
         .select(`
           id,
@@ -79,17 +79,25 @@ export default async function KuntoarviotPage() {
           inspector_name,
           status,
           overall_score,
-          notes,
-          buildings (name)
+          notes
         `)
         .eq('org_id', orgUser.org_id)
         .order('inspection_date', { ascending: false })
 
+      console.log("[v0] inspections query result:", inspectionsData?.length, "error:", inspError)
+
       if (inspectionsData) {
+        // Fetch building names separately to avoid FK join issues
+        const buildingIds = [...new Set(inspectionsData.map(i => i.building_id))]
+        const { data: buildingsData } = buildingIds.length > 0
+          ? await supabase.from('buildings').select('id, name').in('id', buildingIds)
+          : { data: [] }
+        const buildingMap = new Map((buildingsData || []).map(b => [b.id, b.name]))
+
         inspections = inspectionsData.map((i: any) => ({
           id: i.id,
           propertyId: i.building_id,
-          propertyName: i.buildings?.name || 'Tuntematon',
+          propertyName: buildingMap.get(i.building_id) || 'Tuntematon',
           date: i.inspection_date,
           inspector: i.inspector_name || '-',
           status: i.status || 'draft',
