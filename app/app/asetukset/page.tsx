@@ -39,13 +39,13 @@ export default async function AsetuksetPage() {
   let userStats = { paakayttajat: 0, kayttajat: 0 }
 
   try {
-    const { data: orgUsers } = await supabase
+    const { data: orgUserRows } = await supabase
       .from('org_users')
       .select('org_id, org_role, user_email, organizations (name)')
       .eq('user_id', user.id)
       .limit(1)
 
-    const orgUser = orgUsers?.[0]
+    const orgUser = orgUserRows?.[0]
     if (orgUser?.org_id) {
       organization = {
         id: String(orgUser.org_id),
@@ -72,13 +72,13 @@ export default async function AsetuksetPage() {
       // Count buildings by size for billing stats
       const { data: buildings } = await supabase
         .from('kiinteistot')
-        .select('pinta_ala')
+        .select('area_m2')
         .eq('org_id', orgUser.org_id)
 
       if (buildings) {
-        buildingStats.small = buildings.filter(b => (b.pinta_ala || 0) < 1000).length
-        buildingStats.medium = buildings.filter(b => (b.pinta_ala || 0) >= 1000 && (b.pinta_ala || 0) < 5000).length
-        buildingStats.large = buildings.filter(b => (b.pinta_ala || 0) >= 5000).length
+        buildingStats.small = buildings.filter(b => (b.area_m2 || 0) < 1000).length
+        buildingStats.medium = buildings.filter(b => (b.area_m2 || 0) >= 1000 && (b.area_m2 || 0) < 5000).length
+        buildingStats.large = buildings.filter(b => (b.area_m2 || 0) >= 5000).length
       }
     }
   } catch (error) {
