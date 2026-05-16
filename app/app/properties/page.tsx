@@ -54,24 +54,22 @@ import type { ConditionScore } from "@/lib/kuntoarvio-types"
 
 // Type matching Supabase kiinteistot schema
 interface Property {
-  id: string
-  nimi: string
-  katuosoite: string | null
-  postinumero: string | null
-  kaupunki: string | null
-  rakennustyyppi: string
-  rakennusvuosi: number | null
-  bruttopintaala: number | null
-  kuntoluokka: number | null
-  organization_id: string
+  id: number
+  org_id: number
+  property_id: number | null
+  name: string
+  address: string | null
+  construction_year: number | null
+  area_m2: number | null
+  building_type: string | null
+  usage_category: string | null
+  cost_per_m2: number | null
+  notes: string | null
   created_at: string
-  // Computed/display helpers
-  name?: string
-  address?: string
-  building_type?: string
-  build_year?: number
-  square_meters?: number
-  condition_score?: number
+  updated_at: string
+  status: string
+  is_sub_building: boolean | null
+  municipality: string | null
 }
 
 const buildingTypes = [
@@ -137,28 +135,18 @@ export default function PropertiesPage() {
 
   // Filter properties
   const filteredProperties = properties.filter(property => {
-    const name = property.nimi || property.name || ''
-    const address = property.katuosoite || property.address || ''
-    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         address.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = property.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         property.address?.toLowerCase().includes(searchQuery.toLowerCase())
     
-    const buildingType = property.rakennustyyppi || property.building_type
-    const matchesType = typeFilter === "all" || buildingType === typeFilter
+    const matchesType = typeFilter === "all" || property.building_type === typeFilter
     
-    const conditionScore = property.kuntoluokka || property.condition_score || 3
-    let matchesCondition = true
-    if (conditionFilter === "critical") {
-      matchesCondition = conditionScore <= 2
-    } else if (conditionFilter === "attention") {
-      matchesCondition = conditionScore === 3
-    } else if (conditionFilter === "good") {
-      matchesCondition = conditionScore >= 4
-    }
+    // For now, no condition filtering since we don't have a condition column
+    const matchesCondition = conditionFilter === "all"
 
     return matchesSearch && matchesType && matchesCondition
   })
 
-  const totalSquareMeters = filteredProperties.reduce((sum, p) => sum + (p.bruttopintaala || p.square_meters || 0), 0)
+  const totalSquareMeters = filteredProperties.reduce((sum, p) => sum + (p.area_m2 || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -340,36 +328,29 @@ export default function PropertiesPage() {
             </TableHeader>
             <TableBody>
               {filteredProperties.map((property) => {
-                const name = property.nimi || property.name || '-'
-                const address = property.katuosoite || property.address || '-'
-                const buildingType = property.rakennustyyppi || property.building_type || '-'
-                const buildYear = property.rakennusvuosi || property.build_year
-                const sqm = property.bruttopintaala || property.square_meters
-                const condition = (property.kuntoluokka || property.condition_score || 3) as ConditionScore
-                
                 return (
                 <TableRow key={property.id}>
                   <TableCell className="font-medium">
                     <Link href={`/app/properties/${property.id}`} className="hover:text-primary">
-                      {name}
+                      {property.name || '-'}
                     </Link>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">
-                    {address}
+                    {property.address || '-'}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <Badge variant="outline" className="capitalize">
-                      {buildingType}
+                      {property.building_type || '-'}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-muted-foreground">
-                    {buildYear || '-'}
+                    {property.construction_year || '-'}
                   </TableCell>
                   <TableCell className="text-right">
-                    {sqm?.toLocaleString('fi-FI') || '-'}
+                    {property.area_m2?.toLocaleString('fi-FI') || '-'}
                   </TableCell>
                   <TableCell className="text-center">
-                    <ConditionBadge score={condition} size="sm" />
+                    <ConditionBadge score={3} size="sm" />
                   </TableCell>
                   <TableCell className="text-center hidden sm:table-cell">
                     <span className="text-muted-foreground">-</span>
@@ -408,32 +389,25 @@ export default function PropertiesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProperties.map((property) => {
-            const name = property.nimi || property.name || '-'
-            const address = property.katuosoite || property.address || '-'
-            const buildYear = property.rakennusvuosi || property.build_year
-            const sqm = property.bruttopintaala || property.square_meters
-            const condition = (property.kuntoluokka || property.condition_score || 3) as ConditionScore
-            
-            return (
+          {filteredProperties.map((property) => (
             <Link key={property.id} href={`/app/properties/${property.id}`}>
               <Card className="transition-colors hover:border-primary/50">
                 <CardContent className="pt-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{address}</p>
+                      <h3 className="font-semibold text-foreground truncate">{property.name || '-'}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{property.address || '-'}</p>
                     </div>
-                    <ConditionBadge score={condition} size="sm" />
+                    <ConditionBadge score={3} size="sm" />
                   </div>
                   <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{buildYear || '-'}</span>
-                    <span>{sqm?.toLocaleString('fi-FI') || '-'} m²</span>
+                    <span>{property.construction_year || '-'}</span>
+                    <span>{property.area_m2?.toLocaleString('fi-FI') || '-'} m²</span>
                   </div>
                 </CardContent>
               </Card>
             </Link>
-          )})}
+          ))}
         </div>
       )}
     </div>

@@ -131,13 +131,14 @@ export default function NewPropertyPage() {
         .from("kiinteistot")
         .insert({
           org_id: orgUser.org_id,
-          nimi: formData.name,
-          osoite: formData.address,
-          postinumero: formData.postalCode || null,
-          kaupunki: formData.city || null,
-          tyyppi: formData.buildingType,
-          rakennusvuosi: parseInt(formData.buildYear) || null,
-          pinta_ala: parseFloat(formData.squareMeters) || null,
+          name: formData.name,
+          address: formData.address,
+          municipality: formData.city || null,
+          building_type: formData.buildingType,
+          construction_year: parseInt(formData.buildYear) || null,
+          area_m2: parseFloat(formData.squareMeters) || null,
+          notes: formData.notes || null,
+          status: 'active',
         })
         .select()
         .single()

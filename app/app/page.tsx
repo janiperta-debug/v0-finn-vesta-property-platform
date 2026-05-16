@@ -81,8 +81,8 @@ export default async function AppPage() {
 
       if (properties && properties.length > 0) {
         hasData = true
-        const totalSqm = properties.reduce((sum, p) => sum + (p.pinta_ala || 0), 0)
-        const totalValue = properties.reduce((sum, p) => sum + (p.markkina_arvo || 0), 0)
+        const totalSqm = properties.reduce((sum, p) => sum + (p.area_m2 || 0), 0)
+        const totalValue = properties.reduce((sum, p) => sum + (p.cost_per_m2 || 0) * (p.area_m2 || 0), 0)
         // Use status as condition indicator for now
         const avgCondition = 70 // Default value until proper condition tracking
 
@@ -97,11 +97,11 @@ export default async function AppPage() {
         }
 
         recentProperties = properties.slice(0, 5).map(p => ({
-          id: p.id,
-          name: p.nimi || '',
-          address: p.osoite || '',
+          id: String(p.id),
+          name: p.name || '',
+          address: p.address || '',
           condition: 70,
-          type: p.tyyppi || 'muu',
+          type: p.building_type || 'muu',
         }))
       }
     }
