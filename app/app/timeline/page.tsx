@@ -54,13 +54,14 @@ export default async function TimelinePage() {
   const years = Array.from({ length: 15 }, (_, i) => currentYear + i)
 
   try {
-    const { data: orgUser } = await supabase
+    const { data: orgUsers } = await supabase
       .from('org_users')
-      .select('organization_id')
+      .select('org_id')
       .eq('user_id', user.id)
-      .single()
+      .limit(1)
 
-    if (orgUser?.organization_id) {
+    const orgUser = orgUsers?.[0]
+    if (orgUser?.org_id) {
       const { data: invData } = await supabase
         .from('investment_plans')
         .select(`
@@ -74,7 +75,7 @@ export default async function TimelinePage() {
           tila,
           kiinteistot (nimi)
         `)
-        .eq('organization_id', orgUser.organization_id)
+        .eq('org_id', orgUser.org_id)
         .order('vuosi', { ascending: true })
 
       if (invData) {

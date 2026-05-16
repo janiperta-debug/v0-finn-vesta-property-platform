@@ -50,17 +50,18 @@ export default async function VertailuPage() {
   let properties: PropertyComparison[] = []
 
   try {
-    const { data: orgUser } = await supabase
+    const { data: orgUsers } = await supabase
       .from('org_users')
-      .select('organization_id')
+      .select('org_id')
       .eq('user_id', user.id)
-      .single()
+      .limit(1)
 
-    if (orgUser?.organization_id) {
+    const orgUser = orgUsers?.[0]
+    if (orgUser?.org_id) {
       const { data: propsData } = await supabase
         .from('kiinteistot')
         .select('*')
-        .eq('organization_id', orgUser.organization_id)
+        .eq('org_id', orgUser.org_id)
         .order('name')
 
       if (propsData) {

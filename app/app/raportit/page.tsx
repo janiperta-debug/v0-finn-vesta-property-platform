@@ -73,17 +73,18 @@ export default async function RaportitPage() {
   let propertyCount = 0
 
   try {
-    const { data: orgUser } = await supabase
+    const { data: orgUsers } = await supabase
       .from('org_users')
-      .select('organization_id')
+      .select('org_id')
       .eq('user_id', user.id)
-      .single()
+      .limit(1)
 
-    if (orgUser?.organization_id) {
+    const orgUser = orgUsers?.[0]
+    if (orgUser?.org_id) {
       const { count } = await supabase
         .from('kiinteistot')
         .select('*', { count: 'exact', head: true })
-        .eq('organization_id', orgUser.organization_id)
+        .eq('org_id', orgUser.org_id)
 
       propertyCount = count || 0
     }

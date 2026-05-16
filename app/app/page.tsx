@@ -64,13 +64,13 @@ export default async function AppPage() {
 
   try {
     // Get user's organization
-    const { data: orgUser } = await supabase
+    const { data: orgUsers } = await supabase
       .from('org_users')
       .select('org_id')
       .eq('user_id', user.id)
       .limit(1)
-      .single()
 
+    const orgUser = orgUsers?.[0]
     if (orgUser?.org_id) {
       hasOrganization = true
       // Fetch properties

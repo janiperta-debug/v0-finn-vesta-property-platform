@@ -50,22 +50,23 @@ export default async function KuntoarviotPage() {
   let properties: Array<{ id: string; name: string }> = []
 
   try {
-    const { data: orgUser } = await supabase
+    const { data: orgUsers } = await supabase
       .from('org_users')
-      .select('organization_id')
+      .select('org_id')
       .eq('user_id', user.id)
-      .single()
+      .limit(1)
 
-    if (orgUser?.organization_id) {
+    const orgUser = orgUsers?.[0]
+    if (orgUser?.org_id) {
       // Fetch properties for "new inspection" selection
       const { data: propsData } = await supabase
         .from('kiinteistot')
-        .select('id, nimi')
-        .eq('organization_id', orgUser.organization_id)
-        .order('nimi')
+        .select('id, name')
+        .eq('org_id', orgUser.org_id)
+        .order('name')
 
       if (propsData) {
-        properties = propsData.map(p => ({ id: p.id, name: p.nimi || '' }))
+        properties = propsData.map(p => ({ id: String(p.id), name: p.name || '' }))
       }
 
       // Fetch inspections from kuntotarkastukset table
@@ -80,7 +81,7 @@ export default async function KuntoarviotPage() {
           yleiskunto,
           kiinteistot (nimi)
         `)
-        .eq('organization_id', orgUser.organization_id)
+        .eq('org_id', orgUser.org_id)
         .order('tarkastuspvm', { ascending: false })
 
       if (inspectionsData) {

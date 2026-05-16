@@ -56,21 +56,22 @@ export default function NewInvestointiPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: orgUser } = await supabase
+      const { data: orgUsers } = await supabase
         .from('org_users')
-        .select('organization_id')
+        .select('org_id')
         .eq('user_id', user.id)
-        .single()
+        .limit(1)
 
+      const orgUser = orgUsers?.[0]
       if (!orgUser) return
 
       const { data } = await supabase
         .from('kiinteistot')
-        .select('id, nimi')
-        .eq('organization_id', orgUser.organization_id)
-        .order('nimi')
+        .select('id, name')
+        .eq('org_id', orgUser.org_id)
+        .order('name')
 
-      if (data) setProperties(data)
+      if (data) setProperties(data.map(p => ({ id: String(p.id), nimi: p.name || '' })))
     }
     fetchProperties()
   }, [])
@@ -88,12 +89,13 @@ export default function NewInvestointiPage() {
         return
       }
 
-      const { data: orgUser } = await supabase
+      const { data: orgUsers2 } = await supabase
         .from('org_users')
-        .select('organization_id')
+        .select('org_id')
         .eq('user_id', user.id)
-        .single()
+        .limit(1)
 
+      const orgUser = orgUsers2?.[0]
       if (!orgUser) {
         alert('Organisaatiota ei löytynyt')
         return
@@ -102,7 +104,7 @@ export default function NewInvestointiPage() {
       const { error } = await supabase
         .from('investment_plans')
         .insert({
-          organization_id: orgUser.organization_id,
+          organization_id: orgUser.org_id,
           kiinteisto_id: formData.property_id,
           otsikko: formData.title,
           kategoria: formData.category,

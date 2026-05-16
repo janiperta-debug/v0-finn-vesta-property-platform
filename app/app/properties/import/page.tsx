@@ -176,12 +176,13 @@ export default function ImportPropertiesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Ei kirjautunut")
 
-      const { data: orgUser } = await supabase
+      const { data: orgUsers } = await supabase
         .from("org_users")
-        .select("organization_id")
+        .select("org_id")
         .eq("user_id", user.id)
-        .single()
+        .limit(1)
 
+      const orgUser = orgUsers?.[0]
       if (!orgUser) throw new Error("Organisaatiota ei löytynyt")
 
       let success = 0
@@ -192,15 +193,16 @@ export default function ImportPropertiesPage() {
         
         try {
           const { error } = await supabase
-            .from("properties")
+            .from("kiinteistot")
             .insert({
-              organization_id: orgUser.organization_id,
+              org_id: orgUser.org_id,
               name: item.name,
               address: item.address,
-              city: item.city || null,
+              municipality: item.city || null,
               building_type: item.buildingType || "muu",
-              build_year: item.buildYear || null,
-              square_meters: item.squareMeters || null,
+              construction_year: item.buildYear || null,
+              area_m2: item.squareMeters || null,
+              status: 'active',
             })
 
           if (error) throw error

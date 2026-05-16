@@ -39,12 +39,13 @@ export default async function AsetuksetPage() {
   let userStats = { paakayttajat: 0, kayttajat: 0 }
 
   try {
-    const { data: orgUser } = await supabase
+    const { data: orgUsers } = await supabase
       .from('org_users')
       .select('org_id, org_role, user_email, organizations (name)')
       .eq('user_id', user.id)
-      .single()
+      .limit(1)
 
+    const orgUser = orgUsers?.[0]
     if (orgUser?.org_id) {
       organization = {
         id: String(orgUser.org_id),

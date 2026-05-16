@@ -112,22 +112,20 @@ export default function NewPropertyPage() {
 
     try {
       const supabase = createClient()
-      console.log("[v0] Starting property save...")
       
       // Get current user's organization
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      console.log("[v0] User:", user?.id, "Error:", userError)
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("Ei kirjautunut sisään")
 
-      // Get user's organization - note: user_id is text type, org_id is the org field
-      const { data: orgUser, error: orgError } = await supabase
+      // Get user's organizations
+      const { data: orgUsers, error: orgError } = await supabase
         .from("org_users")
         .select("org_id")
         .eq("user_id", user.id)
-        .single()
+        .limit(1)
 
-      console.log("[v0] OrgUser:", orgUser, "Error:", orgError)
-      if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt: " + (orgError?.message || "no org"))
+      const orgUser = orgUsers?.[0]
+      if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt")
 
       const insertData = {
         org_id: orgUser.org_id,
@@ -140,16 +138,13 @@ export default function NewPropertyPage() {
         notes: formData.notes || null,
         status: 'active',
       }
-      console.log("[v0] Insert data:", insertData)
-
-      // Insert property into kiinteistot table with correct column names
+      // Insert property
       const { data: property, error: propError } = await supabase
         .from("kiinteistot")
         .insert(insertData)
         .select()
         .single()
 
-      console.log("[v0] Property result:", property, "Error:", propError)
       if (propError) throw propError
 
       // Insert sub-spaces if any
