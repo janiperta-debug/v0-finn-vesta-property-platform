@@ -69,30 +69,31 @@ export default async function KuntoarviotPage() {
         properties = propsData.map(p => ({ id: String(p.id), name: p.name || '' }))
       }
 
-      // Fetch inspections from kuntotarkastukset table
+      // Fetch inspections from inspections table
       const { data: inspectionsData } = await supabase
-        .from('kuntotarkastukset')
+        .from('inspections')
         .select(`
           id,
-          kiinteisto_id,
-          tarkastuspvm,
-          tarkastaja,
-          tila,
-          yleiskunto,
-          kiinteistot (nimi)
+          building_id,
+          inspection_date,
+          inspector_name,
+          status,
+          overall_score,
+          notes,
+          buildings (name)
         `)
         .eq('org_id', orgUser.org_id)
-        .order('tarkastuspvm', { ascending: false })
+        .order('inspection_date', { ascending: false })
 
       if (inspectionsData) {
         inspections = inspectionsData.map((i: any) => ({
           id: i.id,
-          propertyId: i.kiinteisto_id,
-          propertyName: i.kiinteistot?.nimi || 'Tuntematon',
-          date: i.tarkastuspvm,
-          inspector: i.tarkastaja || '-',
-          status: i.tila || 'draft',
-          overallCondition: i.yleiskunto ? Math.round((i.yleiskunto / 5) * 100) : 0,
+          propertyId: i.building_id,
+          propertyName: i.buildings?.name || 'Tuntematon',
+          date: i.inspection_date,
+          inspector: i.inspector_name || '-',
+          status: i.status || 'draft',
+          overallCondition: i.overall_score ? Math.round((i.overall_score / 5) * 100) : 0,
           urgentItems: 0,
         }))
       }
