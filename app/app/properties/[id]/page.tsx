@@ -33,18 +33,20 @@ import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
 import { toast } from "sonner"
 
 interface Property {
-  id: string
+  id: number
   name: string
-  address: string
-  postal_code?: string
-  city?: string
-  building_type: string
-  build_year?: number
-  square_meters?: number
-  floors?: number
-  tunnus?: string
-  notes?: string
-  has_sub_spaces: boolean
+  address: string | null
+  building_type: string | null
+  construction_year: number | null
+  area_m2: number | null
+  municipality: string | null
+  notes: string | null
+  status: string
+  is_sub_building: boolean | null
+  org_id: number
+  property_id: number | null
+  usage_category: string | null
+  cost_per_m2: number | null
   created_at: string
 }
 
@@ -99,9 +101,9 @@ export default function PropertyDetailPage() {
     try {
       const supabase = createClient()
       
-      // Load property
+      // Load property from buildings table
       const { data: prop, error: propError } = await supabase
-        .from("properties")
+        .from("buildings")
         .select("*")
         .eq("id", propertyId)
         .single()
@@ -183,7 +185,7 @@ export default function PropertyDetailPage() {
     try {
       const supabase = createClient()
       const { error } = await supabase
-        .from("properties")
+        .from("buildings")
         .delete()
         .eq("id", propertyId)
 
@@ -251,18 +253,18 @@ export default function PropertyDetailPage() {
             <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                {property.address}{property.city && `, ${property.city}`}
+                {property.address}{property.municipality && `, ${property.municipality}`}
               </span>
-              {property.build_year && (
+              {property.construction_year && property.construction_year > 0 && (
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5" />
-                  {property.build_year}
+                  {property.construction_year}
                 </span>
               )}
-              {property.square_meters && (
+              {property.area_m2 && property.area_m2 > 0 && (
                 <span className="flex items-center gap-1">
                   <Ruler className="h-3.5 w-3.5" />
-                  {property.square_meters.toLocaleString("fi-FI")} m²
+                  {property.area_m2.toLocaleString("fi-FI")} m²
                 </span>
               )}
             </div>
