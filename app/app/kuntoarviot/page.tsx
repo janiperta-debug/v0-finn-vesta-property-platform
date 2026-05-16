@@ -106,7 +106,6 @@ export default async function KuntoarviotPage() {
           urgentItems: 0,
         }))
       }
-      }
     }
   } catch (error) {
     console.log("[v0] Error fetching inspections:", error)
