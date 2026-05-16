@@ -72,49 +72,54 @@ export default async function KuntoarviotPage() {
       // Fetch inspections from inspections table
       const { data: inspectionsData, error: inspError } = await supabase
         .from('inspections')
-        .select(`
-          id,
-          building_id,
-          inspection_date,
-          inspector_name,
-          status,
-          overall_score,
-          notes
-        `)
+        .select('*')
         .eq('org_id', orgUser.org_id)
         .order('inspection_date', { ascending: false })
 
-      console.log("[v0] inspections query result:", inspectionsData?.length, "error:", inspError)
+      if (inspError) {
+        console.log("[v0] inspections error:", inspError.message)
+      }
 
-      if (inspectionsData) {
+      if (inspectionsData && inspectionsData.length > 0) {
         // Fetch building names separately to avoid FK join issues
-        const buildingIds = [...new Set(inspectionsData.map(i => i.building_id))]
-        const { data: buildingsData } = buildingIds.length > 0
-          ? await supabase.from('buildings').select('id, name').in('id', buildingIds)
-          : { data: [] }
-        const buildingMap = new Map((buildingsData || []).map(b => [b.id, b.name]))
+        const buildingIds = [...new Set(inspectionsData.map(i => i.building_id).filter(Boolean))]
+        let buildingMap = new Map<number, string>()
+        
+        if (buildingIds.length > 0) {
+          const { data: buildingsData } = await supabase
+            .from('buildings')
+            .select('id, name')
+            .in('id', buildingIds)
+          if (buildingsData) {
+            buildingMap = new Map(buildingsData.map(b => [b.id, b.name]))
+          }
+        }
 
         inspections = inspectionsData.map((i: any) => ({
-          id: i.id,
-          propertyId: i.building_id,
+          id: String(i.id),
+          propertyId: String(i.building_id),
           propertyName: buildingMap.get(i.building_id) || 'Tuntematon',
-          date: i.inspection_date,
+          date: i.inspection_date || '',
           inspector: i.inspector_name || '-',
           status: i.status || 'draft',
-          overallCondition: i.overall_score ? Math.round((i.overall_score / 5) * 100) : 0,
+          overallCondition: i.overall_score ? Math.round((Number(i.overall_score) / 5) * 100) : 0,
           urgentItems: 0,
         }))
+      }
       }
     }
   } catch (error) {
     console.log("[v0] Error fetching inspections:", error)
   }
 
-  const statusLabels = {
-    draft: { label: 'Luonnos', variant: 'secondary' as const, icon: Clock },
-    completed: { label: 'Valmis', variant: 'default' as const, icon: CheckCircle },
-    approved: { label: 'Hyväksytty', variant: 'default' as const, icon: CheckCircle },
+  const statusLabels: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive'; icon: any }> = {
+    draft: { label: 'Luonnos', variant: 'secondary', icon: Clock },
+    scheduled: { label: 'Ajoitettu', variant: 'secondary', icon: Clock },
+    completed: { label: 'Valmis', variant: 'default', icon: CheckCircle },
+    approved: { label: 'Hyväksytty', variant: 'default', icon: CheckCircle },
   }
+
+  const defaultStatus = { label: 'Tuntematon', variant: 'secondary' as const, icon: Clock }
 
   return (
     <div className="space-y-6">
@@ -225,7 +230,7 @@ export default async function KuntoarviotPage() {
               </TableHeader>
               <TableBody>
                 {inspections.map((inspection) => {
-                  const statusInfo = statusLabels[inspection.status]
+                  const statusInfo = statusLabels[inspection.status] || defaultStatus
                   const StatusIcon = statusInfo.icon
                   return (
                     <TableRow key={inspection.id}>
