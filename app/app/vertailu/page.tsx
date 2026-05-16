@@ -59,7 +59,7 @@ export default async function VertailuPage() {
     const orgUser = orgUsers?.[0]
     if (orgUser?.org_id) {
       const { data: propsData } = await supabase
-        .from('kiinteistot')
+        .from('buildings')
         .select('*')
         .eq('org_id', orgUser.org_id)
         .order('name')

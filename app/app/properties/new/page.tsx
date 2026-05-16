@@ -140,7 +140,7 @@ export default function NewPropertyPage() {
       }
       // Insert property
       const { data: property, error: propError } = await supabase
-        .from("kiinteistot")
+        .from("buildings")
         .insert(insertData)
         .select()
         .single()

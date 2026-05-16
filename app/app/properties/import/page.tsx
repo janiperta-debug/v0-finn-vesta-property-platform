@@ -193,7 +193,7 @@ export default function ImportPropertiesPage() {
         
         try {
           const { error } = await supabase
-            .from("kiinteistot")
+            .from("buildings")
             .insert({
               org_id: orgUser.org_id,
               name: item.name,

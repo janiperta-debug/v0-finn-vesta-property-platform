@@ -60,7 +60,7 @@ export default async function KuntoarviotPage() {
     if (orgUser?.org_id) {
       // Fetch properties for "new inspection" selection
       const { data: propsData } = await supabase
-        .from('kiinteistot')
+        .from('buildings')
         .select('id, name')
         .eq('org_id', orgUser.org_id)
         .order('name')

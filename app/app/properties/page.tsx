@@ -111,7 +111,7 @@ export default function PropertiesPage() {
     
     // Try to fetch from kiinteistot or properties table
     const { data, error } = await supabase
-      .from("kiinteistot")
+      .from("buildings")
       .select("*")
       .order("name", { ascending: true })
 

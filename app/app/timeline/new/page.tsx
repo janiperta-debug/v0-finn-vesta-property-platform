@@ -66,7 +66,7 @@ export default function NewInvestointiPage() {
       if (!orgUser) return
 
       const { data } = await supabase
-        .from('kiinteistot')
+        .from('buildings')
         .select('id, name')
         .eq('org_id', orgUser.org_id)
         .order('name')

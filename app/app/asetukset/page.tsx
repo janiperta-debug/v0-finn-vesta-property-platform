@@ -71,7 +71,7 @@ export default async function AsetuksetPage() {
 
       // Count buildings by size for billing stats
       const { data: buildings } = await supabase
-        .from('kiinteistot')
+        .from('buildings')
         .select('area_m2')
         .eq('org_id', orgUser.org_id)
 

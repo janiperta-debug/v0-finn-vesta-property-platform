@@ -75,7 +75,7 @@ export default async function AppPage() {
       hasOrganization = true
       // Fetch properties
       const { data: properties } = await supabase
-        .from('kiinteistot')
+        .from('buildings')
         .select('*')
         .eq('org_id', orgUser.org_id)
 

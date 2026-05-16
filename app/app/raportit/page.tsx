@@ -82,7 +82,7 @@ export default async function RaportitPage() {
     const orgUser = orgUsers?.[0]
     if (orgUser?.org_id) {
       const { count } = await supabase
-        .from('kiinteistot')
+        .from('buildings')
         .select('*', { count: 'exact', head: true })
         .eq('org_id', orgUser.org_id)
 
