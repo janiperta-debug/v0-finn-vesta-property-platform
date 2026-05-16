@@ -112,9 +112,11 @@ export default function NewPropertyPage() {
 
     try {
       const supabase = createClient()
+      console.log("[v0] Starting property save...")
       
       // Get current user's organization
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      console.log("[v0] User:", user?.id, "Error:", userError)
       if (!user) throw new Error("Ei kirjautunut sisään")
 
       // Get user's organization - note: user_id is text type, org_id is the org field
@@ -124,25 +126,30 @@ export default function NewPropertyPage() {
         .eq("user_id", user.id)
         .single()
 
-      if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt")
+      console.log("[v0] OrgUser:", orgUser, "Error:", orgError)
+      if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt: " + (orgError?.message || "no org"))
+
+      const insertData = {
+        org_id: orgUser.org_id,
+        name: formData.name,
+        address: formData.address,
+        municipality: formData.city || null,
+        building_type: formData.buildingType,
+        construction_year: parseInt(formData.buildYear) || null,
+        area_m2: parseFloat(formData.squareMeters) || null,
+        notes: formData.notes || null,
+        status: 'active',
+      }
+      console.log("[v0] Insert data:", insertData)
 
       // Insert property into kiinteistot table with correct column names
       const { data: property, error: propError } = await supabase
         .from("kiinteistot")
-        .insert({
-          org_id: orgUser.org_id,
-          name: formData.name,
-          address: formData.address,
-          municipality: formData.city || null,
-          building_type: formData.buildingType,
-          construction_year: parseInt(formData.buildYear) || null,
-          area_m2: parseFloat(formData.squareMeters) || null,
-          notes: formData.notes || null,
-          status: 'active',
-        })
+        .insert(insertData)
         .select()
         .single()
 
+      console.log("[v0] Property result:", property, "Error:", propError)
       if (propError) throw propError
 
       // Insert sub-spaces if any
