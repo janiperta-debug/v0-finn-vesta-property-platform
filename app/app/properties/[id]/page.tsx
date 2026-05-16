@@ -248,7 +248,7 @@ export default function PropertyDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="font-heading text-2xl font-bold text-foreground">{property.name}</h1>
-              <Badge variant="outline">{buildingTypeLabels[property.building_type] || property.building_type}</Badge>
+              <Badge variant="outline">{buildingTypeLabels[property.building_type ?? ''] || property.building_type || '-'}</Badge>
             </div>
             <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
