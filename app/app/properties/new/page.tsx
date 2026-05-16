@@ -130,11 +130,12 @@ export default function NewPropertyPage() {
       const insertData = {
         org_id: orgUser.org_id,
         name: formData.name,
-        address: formData.address,
+        address: formData.address || '',
         municipality: formData.city || null,
-        building_type: formData.buildingType,
-        construction_year: parseInt(formData.buildYear) || null,
-        area_m2: parseFloat(formData.squareMeters) || null,
+        building_type: formData.buildingType || null,
+        construction_year: parseInt(formData.buildYear) || 0,
+        area_m2: parseFloat(formData.squareMeters) || 0,
+        cost_per_m2: 0,
         notes: formData.notes || null,
         status: 'active',
       }
