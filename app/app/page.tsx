@@ -63,25 +63,21 @@ export default async function AppPage() {
   let hasOrganization = false
 
   try {
-    // Get user's organization - only select columns we know exist
-    const { data: orgUser, error: orgError } = await supabase
+    // Get user's organization
+    const { data: orgUser } = await supabase
       .from('org_users')
       .select('org_id')
       .eq('user_id', user.id)
       .limit(1)
       .single()
 
-    console.log("[v0] orgUser query result:", orgUser, "error:", orgError)
-
     if (orgUser?.org_id) {
       hasOrganization = true
       // Fetch properties
-      const { data: properties, error: propError } = await supabase
+      const { data: properties } = await supabase
         .from('kiinteistot')
         .select('*')
         .eq('org_id', orgUser.org_id)
-
-      console.log("[v0] properties query result:", properties?.length, "error:", propError)
 
       if (properties && properties.length > 0) {
         hasData = true

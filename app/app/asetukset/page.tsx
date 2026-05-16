@@ -41,31 +41,31 @@ export default async function AsetuksetPage() {
   try {
     const { data: orgUser } = await supabase
       .from('org_users')
-      .select('org_id, rooli, organizations (nimi)')
+      .select('org_id, org_role, user_email, organizations (name)')
       .eq('user_id', user.id)
       .single()
 
     if (orgUser?.org_id) {
       organization = {
-        id: orgUser.org_id,
-        name: (orgUser.organizations as any)?.nimi || 'Organisaatio',
+        id: String(orgUser.org_id),
+        name: (orgUser.organizations as any)?.name || 'Organisaatio',
       }
-      isPaakayttaja = orgUser.rooli === 'paakayttaja'
+      isPaakayttaja = orgUser.org_role === 'paakayttaja'
 
       // Fetch users in organization
       const { data: users } = await supabase
         .from('org_users')
-        .select('id, user_id, rooli')
+        .select('id, user_id, org_role, user_email, user_name')
         .eq('org_id', orgUser.org_id)
 
       if (users) {
         orgUsers = users.map(u => ({
-          id: u.id,
-          email: u.user_id === user.id ? user.email || '' : 'käyttäjä@esimerkki.fi',
-          role: u.rooli || 'kayttaja',
+          id: String(u.id),
+          email: u.user_email || (u.user_id === user.id ? user.email || '' : 'käyttäjä'),
+          role: u.org_role || 'kayttaja',
         }))
-        userStats.paakayttajat = users.filter(u => u.rooli === 'paakayttaja').length
-        userStats.kayttajat = users.filter(u => u.rooli !== 'paakayttaja').length
+        userStats.paakayttajat = users.filter(u => u.org_role === 'paakayttaja').length
+        userStats.kayttajat = users.filter(u => u.org_role !== 'paakayttaja').length
       }
 
       // Count buildings by size for billing stats
