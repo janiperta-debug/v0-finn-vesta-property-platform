@@ -112,14 +112,14 @@ export default async function KuntoarviotPage() {
     console.log("[v0] Error fetching inspections:", error)
   }
 
-  const statusLabels: Record<string, { label: string; variant: 'secondary' | 'default' | 'destructive'; icon: any }> = {
-    draft: { label: 'Luonnos', variant: 'secondary', icon: Clock },
-    scheduled: { label: 'Ajoitettu', variant: 'secondary', icon: Clock },
-    completed: { label: 'Valmis', variant: 'default', icon: CheckCircle },
-    approved: { label: 'Hyväksytty', variant: 'default', icon: CheckCircle },
+  const statusLabels: Record<string, { label: string; variant: "secondary" | "default" | "destructive"; icon: typeof Clock }> = {
+    draft: { label: "Luonnos", variant: "secondary", icon: Clock },
+    scheduled: { label: "Ajoitettu", variant: "secondary", icon: Clock },
+    completed: { label: "Valmis", variant: "default", icon: CheckCircle },
+    approved: { label: "Hyväksytty", variant: "default", icon: CheckCircle },
   }
 
-  const defaultStatus = { label: 'Tuntematon', variant: 'secondary' as const, icon: Clock }
+  const defaultStatus: { label: string; variant: "secondary" | "default" | "destructive"; icon: typeof Clock } = { label: "Tuntematon", variant: "secondary", icon: Clock }
 
   return (
     <div className="space-y-6">
