@@ -5,13 +5,9 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { 
   ArrowLeft, 
@@ -83,14 +79,6 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null)
   const [subSpaces, setSubSpaces] = useState<SubSpace[]>([])
   const [loading, setLoading] = useState(true)
-  const [addSubSpaceOpen, setAddSubSpaceOpen] = useState(false)
-  const [newSubSpace, setNewSubSpace] = useState({
-    number: "",
-    floor: 1,
-    square_meters: "",
-    rooms: "",
-    type: "apartment",
-  })
 
   useEffect(() => {
     loadProperty()
@@ -111,18 +99,25 @@ export default function PropertyDetailPage() {
       if (propError) throw propError
       setProperty(prop)
 
-      // Load sub-spaces if property has them
-      if (prop.is_sub_building) {
-        const { data: spaces, error: spacesError } = await supabase
-          .from("sub_spaces")
-          .select("*")
-          .eq("property_id", propertyId)
-          .order("floor", { ascending: true })
-          .order("number", { ascending: true })
+      // Load sub-spaces (child buildings where property_id = this building)
+      const { data: spaces, error: spacesError } = await supabase
+        .from("buildings")
+        .select("*")
+        .eq("property_id", parseInt(propertyId))
+        .eq("is_sub_building", true)
+        .order("name", { ascending: true })
 
-        if (!spacesError && spaces) {
-          setSubSpaces(spaces)
-        }
+      if (!spacesError && spaces) {
+        setSubSpaces(spaces.map(s => ({
+          id: String(s.id),
+          property_id: String(s.property_id),
+          number: s.name || "",
+          floor: 1,
+          square_meters: s.area_m2,
+          rooms: "",
+          type: s.usage_category || "other",
+          notes: s.notes,
+        })))
       }
     } catch (error) {
       console.error("Load error:", error)
@@ -132,46 +127,19 @@ export default function PropertyDetailPage() {
     }
   }
 
-  const handleAddSubSpace = async () => {
-    try {
-      const supabase = createClient()
-      
-      const { error } = await supabase
-        .from("sub_spaces")
-        .insert({
-          property_id: propertyId,
-          number: newSubSpace.number,
-          floor: newSubSpace.floor,
-          square_meters: parseFloat(newSubSpace.square_meters) || null,
-          rooms: newSubSpace.rooms || null,
-          type: newSubSpace.type,
-        })
-
-      if (error) throw error
-
-      toast.success("Huoneisto lisätty")
-      setAddSubSpaceOpen(false)
-      setNewSubSpace({ number: "", floor: 1, square_meters: "", rooms: "", type: "apartment" })
-      loadProperty()
-    } catch (error) {
-      console.error("Add sub-space error:", error)
-      toast.error("Huoneiston lisäys epäonnistui")
-    }
-  }
-
   const handleDeleteSubSpace = async (subSpaceId: string) => {
-    if (!confirm("Haluatko varmasti poistaa tämän huoneiston?")) return
+    if (!confirm("Haluatko varmasti poistaa tämän tilan?")) return
 
     try {
       const supabase = createClient()
       const { error } = await supabase
-        .from("sub_spaces")
+        .from("buildings")
         .delete()
         .eq("id", subSpaceId)
 
       if (error) throw error
 
-      toast.success("Huoneisto poistettu")
+      toast.success("Tila poistettu")
       loadProperty()
     } catch (error) {
       console.error("Delete error:", error)
@@ -306,17 +274,15 @@ export default function PropertyDetailPage() {
             <Building2 className="h-4 w-4" />
             Yleiskatsaus
           </TabsTrigger>
-          {property.is_sub_building && (
-            <TabsTrigger value="subspaces" className="gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Huoneistot
-              {subSpaces.length > 0 && (
-                <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">
-                  {subSpaces.length}
-                </span>
-              )}
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="subspaces" className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Tilat
+            {subSpaces.length > 0 && (
+              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+                {subSpaces.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="kuntoarvio" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
             Kuntoarvio
@@ -398,109 +364,36 @@ export default function PropertyDetailPage() {
           </div>
         </TabsContent>
 
-        {/* Sub-spaces Tab */}
-        {property.is_sub_building && (
-          <TabsContent value="subspaces" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">Huoneistot ja tilat</h3>
-                <p className="text-sm text-muted-foreground">
-                  {subSpaces.length} huoneistoa {Object.keys(subSpacesByFloor).length} kerroksessa
-                </p>
-              </div>
-              <Dialog open={addSubSpaceOpen} onOpenChange={setAddSubSpaceOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Lisää huoneisto
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Lisää huoneisto</DialogTitle>
-                    <DialogDescription>Syötä uuden huoneiston tiedot</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Numero</Label>
-                        <Input
-                          placeholder="esim. A 101"
-                          value={newSubSpace.number}
-                          onChange={(e) => setNewSubSpace(prev => ({ ...prev, number: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Kerros</Label>
-                        <Input
-                          type="number"
-                          value={newSubSpace.floor}
-                          onChange={(e) => setNewSubSpace(prev => ({ ...prev, floor: parseInt(e.target.value) || 1 }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Pinta-ala (m²)</Label>
-                        <Input
-                          type="number"
-                          placeholder="55"
-                          value={newSubSpace.square_meters}
-                          onChange={(e) => setNewSubSpace(prev => ({ ...prev, square_meters: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Huoneet</Label>
-                        <Input
-                          placeholder="2h+k"
-                          value={newSubSpace.rooms}
-                          onChange={(e) => setNewSubSpace(prev => ({ ...prev, rooms: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tyyppi</Label>
-                      <Select
-                        value={newSubSpace.type}
-                        onValueChange={(value) => setNewSubSpace(prev => ({ ...prev, type: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="apartment">Asunto</SelectItem>
-                          <SelectItem value="commercial">Liiketila</SelectItem>
-                          <SelectItem value="storage">Varasto</SelectItem>
-                          <SelectItem value="parking">Autopaikka</SelectItem>
-                          <SelectItem value="other">Muu</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setAddSubSpaceOpen(false)}>
-                      Peruuta
-                    </Button>
-                    <Button onClick={handleAddSubSpace}>
-                      Lisää
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+        {/* Sub-spaces Tab - show if there are sub-spaces OR always allow adding */}
+        <TabsContent value="subspaces" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Huoneistot ja tilat</h3>
+              <p className="text-sm text-muted-foreground">
+                {subSpaces.length} tilaa
+              </p>
             </div>
+            <Button asChild>
+              <Link href={`/app/properties/${property.id}/tilat/new`}>
+                <Plus className="h-4 w-4 mr-2" />
+                Lisää tila
+              </Link>
+          </div>
 
-            {subSpaces.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <LayoutGrid className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground mb-4">Ei huoneistoja vielä</p>
-                  <Button onClick={() => setAddSubSpaceOpen(true)}>
+          {subSpaces.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <LayoutGrid className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground mb-4">Ei tiloja vielä</p>
+                <Button asChild>
+                  <Link href={`/app/properties/${property.id}/tilat/new`}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Lisää ensimmäinen huoneisto
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
+                    Lisää ensimmäinen tila
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
               <div className="space-y-6">
                 {Object.entries(subSpacesByFloor)
                   .sort(([a], [b]) => parseInt(a) - parseInt(b))
@@ -570,7 +463,6 @@ export default function PropertyDetailPage() {
               </div>
             )}
           </TabsContent>
-        )}
 
         {/* Kuntoarvio Tab */}
         <TabsContent value="kuntoarvio">

@@ -98,27 +98,24 @@ export default function EditPropertyPage() {
         squareMeters: data.area_m2 ? String(data.area_m2) : "",
         notes: data.notes || "",
       })
-      
-      setHasSubSpaces(data.is_sub_building || false)
 
-      // Load existing sub-spaces (child buildings with same property_id or parent building)
-      if (data.is_sub_building) {
-        const { data: spaces } = await supabase
-          .from("buildings")
-          .select("*")
-          .eq("property_id", parseInt(propertyId))
-          .neq("id", parseInt(propertyId))
+      // Load existing sub-spaces (child buildings where property_id = this building's id)
+      const { data: spaces } = await supabase
+        .from("buildings")
+        .select("*")
+        .eq("property_id", parseInt(propertyId))
+        .eq("is_sub_building", true)
 
-        if (spaces && spaces.length > 0) {
-          setSubSpaces(spaces.map(s => ({
-            id: String(s.id),
-            number: s.name || "",
-            floor: 1,
-            squareMeters: s.area_m2 || 0,
-            type: s.usage_category || "other",
-            notes: s.notes || "",
-          })))
-        }
+      if (spaces && spaces.length > 0) {
+        setHasSubSpaces(true)
+        setSubSpaces(spaces.map(s => ({
+          id: String(s.id),
+          number: s.name || "",
+          floor: 1,
+          squareMeters: s.area_m2 || 0,
+          type: s.usage_category || "other",
+          notes: s.notes || "",
+        })))
       }
       
       setIsLoading(false)
