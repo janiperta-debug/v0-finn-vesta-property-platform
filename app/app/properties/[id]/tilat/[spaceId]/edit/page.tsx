@@ -30,14 +30,15 @@ const spaceTypes = [
   { value: "other", label: "Muu tila" },
 ]
 
-export default function AddSpacePage() {
+export default function EditSpacePage() {
   const router = useRouter()
   const params = useParams()
   const propertyId = params.id as string
+  const spaceId = params.spaceId as string
   
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [parentBuilding, setParentBuilding] = useState<{ name: string; org_id: number } | null>(null)
+  const [parentBuilding, setParentBuilding] = useState<{ name: string } | null>(null)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -49,27 +50,47 @@ export default function AddSpacePage() {
   })
 
   useEffect(() => {
-    async function loadParentBuilding() {
+    async function loadData() {
       const supabase = createClient()
       
-      const { data, error } = await supabase
+      // Load parent building
+      const { data: parent } = await supabase
         .from("buildings")
-        .select("name, org_id")
+        .select("name")
         .eq("id", propertyId)
         .single()
 
-      if (error || !data) {
-        toast.error("Kiinteistöä ei löytynyt")
-        router.push("/app/properties")
+      if (parent) {
+        setParentBuilding(parent)
+      }
+
+      // Load space data
+      const { data: space, error } = await supabase
+        .from("buildings")
+        .select("*")
+        .eq("id", spaceId)
+        .single()
+
+      if (error || !space) {
+        toast.error("Tilaa ei löytynyt")
+        router.push(`/app/properties/${propertyId}`)
         return
       }
 
-      setParentBuilding(data)
+      setFormData({
+        name: space.name || "",
+        type: space.usage_category || "other",
+        floor: "1",
+        squareMeters: space.area_m2 ? String(space.area_m2) : "",
+        rooms: "",
+        notes: space.notes || "",
+      })
+      
       setIsLoading(false)
     }
 
-    loadParentBuilding()
-  }, [propertyId, router])
+    loadData()
+  }, [propertyId, spaceId, router])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -83,38 +104,28 @@ export default function AddSpacePage() {
       return
     }
 
-    if (!parentBuilding) {
-      toast.error("Päärakennusta ei löytynyt")
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
       const supabase = createClient()
       
-      const insertData = {
-        org_id: parentBuilding.org_id,
-        property_id: parseInt(propertyId),
-        name: formData.name,
-        usage_category: formData.type,
-        area_m2: parseFloat(formData.squareMeters) || 0,
-        notes: formData.notes || null,
-        construction_year: 0,
-        cost_per_m2: 0,
-        status: "active",
-        is_sub_building: true,
-      }
-      
-      const { data, error } = await supabase.from("buildings").insert(insertData).select()
+      const { error } = await supabase
+        .from("buildings")
+        .update({
+          name: formData.name,
+          usage_category: formData.type,
+          area_m2: parseFloat(formData.squareMeters) || 0,
+          notes: formData.notes || null,
+        })
+        .eq("id", spaceId)
 
       if (error) throw error
 
-      toast.success("Tila lisätty")
+      toast.success("Tila päivitetty")
       router.push(`/app/properties/${propertyId}`)
     } catch (error: any) {
-      console.error("Insert error:", error)
-      toast.error(error.message || "Tilan lisäys epäonnistui")
+      console.error("Update error:", error)
+      toast.error(error.message || "Tilan päivitys epäonnistui")
     } finally {
       setIsSubmitting(false)
     }
@@ -137,7 +148,7 @@ export default function AddSpacePage() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Lisää tila</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Muokkaa tilaa</h1>
           <p className="text-sm text-muted-foreground">{parentBuilding?.name}</p>
         </div>
       </div>
@@ -147,7 +158,7 @@ export default function AddSpacePage() {
           <CardHeader>
             <CardTitle>Tilan tiedot</CardTitle>
             <CardDescription>
-              Lisää huoneisto, toimisto, keittiö tai muu tila kiinteistöön
+              Muokkaa tilan tietoja
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -205,16 +216,6 @@ export default function AddSpacePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="rooms">Huonejako (valinnainen)</Label>
-              <Input
-                id="rooms"
-                placeholder="esim. 2h+k, 3 huonetta"
-                value={formData.rooms}
-                onChange={(e) => handleInputChange("rooms", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="notes">Lisätiedot</Label>
               <Textarea
                 id="notes"
@@ -233,7 +234,7 @@ export default function AddSpacePage() {
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Lisää tila
+            Tallenna muutokset
           </Button>
         </div>
       </form>
