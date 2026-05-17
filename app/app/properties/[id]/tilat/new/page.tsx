@@ -93,7 +93,7 @@ export default function AddSpacePage() {
     try {
       const supabase = createClient()
       
-      const { error } = await supabase.from("buildings").insert({
+      const insertData = {
         org_id: parentBuilding.org_id,
         property_id: parseInt(propertyId),
         name: formData.name,
@@ -104,7 +104,13 @@ export default function AddSpacePage() {
         cost_per_m2: 0,
         status: "active",
         is_sub_building: true,
-      })
+      }
+      
+      console.log("[v0] Inserting sub-space:", insertData)
+      
+      const { data, error } = await supabase.from("buildings").insert(insertData).select()
+      
+      console.log("[v0] Insert result:", data, "error:", error)
 
       if (error) throw error
 
