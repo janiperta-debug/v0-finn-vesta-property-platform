@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,10 +38,13 @@ const categories = [
 
 export default function NewInvestointiPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedBuildingId = searchParams.get("building_id")
+  
   const [isLoading, setIsLoading] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
   const [formData, setFormData] = useState({
-    property_id: "",
+    property_id: preselectedBuildingId || "",
     title: "",
     category: "",
     description: "",
@@ -71,10 +74,16 @@ export default function NewInvestointiPage() {
         .eq('org_id', orgUser.org_id)
         .order('name')
 
-      if (data) setProperties(data.map(p => ({ id: String(p.id), nimi: p.name || '' })))
+      if (data) {
+        setProperties(data.map(p => ({ id: String(p.id), nimi: p.name || '' })))
+        // If preselected building_id, set it after properties load
+        if (preselectedBuildingId && !formData.property_id) {
+          setFormData(prev => ({ ...prev, property_id: preselectedBuildingId }))
+        }
+      }
     }
     fetchProperties()
-  }, [])
+  }, [preselectedBuildingId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

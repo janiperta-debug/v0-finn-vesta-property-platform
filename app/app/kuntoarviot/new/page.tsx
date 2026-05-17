@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,9 +18,12 @@ interface Property {
 
 export default function NewKuntoarvioPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedBuildingId = searchParams.get("building_id")
+  
   const [isLoading, setIsLoading] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
-  const [selectedProperty, setSelectedProperty] = useState("")
+  const [selectedProperty, setSelectedProperty] = useState(preselectedBuildingId || "")
   const [inspectionType, setInspectionType] = useState("perus")
   const [notes, setNotes] = useState("")
 
@@ -45,10 +48,16 @@ export default function NewKuntoarvioPage() {
         .eq('org_id', orgUser.org_id)
         .order('name')
 
-      if (data) setProperties(data.map(p => ({ id: String(p.id), nimi: p.name || '' })))
+      if (data) {
+        setProperties(data.map(p => ({ id: String(p.id), nimi: p.name || '' })))
+        // If preselected building_id, ensure it's set
+        if (preselectedBuildingId && !selectedProperty) {
+          setSelectedProperty(preselectedBuildingId)
+        }
+      }
     }
     fetchProperties()
-  }, [])
+  }, [preselectedBuildingId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
