@@ -378,6 +378,7 @@ export default function PropertyDetailPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Lisää tila
               </Link>
+            </Button>
           </div>
 
           {subSpaces.length === 0 ? (
