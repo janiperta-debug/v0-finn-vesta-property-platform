@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,7 @@ interface Property {
   nimi: string
 }
 
-export default function NewKuntoarvioPage() {
+function NewKuntoarvioForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedBuildingId = searchParams.get("building_id")
@@ -191,5 +191,13 @@ export default function NewKuntoarvioPage() {
         </Card>
       </form>
     </div>
+  )
+}
+
+export default function NewKuntoarvioPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Ladataan...</div>}>
+      <NewKuntoarvioForm />
+    </Suspense>
   )
 }

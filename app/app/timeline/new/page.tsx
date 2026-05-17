@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,7 @@ const categories = [
   "Muu",
 ]
 
-export default function NewInvestointiPage() {
+function NewInvestointiForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedBuildingId = searchParams.get("building_id")
@@ -291,5 +291,13 @@ export default function NewInvestointiPage() {
         </Card>
       </form>
     </div>
+  )
+}
+
+export default function NewInvestointiPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Ladataan...</div>}>
+      <NewInvestointiForm />
+    </Suspense>
   )
 }
