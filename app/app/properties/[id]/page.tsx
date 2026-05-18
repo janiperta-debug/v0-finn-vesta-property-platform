@@ -6,7 +6,6 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { 
@@ -21,8 +20,13 @@ import {
   LayoutGrid,
   ClipboardCheck,
   History,
-  Settings,
-  MoreHorizontal
+  TrendingUp,
+  AlertTriangle,
+  ChevronRight,
+  MoreHorizontal,
+  User,
+  FileText,
+  Target,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
@@ -59,6 +63,17 @@ interface SubSpace {
   overall_condition?: number
 }
 
+interface Inspection {
+  id: string
+  building_id: number
+  inspection_date: string
+  inspector_name: string | null
+  inspector_type: string | null
+  status: string
+  overall_score: number | null
+  notes: string | null
+}
+
 const buildingTypeLabels: Record<string, string> = {
   kerrostalo: "Kerrostalo",
   rivitalo: "Rivitalo",
@@ -71,6 +86,21 @@ const buildingTypeLabels: Record<string, string> = {
   muu: "Muu",
 }
 
+const getKlaColor = (score: number) => {
+  if (score >= 75) return "text-emerald-400"
+  if (score >= 60) return "text-amber-400"
+  return "text-red-400"
+}
+
+const getKlaBgColor = (score: number) => {
+  if (score >= 75) return "bg-emerald-500/20 text-emerald-400"
+  if (score >= 60) return "bg-amber-500/20 text-amber-400"
+  return "bg-red-500/20 text-red-400"
+}
+
+const formatEur = (value: number) => 
+  new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+
 export default function PropertyDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -78,6 +108,7 @@ export default function PropertyDetailPage() {
   
   const [property, setProperty] = useState<Property | null>(null)
   const [subSpaces, setSubSpaces] = useState<SubSpace[]>([])
+  const [inspections, setInspections] = useState<Inspection[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -93,22 +124,20 @@ export default function PropertyDetailPage() {
       const { data: prop, error: propError } = await supabase
         .from("buildings")
         .select("*")
-        .eq("id", propertyId)
+        .eq("id", parseInt(propertyId))
         .single()
 
       if (propError) throw propError
       setProperty(prop)
 
       // Load sub-spaces (child buildings where property_id = this building)
-      const { data: spaces, error: spacesError } = await supabase
+      const { data: spaces } = await supabase
         .from("buildings")
         .select("*")
         .eq("property_id", parseInt(propertyId))
         .order("name", { ascending: true })
 
-      console.log("[v0] Loading spaces for property_id:", propertyId, "found:", spaces?.length, "error:", spacesError)
-
-      if (!spacesError && spaces) {
+      if (spaces) {
         setSubSpaces(spaces.map(s => ({
           id: String(s.id),
           property_id: String(s.property_id),
@@ -119,6 +148,17 @@ export default function PropertyDetailPage() {
           type: s.usage_category || "other",
           notes: s.notes,
         })))
+      }
+
+      // Load inspections for this building
+      const { data: insps } = await supabase
+        .from("inspections")
+        .select("*")
+        .eq("building_id", parseInt(propertyId))
+        .order("inspection_date", { ascending: false })
+
+      if (insps) {
+        setInspections(insps)
       }
     } catch (error) {
       console.error("Load error:", error)
@@ -136,7 +176,7 @@ export default function PropertyDetailPage() {
       const { error } = await supabase
         .from("buildings")
         .delete()
-        .eq("id", subSpaceId)
+        .eq("id", parseInt(subSpaceId))
 
       if (error) throw error
 
@@ -156,7 +196,7 @@ export default function PropertyDetailPage() {
       const { error } = await supabase
         .from("buildings")
         .delete()
-        .eq("id", propertyId)
+        .eq("id", parseInt(propertyId))
 
       if (error) throw error
 
@@ -196,6 +236,14 @@ export default function PropertyDetailPage() {
     )
   }
 
+  // Calculate some demo values (replace with real data when available)
+  const kuntoluokka = inspections.length > 0 && inspections[0].overall_score 
+    ? Math.round(inspections[0].overall_score * 20) 
+    : 0
+  const jalleenhankintaArvo = (property.area_m2 || 0) * (property.cost_per_m2 || 2500)
+  const tekninenArvo = jalleenhankintaArvo * (kuntoluokka / 100 || 0.7)
+  const korjausVelka = jalleenhankintaArvo - tekninenArvo
+
   // Group sub-spaces by floor
   const subSpacesByFloor = subSpaces.reduce((acc, space) => {
     const floor = space.floor
@@ -204,10 +252,13 @@ export default function PropertyDetailPage() {
     return acc
   }, {} as Record<number, SubSpace[]>)
 
+  // Check building type for apartments
+  const hasApartments = ['kerrostalo', 'rivitalo'].includes(property.building_type || '')
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/app/properties">
@@ -215,283 +266,469 @@ export default function PropertyDetailPage() {
             </Link>
           </Button>
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="font-heading text-2xl font-bold text-foreground">{property.name}</h1>
+              {kuntoluokka > 0 && (
+                <Badge variant="secondary" className={`${getKlaBgColor(kuntoluokka)} border-0 font-mono`}>
+                  Kla {kuntoluokka}%
+                </Badge>
+              )}
               <Badge variant="outline">{buildingTypeLabels[property.building_type ?? ''] || property.building_type || '-'}</Badge>
             </div>
-            <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
                 {property.address}{property.municipality && `, ${property.municipality}`}
               </span>
-              {property.construction_year && property.construction_year > 0 && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {property.construction_year}
-                </span>
-              )}
-              {property.area_m2 && property.area_m2 > 0 && (
-                <span className="flex items-center gap-1">
-                  <Ruler className="h-3.5 w-3.5" />
-                  {property.area_m2.toLocaleString("fi-FI")} m²
-                </span>
-              )}
             </div>
           </div>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/app/kuntoarviot/new?building_id=${property.id}`}>
+            <Button size="sm" className="gap-1.5">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              Kuntoarvio
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/app/properties/${propertyId}/edit`}>
-                <Edit className="h-4 w-4 mr-2" />
-                Muokkaa tietoja
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="h-4 w-4 mr-2" />
-              Asetukset
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="text-destructive focus:text-destructive"
-              onClick={handleDeleteProperty}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Poista kiinteistö
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Link>
+          <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`}>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Target className="h-3.5 w-3.5" />
+              Tavoitesuunnittelu
+            </Button>
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="h-9 w-9">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/app/properties/${propertyId}/edit`}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Muokkaa tietoja
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={handleDeleteProperty}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Poista kiinteistö
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      {/* Main content */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
-          <TabsTrigger value="overview" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            Yleiskatsaus
-          </TabsTrigger>
-          <TabsTrigger value="subspaces" className="gap-2">
-            <LayoutGrid className="h-4 w-4" />
-            Tilat
-            {subSpaces.length > 0 && (
-              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs">
-                {subSpaces.length}
-              </span>
-            )}
-          </TabsTrigger>
+      {/* Key metrics - similar to demo */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            Rakennusvuosi
+          </div>
+          <p className="font-heading text-2xl font-bold text-foreground">
+            {property.construction_year || "-"}
+          </p>
+          {property.construction_year && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {new Date().getFullYear() - property.construction_year} vuotta vanha
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <Ruler className="h-3.5 w-3.5" />
+            Pinta-ala
+          </div>
+          <p className="font-heading text-2xl font-bold text-foreground">
+            {property.area_m2 ? `${property.area_m2.toLocaleString("fi-FI")} m²` : "-"}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {subSpaces.length} tilaa/huoneistoa
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Jälleenhankinta-arvo
+          </div>
+          <p className="font-heading text-2xl font-bold text-foreground">
+            {jalleenhankintaArvo > 0 ? formatEur(jalleenhankintaArvo) : "-"}
+          </p>
+          {property.area_m2 && jalleenhankintaArvo > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {formatEur(jalleenhankintaArvo / property.area_m2)}/m²
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Tekninen arvo
+          </div>
+          <p className={`font-heading text-2xl font-bold ${kuntoluokka > 0 ? getKlaColor(kuntoluokka) : ''}`}>
+            {tekninenArvo > 0 ? formatEur(tekninenArvo) : "-"}
+          </p>
+          {kuntoluokka > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Kuntoluokka {kuntoluokka}%
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs for different views - similar to demo */}
+      <Tabs defaultValue="kuntoarvio" className="space-y-4">
+        <TabsList className="bg-muted/50 w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="kuntoarvio" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
             Kuntoarvio
           </TabsTrigger>
-          <TabsTrigger value="historia" className="gap-2">
-            <History className="h-4 w-4" />
-            Historia
+          <TabsTrigger value="huoneistot" className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            {hasApartments ? "Huoneistot" : "Tilat"}
+            {subSpaces.length > 0 && (
+              <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs">
+                {subSpaces.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="kuntoluokka" className="gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Kuntoluokka
+          </TabsTrigger>
+          <TabsTrigger value="korjausvelka" className="gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Korjausvelka
           </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Property Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Kiinteistön tiedot</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <span className="text-muted-foreground">Tyyppi</span>
-                  <span className="font-medium">{buildingTypeLabels[property.building_type || ''] || property.building_type || '-'}</span>
-                  {property.construction_year && property.construction_year > 0 && (
-                    <>
-                      <span className="text-muted-foreground">Rakennusvuosi</span>
-                      <span className="font-medium">{property.construction_year}</span>
-                    </>
-                  )}
-                  {property.area_m2 && property.area_m2 > 0 && (
-                    <>
-                      <span className="text-muted-foreground">Pinta-ala</span>
-                      <span className="font-medium">{property.area_m2.toLocaleString("fi-FI")} m²</span>
-                    </>
-                  )}
-                  {property.usage_category && (
-                    <>
-                      <span className="text-muted-foreground">Käyttöluokka</span>
-                      <span className="font-medium">{property.usage_category}</span>
-                    </>
-                  )}
-                  <span className="text-muted-foreground">Alatilat</span>
-                  <span className="font-medium">{property.is_sub_building ? `${subSpaces.length} kpl` : "Ei jaettu"}</span>
-                </div>
-                {property.notes && (
-                  <div className="pt-4 border-t">
-                    <span className="text-sm text-muted-foreground">Lisätiedot</span>
-                    <p className="mt-1 text-sm">{property.notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Yhteenveto</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg bg-muted/50 p-4 text-center">
-                    <p className="text-2xl font-bold text-primary">-</p>
-                    <p className="text-xs text-muted-foreground">Kuntoluokka</p>
-                  </div>
-                  <div className="rounded-lg bg-muted/50 p-4 text-center">
-                    <p className="text-2xl font-bold">-</p>
-                    <p className="text-xs text-muted-foreground">Korjausvelka</p>
-                  </div>
-                  <div className="rounded-lg bg-muted/50 p-4 text-center">
-                    <p className="text-2xl font-bold">{subSpaces.length}</p>
-                    <p className="text-xs text-muted-foreground">Huoneistoa</p>
-                  </div>
-                  <div className="rounded-lg bg-muted/50 p-4 text-center">
-                    <p className="text-2xl font-bold">-</p>
-                    <p className="text-xs text-muted-foreground">Tarkastuksia</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Sub-spaces Tab - show if there are sub-spaces OR always allow adding */}
-        <TabsContent value="subspaces" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Huoneistot ja tilat</h3>
-              <p className="text-sm text-muted-foreground">
-                {subSpaces.length} tilaa
-              </p>
-            </div>
-            <Button asChild>
-              <Link href={`/app/properties/${property.id}/tilat/new`}>
-                <Plus className="h-4 w-4 mr-2" />
-                Lisää tila
-              </Link>
-            </Button>
-          </div>
-
-          {subSpaces.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <LayoutGrid className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground mb-4">Ei tiloja vielä</p>
-                <Button asChild>
-                  <Link href={`/app/properties/${property.id}/tilat/new`}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Lisää ensimmäinen tila
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-              <div className="space-y-6">
-                {Object.entries(subSpacesByFloor)
-                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                  .map(([floor, spaces]) => (
-                    <div key={floor}>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                        {floor === "0" ? "Kellari" : `${floor}. kerros`}
-                      </h4>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {spaces.map((space) => (
-                          <Card key={space.id} className="group">
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold">{space.number}</span>
-                                    {space.overall_condition && (
-                                      <ConditionBadge score={space.overall_condition as 1|2|3|4|5} size="sm" />
-                                    )}
-                                  </div>
-                                  <div className="mt-1 text-sm text-muted-foreground">
-                                    {space.rooms && <span>{space.rooms}</span>}
-                                    {space.square_meters && <span> &bull; {space.square_meters} m²</span>}
-                                  </div>
-                                  {space.tenant && (
-                                    <Badge variant="secondary" className="mt-2 text-xs">
-                                      Vuokrattu
-                                    </Badge>
-                                  )}
-                                </div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon"
-                                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem asChild>
-                                      <Link href={`/app/kuntoarviot/new?building_id=${space.id}`}>
-                                        <ClipboardCheck className="h-4 w-4 mr-2" />
-                                        Tee tarkastus
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                      <Link href={`/app/properties/${property.id}/tilat/${space.id}/edit`}>
-                                        <Edit className="h-4 w-4 mr-2" />
-                                        Muokkaa
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
-                                      className="text-destructive focus:text-destructive"
-                                      onClick={() => handleDeleteSubSpace(space.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Poista
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+        {/* Kuntoarvio Tab */}
+        <TabsContent value="kuntoarvio" className="space-y-6">
+          {inspections.length > 0 ? (
+            <>
+              {/* Latest inspection summary */}
+              <div className="rounded-xl border border-border/50 bg-card p-5">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-heading text-base font-semibold text-foreground mb-4">Viimeisin arviointi</h3>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Yleisarvosana</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {inspections[0].overall_score && (
+                            <ConditionBadge score={Math.round(inspections[0].overall_score) as 1|2|3|4|5} />
+                          )}
+                          <span className="font-medium">{inspections[0].overall_score?.toFixed(1) || "-"} / 5</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Tarkastaja</p>
+                        <p className="font-medium mt-1">{inspections[0].inspector_name || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Päivämäärä</p>
+                        <p className="font-medium mt-1">
+                          {new Date(inspections[0].inspection_date).toLocaleDateString("fi-FI")}
+                        </p>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  <Link href={`/app/kuntoarviot/${inspections[0].id}`}>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      Avaa arviointi
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            )}
-          </TabsContent>
 
-        {/* Kuntoarvio Tab */}
-        <TabsContent value="kuntoarvio">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <ClipboardCheck className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground mb-4">Kuntoarvioita ei vielä tehty</p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Aloita kuntoarvio
-              </Button>
-            </CardContent>
-          </Card>
+              {/* All inspections list */}
+              <div className="rounded-xl border border-border/50 bg-card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-heading text-base font-semibold text-foreground">
+                    Kaikki arvioinnit ({inspections.length})
+                  </h3>
+                  <Link href={`/app/kuntoarviot/new?building_id=${property.id}`}>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <Plus className="h-4 w-4" />
+                      Uusi arviointi
+                    </Button>
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {inspections.map(insp => (
+                    <Link 
+                      key={insp.id} 
+                      href={`/app/kuntoarviot/${insp.id}`}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {insp.overall_score && (
+                          <ConditionBadge score={Math.round(insp.overall_score) as 1|2|3|4|5} size="sm" />
+                        )}
+                        <div>
+                          <p className="font-medium text-sm">
+                            {new Date(insp.inspection_date).toLocaleDateString("fi-FI")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {insp.inspector_name || "Ei tarkastajaa"} &bull; {insp.status}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-border/50 bg-card p-8 text-center">
+              <ClipboardCheck className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="font-heading text-lg font-semibold mb-2">Ei kuntoarvioita</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Tee ensimmäinen kuntoarvio nähdäksesi kiinteistön kunnon ja korjaustarpeet.
+              </p>
+              <Link href={`/app/kuntoarviot/new?building_id=${property.id}`}>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Aloita kuntoarvio
+                </Button>
+              </Link>
+            </div>
+          )}
         </TabsContent>
 
-        {/* Historia Tab */}
-        <TabsContent value="historia">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <History className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">Ei historiatietoja</p>
-            </CardContent>
-          </Card>
+        {/* Huoneistot/Tilat Tab */}
+        <TabsContent value="huoneistot" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-heading text-lg font-semibold">
+                {hasApartments ? "Huoneistot" : "Tilat"}
+              </h3>
+              <p className="text-sm text-muted-foreground">{subSpaces.length} kpl</p>
+            </div>
+            <Link href={`/app/properties/${property.id}/tilat/new`}>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Lisää {hasApartments ? "huoneisto" : "tila"}
+              </Button>
+            </Link>
+          </div>
+
+          {subSpaces.length > 0 ? (
+            <div className="space-y-6">
+              {Object.entries(subSpacesByFloor)
+                .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                .map(([floor, spaces]) => (
+                  <div key={floor}>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                      {floor === "0" ? "Kellari" : `${floor}. kerros`}
+                    </h4>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {spaces.map((space) => (
+                        <div key={space.id} className="group rounded-xl border border-border/50 bg-card p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">{space.number}</span>
+                                {space.overall_condition && (
+                                  <ConditionBadge score={space.overall_condition as 1|2|3|4|5} size="sm" />
+                                )}
+                              </div>
+                              <div className="mt-1 text-sm text-muted-foreground">
+                                {space.type && <span className="capitalize">{space.type}</span>}
+                                {space.square_meters && <span> &bull; {space.square_meters} m²</span>}
+                              </div>
+                              {space.notes && (
+                                <p className="mt-2 text-xs text-muted-foreground line-clamp-2">{space.notes}</p>
+                              )}
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/app/kuntoarviot/new?building_id=${space.id}`}>
+                                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                                    Tee tarkastus
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/app/properties/${property.id}/tilat/${space.id}/edit`}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Muokkaa
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => handleDeleteSubSpace(space.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Poista
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/50 bg-card p-8 text-center">
+              <LayoutGrid className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="font-heading text-lg font-semibold mb-2">
+                Ei {hasApartments ? "huoneistoja" : "tiloja"}
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                Lisää kiinteistön {hasApartments ? "huoneistot" : "tilat"} seurataksesi niiden kuntoa erikseen.
+              </p>
+              <Link href={`/app/properties/${property.id}/tilat/new`}>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Lisää ensimmäinen {hasApartments ? "huoneisto" : "tila"}
+                </Button>
+              </Link>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Kuntoluokka Tab */}
+        <TabsContent value="kuntoluokka" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Kuntoluokka</h3>
+              {kuntoluokka > 0 ? (
+                <>
+                  <div className="flex items-end gap-4">
+                    <div className={`font-heading text-5xl font-bold ${getKlaColor(kuntoluokka)}`}>
+                      {kuntoluokka}%
+                    </div>
+                    <div className="pb-1 text-sm text-muted-foreground">
+                      {kuntoluokka >= 75 ? "Erinomainen kunto" : kuntoluokka >= 60 ? "Tyydyttävä kunto" : "Heikko kunto - toimenpiteitä tarvitaan"}
+                    </div>
+                  </div>
+                  <div className="mt-4 h-3 overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className={`h-full rounded-full ${kuntoluokka >= 75 ? "bg-emerald-400" : kuntoluokka >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                      style={{ width: `${Math.min(kuntoluokka, 100)}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                    <span>0%</span>
+                    <span>60%</span>
+                    <span>75%</span>
+                    <span>100%</span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Tee kuntoarvio nähdäksesi kuntoluokka</p>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Tarkastustiedot</h3>
+              {inspections.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Viimeisin tarkastus</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(inspections[0].inspection_date).toLocaleDateString("fi-FI")}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tarkastaja</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {inspections[0].inspector_name || "-"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                      <FileText className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Tarkastuksia yhteensä</p>
+                      <p className="text-sm font-medium text-foreground">{inspections.length} kpl</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Ei tarkastuksia</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Korjausvelka Tab */}
+        <TabsContent value="korjausvelka" className="space-y-4">
+          <div className="rounded-xl border border-border/50 bg-card p-5">
+            <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausvelka</h3>
+            {korjausVelka > 0 ? (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Korjausvelka yhteensä</span>
+                    <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
+                  </div>
+                  {property.area_m2 && (
+                    <p className="mt-0.5 text-right text-xs text-muted-foreground">
+                      {formatEur(korjausVelka / property.area_m2)}/m²
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2 border-t border-border/50 pt-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Kunnossapitotarve</span>
+                    <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Peruskorjaustarve</span>
+                    <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Kehitys- ja muutostarve</span>
+                    <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {kuntoluokka > 0 
+                    ? "Ei merkittävää korjausvelkaa" 
+                    : "Tee kuntoarvio nähdäksesi korjausvelka"}
+                </p>
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
