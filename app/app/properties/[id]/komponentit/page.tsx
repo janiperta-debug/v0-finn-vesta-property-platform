@@ -99,7 +99,7 @@ export default function KomponentitPage() {
       const { data: inspections } = await supabase
         .from("inspections")
         .select("*")
-        .eq("building_id", propertyId)
+        .eq("building_id", parseInt(propertyId))
         .in("status", ["completed", "approved"])
         .order("inspection_date", { ascending: false })
         .limit(1)

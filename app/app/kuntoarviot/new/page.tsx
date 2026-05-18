@@ -24,7 +24,7 @@ function NewKuntoarvioForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
   const [selectedProperty, setSelectedProperty] = useState(preselectedBuildingId || "")
-  const [inspectionType, setInspectionType] = useState("perus")
+  const [inspectionType, setInspectionType] = useState("property_manager")
   const [notes, setNotes] = useState("")
 
   useEffect(() => {
@@ -84,17 +84,20 @@ function NewKuntoarvioForm() {
         return
       }
 
-      const { error } = await supabase
+      const insertData = {
+        org_id: orgUser.org_id,
+        building_id: parseInt(selectedProperty),
+        inspector_type: inspectionType,
+        status: 'draft',
+        notes: notes || '',
+        inspection_date: new Date().toISOString().split('T')[0],
+        inspector_name: '-',
+      }
+      
+      const { data, error } = await supabase
         .from('inspections')
-        .insert({
-          org_id: orgUser.org_id,
-          building_id: parseInt(selectedProperty),
-          inspector_type: inspectionType,
-          status: 'scheduled',
-          notes: notes,
-          inspection_date: new Date().toISOString().split('T')[0],
-          inspector_name: '',
-        })
+        .insert(insertData)
+        .select()
 
       if (error) throw error
 
@@ -153,15 +156,15 @@ function NewKuntoarvioForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Arvioinnin tyyppi *</Label>
+                <Label htmlFor="type">Tarkastajan tyyppi *</Label>
                 <Select value={inspectionType} onValueChange={setInspectionType}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="perus">Perusarviointi</SelectItem>
-                    <SelectItem value="tarkennettu">Tarkennettu arviointi</SelectItem>
-                    <SelectItem value="laaja">Laaja kuntotutkimus</SelectItem>
+                    <SelectItem value="property_manager">Isännöitsijä</SelectItem>
+                    <SelectItem value="internal">Sisäinen</SelectItem>
+                    <SelectItem value="external">Ulkoinen</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

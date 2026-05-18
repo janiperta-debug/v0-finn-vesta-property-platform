@@ -1,60 +1,68 @@
 import Link from "next/link"
-import { Building2 } from "lucide-react"
+import Image from "next/image"
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border/50 bg-card">
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-4">
+    <footer className="border-t border-border/30 bg-card/50">
+      <div className="mx-auto max-w-7xl px-4 py-16">
+        <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Building2 className="h-5 w-5 text-primary-foreground" />
-              </div>
+            <Link href="/" className="flex items-center gap-2.5">
+              <Image 
+                src="/finnvesta-logo.png" 
+                alt="FinnVesta" 
+                width={40} 
+                height={40}
+                className="rounded-lg"
+              />
               <span className="font-heading text-xl font-bold text-foreground">FinnVesta</span>
             </Link>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Property Foresight</p>
-            <p className="mt-1 text-xs text-muted-foreground">T:mi Janope</p>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Property Intelligence
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground/70">
+              Reaaliaikainen kiinteistöhallinta suomalaisille ammattilaisille.
+            </p>
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-foreground">Tuote</h4>
-            <nav className="flex flex-col gap-2">
-              <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <h4 className="mb-4 text-sm font-semibold text-foreground">Tuote</h4>
+            <nav className="flex flex-col gap-3">
+              <Link href="/#features" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Ominaisuudet
               </Link>
-              <Link href="/#pricing" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/#pricing" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Hinnoittelu
               </Link>
-              <Link href="/demo" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/demo" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Demo
               </Link>
             </nav>
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-foreground">Laki</h4>
-            <nav className="flex flex-col gap-2">
-              <Link href="/tietosuoja" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <h4 className="mb-4 text-sm font-semibold text-foreground">Laki</h4>
+            <nav className="flex flex-col gap-3">
+              <Link href="/tietosuoja" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Tietosuojaseloste
               </Link>
-              <Link href="/kayttoehdot" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/kayttoehdot" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Käyttöehdot
               </Link>
-              <Link href="/evasteet" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              <Link href="/evasteet" className="text-sm text-muted-foreground transition-colors hover:text-primary">
                 Evästekäytäntö
               </Link>
             </nav>
           </div>
 
           <div>
-            <h4 className="mb-3 text-sm font-semibold text-foreground">Muut tuotteet</h4>
-            <nav className="flex flex-col gap-2">
+            <h4 className="mb-4 text-sm font-semibold text-foreground">Muut tuotteet</h4>
+            <nav className="flex flex-col gap-3">
               <a
                 href="https://finnverdis.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm text-muted-foreground transition-colors hover:text-primary"
               >
                 FinnVerdis
               </a>
@@ -62,7 +70,7 @@ export function SiteFooter() {
                 href="https://gametable.site"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm text-muted-foreground transition-colors hover:text-primary"
               >
                 GameTable
               </a>
@@ -70,9 +78,12 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-border/50 pt-6">
-          <p className="text-center text-xs text-muted-foreground">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/30 pt-8 sm:flex-row">
+          <p className="text-xs text-muted-foreground/70">
             &copy; 2025 FinnVesta. Kaikki oikeudet pidätetään.
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            T:mi Janope
           </p>
         </div>
       </div>

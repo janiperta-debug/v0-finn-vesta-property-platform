@@ -57,7 +57,7 @@ export default function EditSpacePage() {
       const { data: parent } = await supabase
         .from("buildings")
         .select("name")
-        .eq("id", propertyId)
+        .eq("id", parseInt(propertyId))
         .single()
 
       if (parent) {
@@ -68,7 +68,7 @@ export default function EditSpacePage() {
       const { data: space, error } = await supabase
         .from("buildings")
         .select("*")
-        .eq("id", spaceId)
+        .eq("id", parseInt(spaceId))
         .single()
 
       if (error || !space) {
@@ -114,10 +114,10 @@ export default function EditSpacePage() {
         .update({
           name: formData.name,
           usage_category: formData.type,
-          area_m2: parseFloat(formData.squareMeters) || 0,
+          area_m2: parseFloat(formData.squareMeters) || null,
           notes: formData.notes || null,
         })
-        .eq("id", spaceId)
+        .eq("id", parseInt(spaceId))
 
       if (error) throw error
 

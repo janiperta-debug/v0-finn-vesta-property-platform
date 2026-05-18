@@ -55,7 +55,7 @@ export default function AddSpacePage() {
       const { data, error } = await supabase
         .from("buildings")
         .select("name, org_id")
-        .eq("id", propertyId)
+        .eq("id", parseInt(propertyId))
         .single()
 
       if (error || !data) {
@@ -98,15 +98,19 @@ export default function AddSpacePage() {
         property_id: parseInt(propertyId),
         name: formData.name,
         usage_category: formData.type,
-        area_m2: parseFloat(formData.squareMeters) || 0,
+        area_m2: parseFloat(formData.squareMeters) || null,
         notes: formData.notes || null,
-        construction_year: 0,
-        cost_per_m2: 0,
+        construction_year: null,
+        cost_per_m2: null,
         status: "active",
         is_sub_building: true,
       }
       
+      console.log("[v0] Inserting space with data:", insertData)
+      
       const { data, error } = await supabase.from("buildings").insert(insertData).select()
+
+      console.log("[v0] Insert result - data:", data, "error:", error)
 
       if (error) throw error
 

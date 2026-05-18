@@ -104,7 +104,6 @@ export default function EditPropertyPage() {
         .from("buildings")
         .select("*")
         .eq("property_id", parseInt(propertyId))
-        .eq("is_sub_building", true)
 
       if (spaces && spaces.length > 0) {
         setHasSubSpaces(true)

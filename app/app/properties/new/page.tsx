@@ -148,20 +148,21 @@ export default function NewPropertyPage() {
 
       if (propError) throw propError
 
-      // Insert sub-spaces if any
+      // Insert sub-spaces if any (as child buildings)
       if (hasSubSpaces && subSpaces.length > 0 && property) {
         const subSpaceInserts = subSpaces.map(s => ({
+          org_id: orgUser.org_id,
           property_id: property.id,
-          number: s.number,
-          floor: s.floor,
-          square_meters: s.squareMeters,
-          rooms: s.rooms,
-          type: s.type,
+          name: s.number,
+          area_m2: s.squareMeters || null,
+          usage_category: s.type,
           notes: s.notes || null,
+          is_sub_building: true,
+          status: 'active',
         }))
 
         const { error: subError } = await supabase
-          .from("sub_spaces")
+          .from("buildings")
           .insert(subSpaceInserts)
 
         if (subError) {

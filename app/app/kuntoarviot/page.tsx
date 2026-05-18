@@ -76,9 +76,7 @@ export default async function KuntoarviotPage() {
         .eq('org_id', orgUser.org_id)
         .order('inspection_date', { ascending: false })
 
-      if (inspError) {
-        console.log("[v0] inspections error:", inspError.message)
-      }
+      console.log("[v0] Inspections fetched:", inspectionsData?.length, "error:", inspError?.message)
 
       if (inspectionsData && inspectionsData.length > 0) {
         // Fetch building names separately to avoid FK join issues

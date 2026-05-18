@@ -104,8 +104,9 @@ export default function PropertyDetailPage() {
         .from("buildings")
         .select("*")
         .eq("property_id", parseInt(propertyId))
-        .eq("is_sub_building", true)
         .order("name", { ascending: true })
+
+      console.log("[v0] Loading spaces for property_id:", propertyId, "found:", spaces?.length, "error:", spacesError)
 
       if (!spacesError && spaces) {
         setSubSpaces(spaces.map(s => ({

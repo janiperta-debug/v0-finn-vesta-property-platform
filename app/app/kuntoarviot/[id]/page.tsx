@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   ArrowLeft, 
   Building2, 
@@ -17,7 +21,10 @@ import {
   Clock,
   AlertTriangle,
   Edit,
-  Trash2
+  Trash2,
+  Save,
+  X,
+  PlayCircle
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -58,6 +65,7 @@ const inspectorTypeLabels: Record<string, string> = {
   erikois: "Erikoistarkastus",
   internal: "Sisäinen tarkastus",
   external: "Ulkoinen tarkastus",
+  property_manager: "Kiinteistöpäällikkö",
 }
 
 export default function InspectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -67,6 +75,17 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
   const [building, setBuilding] = useState<Building | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  
+  const [editForm, setEditForm] = useState({
+    inspector_name: "",
+    inspection_date: "",
+    inspector_type: "",
+    overall_score: "",
+    notes: "",
+    status: "",
+  })
 
   useEffect(() => {
     loadInspection()
@@ -85,6 +104,16 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
 
       if (error) throw error
       setInspection(insp)
+      
+      // Set edit form values
+      setEditForm({
+        inspector_name: insp.inspector_name || "",
+        inspection_date: insp.inspection_date || "",
+        inspector_type: insp.inspector_type || "",
+        overall_score: insp.overall_score?.toString() || "",
+        notes: insp.notes || "",
+        status: insp.status || "draft",
+      })
 
       // Load building info
       if (insp.building_id) {
@@ -101,6 +130,60 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
       toast.error("Tarkastuksen lataus epäonnistui")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      
+      const updateData = {
+        inspector_name: editForm.inspector_name || "-",
+        inspection_date: editForm.inspection_date,
+        inspector_type: editForm.inspector_type,
+        overall_score: editForm.overall_score ? parseFloat(editForm.overall_score) : null,
+        notes: editForm.notes || null,
+        status: editForm.status,
+      }
+      
+      const { error } = await supabase
+        .from("inspections")
+        .update(updateData)
+        .eq("id", inspectionId)
+
+      if (error) throw error
+
+      toast.success("Tarkastus tallennettu")
+      setIsEditing(false)
+      loadInspection()
+    } catch (error) {
+      console.error("Save error:", error)
+      toast.error("Tallentaminen epäonnistui")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleMarkComplete = async () => {
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      
+      const { error } = await supabase
+        .from("inspections")
+        .update({ status: "completed" })
+        .eq("id", inspectionId)
+
+      if (error) throw error
+
+      toast.success("Tarkastus merkitty valmiiksi")
+      loadInspection()
+    } catch (error) {
+      console.error("Error:", error)
+      toast.error("Toiminto epäonnistui")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -157,6 +240,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
 
   const statusInfo = statusLabels[inspection.status] || defaultStatus
   const StatusIcon = statusInfo.icon
+  const isIncomplete = ["draft", "scheduled", "in_progress"].includes(inspection.status)
 
   return (
     <div className="space-y-6">
@@ -184,10 +268,35 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleDelete} disabled={deleting}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Poista
-          </Button>
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(false)} disabled={saving}>
+                <X className="h-4 w-4 mr-2" />
+                Peruuta
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? "Tallennetaan..." : "Tallenna"}
+              </Button>
+            </>
+          ) : (
+            <>
+              {isIncomplete && (
+                <Button variant="default" onClick={handleMarkComplete} disabled={saving}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Merkitse valmiiksi
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Muokkaa
+              </Button>
+              <Button variant="outline" onClick={handleDelete} disabled={deleting}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Poista
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -199,48 +308,105 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
             <CardTitle>Tarkastuksen tiedot</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Building2 className="h-4 w-4" />
-                Kiinteistö
-              </div>
-              <div className="font-medium">
-                {building ? (
-                  <Link 
-                    href={`/app/properties/${building.id}`}
-                    className="text-primary hover:underline"
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Tarkastaja</Label>
+                  <Input
+                    value={editForm.inspector_name}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, inspector_name: e.target.value }))}
+                    placeholder="Tarkastajan nimi"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Päivämäärä</Label>
+                  <Input
+                    type="date"
+                    value={editForm.inspection_date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, inspection_date: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tyyppi</Label>
+                  <Select
+                    value={editForm.inspector_type}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, inspector_type: value }))}
                   >
-                    {building.name}
-                  </Link>
-                ) : (
-                  "Ei määritetty"
-                )}
+                    <SelectTrigger>
+                      <SelectValue placeholder="Valitse tyyppi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="perus">Perustarkastus</SelectItem>
+                      <SelectItem value="laaja">Laaja tarkastus</SelectItem>
+                      <SelectItem value="erikois">Erikoistarkastus</SelectItem>
+                      <SelectItem value="internal">Sisäinen tarkastus</SelectItem>
+                      <SelectItem value="external">Ulkoinen tarkastus</SelectItem>
+                      <SelectItem value="property_manager">Kiinteistöpäällikkö</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Tila</Label>
+                  <Select
+                    value={editForm.status}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Valitse tila" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Luonnos</SelectItem>
+                      <SelectItem value="in_progress">Käynnissä</SelectItem>
+                      <SelectItem value="completed">Valmis</SelectItem>
+                      <SelectItem value="approved">Hyväksytty</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  Kiinteistö
+                </div>
+                <div className="font-medium">
+                  {building ? (
+                    <Link 
+                      href={`/app/properties/${building.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      {building.name}
+                    </Link>
+                  ) : (
+                    "Ei määritetty"
+                  )}
+                </div>
 
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                Päivämäärä
-              </div>
-              <div className="font-medium">
-                {new Date(inspection.inspection_date).toLocaleDateString("fi-FI")}
-              </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  Päivämäärä
+                </div>
+                <div className="font-medium">
+                  {new Date(inspection.inspection_date).toLocaleDateString("fi-FI")}
+                </div>
 
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-4 w-4" />
-                Tarkastaja
-              </div>
-              <div className="font-medium">
-                {inspection.inspector_name || "-"}
-              </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4" />
+                  Tarkastaja
+                </div>
+                <div className="font-medium">
+                  {inspection.inspector_name || "-"}
+                </div>
 
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <FileText className="h-4 w-4" />
-                Tyyppi
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <FileText className="h-4 w-4" />
+                  Tyyppi
+                </div>
+                <div className="font-medium">
+                  {inspectorTypeLabels[inspection.inspector_type] || inspection.inspector_type || "-"}
+                </div>
               </div>
-              <div className="font-medium">
-                {inspectorTypeLabels[inspection.inspector_type] || inspection.inspector_type || "-"}
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -251,7 +417,30 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
             <CardDescription>Kiinteistön kokonaiskunto</CardDescription>
           </CardHeader>
           <CardContent>
-            {inspection.overall_score ? (
+            {isEditing ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Arvosana (1-5)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="5"
+                    step="0.1"
+                    value={editForm.overall_score}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, overall_score: e.target.value }))}
+                    placeholder="esim. 3.5"
+                  />
+                </div>
+                {editForm.overall_score && (
+                  <div className="h-4 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${(parseFloat(editForm.overall_score) / 5) * 100}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : inspection.overall_score ? (
               <div className="flex items-center gap-6">
                 <div className="text-5xl font-bold">
                   {inspection.overall_score.toFixed(1)}
@@ -269,23 +458,40 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
             ) : (
-              <p className="text-muted-foreground">Ei arvosanaa</p>
+              <div className="text-center py-4">
+                <p className="text-muted-foreground mb-2">Ei arvosanaa</p>
+                {isIncomplete && (
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Lisää arvosana
+                  </Button>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Notes */}
-      {inspection.notes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Muistiinpanot</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Muistiinpanot</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isEditing ? (
+            <Textarea
+              value={editForm.notes}
+              onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Kirjoita muistiinpanoja tarkastuksesta..."
+              rows={4}
+            />
+          ) : inspection.notes ? (
             <p className="whitespace-pre-wrap">{inspection.notes}</p>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-muted-foreground italic">Ei muistiinpanoja</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Metadata */}
       <Card>

@@ -80,7 +80,7 @@ export default function TavoitesuunnitteluPage() {
       const { data: prop } = await supabase
         .from("buildings")
         .select("*")
-        .eq("id", propertyId)
+        .eq("id", parseInt(propertyId))
         .single()
 
       if (prop) setProperty(prop)
@@ -89,7 +89,7 @@ export default function TavoitesuunnitteluPage() {
       const { data: invData, error } = await supabase
         .from("investment_plans")
         .select("*")
-        .eq("kiinteisto_id", propertyId)
+        .eq("kiinteisto_id", parseInt(propertyId))
         .order("vuosi", { ascending: true })
 
       if (error) {
