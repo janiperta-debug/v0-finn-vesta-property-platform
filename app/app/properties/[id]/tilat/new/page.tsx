@@ -106,11 +106,7 @@ export default function AddSpacePage() {
         is_sub_building: true,
       }
       
-      console.log("[v0] Inserting space with data:", insertData)
-      
-      const { data, error } = await supabase.from("buildings").insert(insertData).select()
-
-      console.log("[v0] Insert result - data:", data, "error:", error)
+      const { error } = await supabase.from("buildings").insert(insertData)
 
       if (error) throw error
 

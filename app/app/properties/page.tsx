@@ -126,6 +126,7 @@ export default function PropertiesPage() {
       .from("buildings")
       .select("*")
       .eq("org_id", orgUser.org_id)
+      .is("property_id", null)
       .order("name", { ascending: true })
 
     if (!error && data) {

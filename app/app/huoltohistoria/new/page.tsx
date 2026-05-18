@@ -96,8 +96,8 @@ export default function NewHuoltotyoPage() {
       const { error } = await supabase
         .from('huoltotyot')
         .insert({
-          organization_id: orgUser.org_id,
-          kiinteisto_id: formData.property_id,
+          org_id: orgUser.org_id,
+          kiinteisto_id: parseInt(formData.property_id),
           otsikko: formData.title,
           kategoria: formData.category,
           kuvaus: formData.description,

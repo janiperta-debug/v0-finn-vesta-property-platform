@@ -66,19 +66,21 @@ export default async function VertailuPage() {
 
       if (propsData) {
         properties = propsData.map((p: any) => {
-          const repairDebt = (p.replacement_value || 0) - (p.technical_value || 0)
+          const replacementValue = (p.area_m2 || 0) * (p.cost_per_m2 || 2500)
+          const technicalValue = replacementValue * ((p.condition_class || 70) / 100)
+          const repairDebt = replacementValue - technicalValue
           return {
             id: p.id,
-            name: p.name,
+            name: p.name || 'Nimetön',
             address: p.address || '',
             buildingType: p.building_type || 'muu',
-            yearBuilt: p.year_built || 0,
-            squareMeters: p.square_meters || 0,
+            yearBuilt: p.construction_year || 0,
+            squareMeters: p.area_m2 || 0,
             conditionClass: p.condition_class || 0,
             repairDebt: repairDebt,
-            repairDebtPerSqm: p.square_meters ? repairDebt / p.square_meters : 0,
-            technicalValue: p.technical_value || 0,
-            replacementValue: p.replacement_value || 0,
+            repairDebtPerSqm: p.area_m2 ? repairDebt / p.area_m2 : 0,
+            technicalValue: technicalValue,
+            replacementValue: replacementValue,
           }
         })
       }

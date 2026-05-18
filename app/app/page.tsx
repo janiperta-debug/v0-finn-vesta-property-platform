@@ -87,7 +87,7 @@ export default async function AppPage() {
         .from('buildings')
         .select('*')
         .eq('org_id', orgUser.org_id)
-        .eq('is_sub_building', false)
+        .is('property_id', null)
 
       if (properties && properties.length > 0) {
         hasData = true
