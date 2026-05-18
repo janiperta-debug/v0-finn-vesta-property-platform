@@ -113,8 +113,8 @@ function NewInvestointiForm() {
       const { error } = await supabase
         .from('investment_plans')
         .insert({
-          organization_id: orgUser.org_id,
-          kiinteisto_id: formData.property_id,
+          org_id: orgUser.org_id,
+          kiinteisto_id: parseInt(formData.property_id),
           otsikko: formData.title,
           kategoria: formData.category,
           kuvaus: formData.description,

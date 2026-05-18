@@ -64,25 +64,29 @@ export default async function TimelinePage() {
     if (orgUser?.org_id) {
       const { data: invData } = await supabase
         .from('investment_plans')
-        .select(`
-          id,
-          kiinteisto_id,
-          otsikko,
-          kategoria,
-          vuosi,
-          arvioitu_kustannus,
-          prioriteetti,
-          tila,
-          kiinteistot (nimi)
-        `)
+        .select('*')
         .eq('org_id', orgUser.org_id)
         .order('vuosi', { ascending: true })
 
       if (invData) {
+        // Get building names separately
+        const buildingIds = [...new Set(invData.map((i: any) => i.kiinteisto_id).filter(Boolean))]
+        let buildingMap = new Map<number, string>()
+        
+        if (buildingIds.length > 0) {
+          const { data: buildingsData } = await supabase
+            .from('buildings')
+            .select('id, name')
+            .in('id', buildingIds)
+          if (buildingsData) {
+            buildingMap = new Map(buildingsData.map(b => [b.id, b.name]))
+          }
+        }
+
         investments = invData.map((i: any) => ({
           id: i.id,
           propertyId: i.kiinteisto_id,
-          propertyName: i.kiinteistot?.nimi || 'Tuntematon',
+          propertyName: buildingMap.get(i.kiinteisto_id) || 'Tuntematon',
           title: i.otsikko || '-',
           category: i.kategoria || 'other',
           year: i.vuosi,

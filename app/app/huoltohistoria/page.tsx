@@ -81,26 +81,29 @@ export default async function HuoltohistoriaPage() {
     if (orgUser?.org_id) {
       const { data: tasksData } = await supabase
         .from('huoltotyot')
-        .select(`
-          id,
-          kiinteisto_id,
-          otsikko,
-          kuvaus,
-          kategoria,
-          pvm,
-          kustannus,
-          tila,
-          urakoitsija,
-          kiinteistot (nimi)
-        `)
+        .select('*')
         .eq('org_id', orgUser.org_id)
         .order('pvm', { ascending: false })
 
       if (tasksData) {
+        // Get building names separately
+        const buildingIds = [...new Set(tasksData.map((t: any) => t.kiinteisto_id).filter(Boolean))]
+        let buildingMap = new Map<number, string>()
+        
+        if (buildingIds.length > 0) {
+          const { data: buildingsData } = await supabase
+            .from('buildings')
+            .select('id, name')
+            .in('id', buildingIds)
+          if (buildingsData) {
+            buildingMap = new Map(buildingsData.map(b => [b.id, b.name]))
+          }
+        }
+
         tasks = tasksData.map((t: any) => ({
           id: t.id,
           propertyId: t.kiinteisto_id,
-          propertyName: t.kiinteistot?.nimi || 'Tuntematon',
+          propertyName: buildingMap.get(t.kiinteisto_id) || 'Tuntematon',
           title: t.otsikko || '-',
           description: t.kuvaus || '',
           category: t.kategoria || 'other',
