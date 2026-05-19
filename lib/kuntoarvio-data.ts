@@ -786,3 +786,6 @@ export function getApartmentSummary(apartments: Apartment[]): BuildingApartmentS
     upcomingRenovations: needsAttention,
   }
 }
+
+// Export all category IDs as an array
+export const allCategoryIds = categories.map(c => c.id)
