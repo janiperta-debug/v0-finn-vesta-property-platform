@@ -344,8 +344,8 @@ export default function NewPropertyPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Lisaa kiinteisto</h1>
-          <p className="text-sm text-muted-foreground">Syota kiinteiston perustiedot ja rakennetiedot</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Lisää kiinteistö</h1>
+          <p className="text-sm text-muted-foreground">Syötä kiinteistön perustiedot ja rakennetiedot</p>
         </div>
       </div>
 
@@ -383,8 +383,8 @@ export default function NewPropertyPage() {
           <TabsContent value="basic" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Kiinteiston tiedot</CardTitle>
-                <CardDescription>Perustiedot kiinteistosta</CardDescription>
+                <CardTitle>Kiinteistön tiedot</CardTitle>
+                <CardDescription>Perustiedot kiinteistöstä</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -502,10 +502,10 @@ export default function NewPropertyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Lisatiedot</Label>
+                  <Label htmlFor="notes">Lisätiedot</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Vapaamuotoiset lisatiedot..."
+                    placeholder="Vapaamuotoiset lisätiedot..."
                     rows={3}
                     value={formData.notes}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
@@ -520,8 +520,8 @@ export default function NewPropertyPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Huoneistot / Alatilat</CardTitle>
-                    <CardDescription>
-                      Jaa kiinteisto huoneistoihin tai muihin alatiloihin seurantaa varten
+                  <CardDescription>
+                    Jaa kiinteistö huoneistoihin tai muihin alatiloihin seurantaa varten
                     </CardDescription>
                   </div>
                   <Switch
@@ -533,7 +533,7 @@ export default function NewPropertyPage() {
               {hasSubSpaces && (
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Voit lisata huoneistot seuraavalla valilehdella tai generoida ne automaattisesti kerrosten perusteella.
+                    Voit lisätä huoneistot seuraavalla välilehdellä tai generoida ne automaattisesti kerrosten perusteella.
                   </p>
                   <Button type="button" variant="outline" onClick={generateSubSpaces}>
                     Generoi huoneistot
