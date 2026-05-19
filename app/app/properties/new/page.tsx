@@ -304,14 +304,17 @@ export default function NewPropertyPage() {
         if (inspError) {
           console.error("Inspection insert error:", inspError)
         } else if (inspection) {
-          // Save category evaluations
+          // Save category evaluations with correct column names
           const categoryEvals = previewAssessment.map(a => ({
             inspection_id: inspection.id,
             category_id: a.categoryId,
-            condition_score: a.conditionScore,
-            urgency_class: a.urgencyClass,
-            notes: a.notes,
-            repair_cost_estimate: a.estimatedRepairCost,
+            score: a.conditionScore,
+            urgency: a.urgencyClass,
+            comment: a.notes,
+            cost_estimate: a.estimatedRepairCost,
+            mode: 'basic',
+            is_applicable: true,
+            is_migrated: false,
           }))
 
           const { error: catError } = await supabase

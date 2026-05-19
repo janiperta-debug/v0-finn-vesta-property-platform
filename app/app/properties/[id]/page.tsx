@@ -74,6 +74,16 @@ interface Inspection {
   notes: string | null
 }
 
+interface CategoryEvaluation {
+  id: string
+  inspection_id: string
+  category_id: number
+  score: number | null
+  comment: string | null
+  urgency: string | null
+  cost_estimate: number | null
+}
+
 const buildingTypeLabels: Record<string, string> = {
   kerrostalo: "Kerrostalo",
   rivitalo: "Rivitalo",
@@ -109,6 +119,7 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null)
   const [subSpaces, setSubSpaces] = useState<SubSpace[]>([])
   const [inspections, setInspections] = useState<Inspection[]>([])
+  const [categoryEvaluations, setCategoryEvaluations] = useState<CategoryEvaluation[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
