@@ -218,22 +218,12 @@ export function EvaluationForm({
   const handleSubItemChange = (evaluation: SubItemEvaluation) => {
     setSubItemEvaluations((prev) => {
       const existing = prev.findIndex((e) => e.subItemId === evaluation.subItemId)
-      let updated: SubItemEvaluation[]
       if (existing >= 0) {
-        updated = [...prev]
+        const updated = [...prev]
         updated[existing] = evaluation
-      } else {
-        updated = [...prev, evaluation]
+        return updated
       }
-      
-      // Calculate average score from sub-items automatically
-      const scoredItems = updated.filter((e) => e.score !== undefined)
-      if (scoredItems.length > 0) {
-        const avgScore = scoredItems.reduce((sum, e) => sum + (e.score || 0), 0) / scoredItems.length
-        setOverallScore(Math.round(avgScore) as ConditionScore)
-      }
-      
-      return updated
+      return [...prev, evaluation]
     })
   }
 
