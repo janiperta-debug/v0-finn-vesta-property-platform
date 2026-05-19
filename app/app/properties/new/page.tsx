@@ -86,24 +86,82 @@ export default function NewPropertyPage() {
 
   const generateSubSpaces = () => {
     const floors = parseInt(formData.floors) || 3
-    const unitsPerFloor = 4
+    const buildingType = formData.buildingType
+    const totalArea = parseFloat(formData.squareMeters) || 0
     const generated: SubSpace[] = []
     
-    for (let floor = 1; floor <= floors; floor++) {
-      for (let unit = 1; unit <= unitsPerFloor; unit++) {
+    // Adjust units per floor based on building type
+    let unitsPerFloor = 4
+    let defaultSize = 55
+    let defaultRooms = "2h+k"
+    
+    if (buildingType === "rivitalo") {
+      unitsPerFloor = 1 // One unit per "floor" (actually per unit)
+      defaultSize = 85
+      defaultRooms = "3h+k"
+    } else if (buildingType === "paritalo") {
+      unitsPerFloor = 2
+      defaultSize = 75
+      defaultRooms = "3h+k"
+    } else if (buildingType === "omakotitalo") {
+      // Single unit
+      generated.push({
+        id: `temp-1-1`,
+        number: "A",
+        floor: 1,
+        squareMeters: totalArea || 120,
+        rooms: "4h+k",
+        type: "apartment",
+        notes: "",
+      })
+      setSubSpaces(generated)
+      toast.success(`Luotiin ${generated.length} tila`)
+      return
+    } else if (buildingType === "toimisto" || buildingType === "teollisuus") {
+      unitsPerFloor = 2
+      defaultSize = 150
+      defaultRooms = ""
+    }
+    
+    // Calculate unit size if total area is provided
+    if (totalArea > 0) {
+      const totalUnits = buildingType === "rivitalo" ? floors : floors * unitsPerFloor
+      defaultSize = Math.round(totalArea / totalUnits)
+    }
+    
+    if (buildingType === "rivitalo") {
+      // For rivitalo, "floors" means number of units
+      const numUnits = floors
+      for (let unit = 1; unit <= numUnits; unit++) {
         generated.push({
-          id: `temp-${floor}-${unit}`,
-          number: `${floor}${String(unit).padStart(2, '0')}`,
-          floor,
-          squareMeters: 55,
-          rooms: "2h+k",
+          id: `temp-1-${unit}`,
+          number: String.fromCharCode(64 + unit), // A, B, C...
+          floor: 1,
+          squareMeters: defaultSize,
+          rooms: defaultRooms,
           type: "apartment",
           notes: "",
         })
       }
+    } else {
+      // Standard multi-floor building
+      for (let floor = 1; floor <= floors; floor++) {
+        for (let unit = 1; unit <= unitsPerFloor; unit++) {
+          generated.push({
+            id: `temp-${floor}-${unit}`,
+            number: `${floor}${String(unit).padStart(2, '0')}`,
+            floor,
+            squareMeters: defaultSize,
+            rooms: defaultRooms,
+            type: buildingType === "toimisto" || buildingType === "teollisuus" ? "commercial" : "apartment",
+            notes: "",
+          })
+        }
+      }
     }
+    
     setSubSpaces(generated)
-    toast.success(`Luotiin ${generated.length} huoneistoa`)
+    toast.success(`Luotiin ${generated.length} ${buildingType === "toimisto" || buildingType === "teollisuus" ? "tilaa" : "huoneistoa"}`)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
