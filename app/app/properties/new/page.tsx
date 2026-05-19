@@ -115,6 +115,7 @@ export default function NewPropertyPage() {
         notes: "",
       })
       setSubSpaces(generated)
+      setHasSubSpaces(true)
       toast.success(`Luotiin ${generated.length} tila`)
       return
     } else if (buildingType === "toimisto" || buildingType === "teollisuus") {
@@ -161,6 +162,7 @@ export default function NewPropertyPage() {
     }
     
     setSubSpaces(generated)
+    setHasSubSpaces(true)
     toast.success(`Luotiin ${generated.length} ${buildingType === "toimisto" || buildingType === "teollisuus" ? "tilaa" : "huoneistoa"}`)
   }
 
