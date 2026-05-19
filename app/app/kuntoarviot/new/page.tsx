@@ -101,7 +101,12 @@ function NewKuntoarvioForm() {
 
       if (error) throw error
 
-      router.push('/app/kuntoarviot')
+      // Redirect to the created inspection to continue filling it
+      if (data && data[0]) {
+        router.push(`/app/kuntoarviot/${data[0].id}`)
+      } else {
+        router.push('/app/kuntoarviot')
+      }
     } catch (error) {
       console.error('Error creating inspection:', error)
       alert('Virhe kuntoarvion luomisessa')
