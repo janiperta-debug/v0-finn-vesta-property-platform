@@ -115,6 +115,25 @@ export default function EditPropertyPage() {
         return
       }
 
+      // Parse notes field which may contain JSON with structure data
+      let userNotes = data.notes || ""
+      let savedStructures: BuildingStructureData | null = null
+      
+      if (data.notes) {
+        try {
+          const parsed = JSON.parse(data.notes)
+          if (parsed.userNotes !== undefined) {
+            userNotes = parsed.userNotes
+          }
+          if (parsed.structures) {
+            savedStructures = parsed.structures
+          }
+        } catch {
+          // notes is plain text, not JSON
+          userNotes = data.notes
+        }
+      }
+
       setFormData({
         name: data.name || "",
         address: data.address || "",
@@ -124,8 +143,13 @@ export default function EditPropertyPage() {
         buildYear: data.construction_year ? String(data.construction_year) : "",
         squareMeters: data.area_m2 ? String(data.area_m2) : "",
         floors: "",
-        notes: data.notes || "",
+        notes: userNotes,
       })
+
+      // Load saved structure data if exists
+      if (savedStructures) {
+        setStructures(savedStructures)
+      }
 
       // Load existing sub-spaces
       const { data: spaces } = await supabase
@@ -287,6 +311,12 @@ export default function EditPropertyPage() {
     try {
       const supabase = createClient()
 
+      // Combine notes with structure data as JSON
+      const buildingMetadata = {
+        userNotes: formData.notes || '',
+        structures: structureData,
+      }
+
       // Update main building
       const { error } = await supabase
         .from("buildings")
@@ -297,7 +327,7 @@ export default function EditPropertyPage() {
           building_type: formData.buildingType || null,
           construction_year: parseInt(formData.buildYear) || 0,
           area_m2: parseFloat(formData.squareMeters) || 0,
-          notes: formData.notes || null,
+          notes: JSON.stringify(buildingMetadata),
         })
         .eq("id", propertyId)
 

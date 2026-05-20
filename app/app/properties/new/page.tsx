@@ -237,6 +237,12 @@ export default function NewPropertyPage() {
         conditionClass = calculateOverallCondition(previewAssessment)
       }
 
+      // Combine notes with structure data as JSON
+      const buildingMetadata = {
+        userNotes: formData.notes || '',
+        structures: structureData,
+      }
+
       const insertData = {
         org_id: orgUser.org_id,
         name: formData.name,
@@ -246,7 +252,7 @@ export default function NewPropertyPage() {
         construction_year: parseInt(formData.buildYear) || 0,
         area_m2: parseFloat(formData.squareMeters) || 0,
         cost_per_m2: 2500, // Default replacement cost per m²
-        notes: formData.notes || null,
+        notes: JSON.stringify(buildingMetadata),
         status: 'active',
       }
 
