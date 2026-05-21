@@ -483,7 +483,7 @@ export default function PropertyDetailPage() {
                       .sort((a, b) => (a.score || 0) - (b.score || 0))
                       .slice(0, 9)
                       .map(evaluation => {
-                        const category = categories.find(c => c.id === evaluation.category_id)
+                        const category = categories.find(c => String(c.id) === String(evaluation.category_id))
                         return (
                           <div key={evaluation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                             <div className="flex items-center gap-3">

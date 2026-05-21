@@ -314,7 +314,7 @@ export default function EditPropertyPage() {
       // Combine notes with structure data as JSON
       const buildingMetadata = {
         userNotes: formData.notes || '',
-        structures: structureData,
+        structures: structures,
       }
 
       // Update main building

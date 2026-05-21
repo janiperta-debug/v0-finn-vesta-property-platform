@@ -240,7 +240,7 @@ export default function NewPropertyPage() {
       // Combine notes with structure data as JSON
       const buildingMetadata = {
         userNotes: formData.notes || '',
-        structures: structureData,
+        structures: structures,
       }
 
       const insertData = {

@@ -54,14 +54,16 @@ export default async function TimelinePage() {
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 15 }, (_, i) => currentYear + i)
 
-  try {
-    const { data: orgUsers } = await supabase
-      .from('org_users')
-      .select('org_id')
-      .eq('user_id', user.id)
-      .limit(1)
+  // Get org_id first
+  const { data: orgUsers } = await supabase
+    .from('org_users')
+    .select('org_id')
+    .eq('user_id', user.id)
+    .limit(1)
 
-    const orgUser = orgUsers?.[0]
+  const orgUser = orgUsers?.[0]
+
+  try {
     if (orgUser?.org_id) {
       const { data: invData } = await supabase
         .from('investment_plans')
