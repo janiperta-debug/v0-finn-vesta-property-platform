@@ -264,22 +264,30 @@ export default function NewPropertyPage() {
 
       if (propError) throw propError
 
+      console.log("[v0] Property saved:", property?.id, "hasSubSpaces:", hasSubSpaces, "subSpaces count:", subSpaces.length)
+
       // Insert sub-spaces if any
       if (hasSubSpaces && subSpaces.length > 0 && property) {
+        console.log("[v0] Inserting subSpaces:", subSpaces)
         const subSpaceInserts = subSpaces.map(s => ({
           org_id: orgUser.org_id,
           property_id: property.id,
-          name: s.number,
-          area_m2: s.squareMeters || null,
+          name: s.number || s.name,
+          area_m2: s.squareMeters || s.square_meters || null,
           usage_category: s.type,
           notes: s.notes || null,
           is_sub_building: true,
           status: 'active',
         }))
 
-        const { error: subError } = await supabase
+        console.log("[v0] SubSpace inserts:", subSpaceInserts)
+
+        const { data: insertedSpaces, error: subError } = await supabase
           .from("buildings")
           .insert(subSpaceInserts)
+          .select()
+
+        console.log("[v0] SubSpace insert result:", insertedSpaces, "error:", subError)
 
         if (subError) {
           console.error("Sub-space insert error:", subError)
@@ -288,6 +296,7 @@ export default function NewPropertyPage() {
       }
 
       // Create initial inspection with RT assessment if enabled
+      console.log("[v0] generateAssessment:", generateAssessment, "previewAssessment count:", previewAssessment?.length)
       if (generateAssessment && previewAssessment && previewAssessment.length > 0 && property) {
         const overallScore = calculateOverallCondition(previewAssessment)
         
