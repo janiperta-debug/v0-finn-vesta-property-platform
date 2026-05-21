@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { categories } from "@/lib/kuntoarvio-data"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -170,6 +171,18 @@ export default function PropertyDetailPage() {
 
       if (insps) {
         setInspections(insps)
+        
+        // Load category evaluations for the latest inspection
+        if (insps.length > 0) {
+          const { data: evals } = await supabase
+            .from("category_evaluations")
+            .select("*")
+            .eq("inspection_id", insps[0].id)
+          
+          if (evals) {
+            setCategoryEvaluations(evals)
+          }
+        }
       }
     } catch (error) {
       console.error("Load error:", error)
@@ -457,6 +470,53 @@ export default function PropertyDetailPage() {
                   </Link>
                 </div>
               </div>
+
+              {/* Category evaluations from latest inspection */}
+              {categoryEvaluations.length > 0 && (
+                <div className="rounded-xl border border-border/50 bg-card p-5">
+                  <h3 className="font-heading text-base font-semibold text-foreground mb-4">
+                    Rakennusosien kunto
+                  </h3>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {categoryEvaluations
+                      .filter(e => e.score !== null)
+                      .sort((a, b) => (a.score || 0) - (b.score || 0))
+                      .slice(0, 9)
+                      .map(evaluation => {
+                        const category = categories.find(c => c.id === evaluation.category_id)
+                        return (
+                          <div key={evaluation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                            <div className="flex items-center gap-3">
+                              <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
+                              <div>
+                                <p className="text-sm font-medium">{category?.name || `Kategoria ${evaluation.category_id}`}</p>
+                                {evaluation.urgency && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {evaluation.urgency === 'immediate' ? 'Välitön' : 
+                                     evaluation.urgency === 'soon' ? '1-2v' : 
+                                     evaluation.urgency === 'planned' ? '3-5v' : 'Seuranta'}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                {(evaluation.cost_estimate / 1000).toFixed(0)}k€
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                  </div>
+                  {categoryEvaluations.filter(e => e.score !== null).length > 9 && (
+                    <Link href={`/app/kuntoarviot/${inspections[0].id}`}>
+                      <Button variant="link" size="sm" className="mt-2 px-0">
+                        Näytä kaikki {categoryEvaluations.filter(e => e.score !== null).length} kategoriaa
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              )}
 
               {/* All inspections list */}
               <div className="rounded-xl border border-border/50 bg-card p-5">

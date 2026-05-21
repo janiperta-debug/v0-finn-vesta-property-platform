@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { categories } from "@/lib/kuntoarvio-data"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -100,6 +101,74 @@ export default async function TimelinePage() {
     console.log("[v0] Error fetching investments:", error)
   }
 
+  // Load suggested repairs from category evaluations with poor condition
+  interface SuggestedRepair {
+    id: string
+    buildingId: number
+    buildingName: string
+    categoryId: number
+    categoryName: string
+    score: number
+    urgency: string
+    costEstimate: number
+  }
+  let suggestions: SuggestedRepair[] = []
+  
+  try {
+    // Get all category evaluations with score <= 2 (poor/critical condition)
+    const { data: evals } = await supabase
+      .from('category_evaluations')
+      .select(`
+        id,
+        category_id,
+        score,
+        urgency,
+        cost_estimate,
+        inspection_id,
+        inspections!inner (
+          building_id,
+          org_id
+        )
+      `)
+      .lte('score', 2)
+      .not('score', 'is', null)
+    
+    if (evals && evals.length > 0) {
+      // Get building names
+      const buildingIds = [...new Set(evals.map((e: any) => e.inspections?.building_id).filter(Boolean))]
+      let buildingMap = new Map<number, string>()
+      
+      if (buildingIds.length > 0) {
+        const { data: buildings } = await supabase
+          .from('buildings')
+          .select('id, name')
+          .in('id', buildingIds)
+        if (buildings) {
+          buildingMap = new Map(buildings.map(b => [b.id, b.name]))
+        }
+      }
+      
+      suggestions = evals
+        .filter((e: any) => e.inspections?.org_id === orgUser?.org_id)
+        .map((e: any) => {
+          const category = categories.find(c => c.id === e.category_id)
+          return {
+            id: e.id,
+            buildingId: e.inspections?.building_id,
+            buildingName: buildingMap.get(e.inspections?.building_id) || 'Tuntematon',
+            categoryId: e.category_id,
+            categoryName: category?.name || `Kategoria ${e.category_id}`,
+            score: e.score,
+            urgency: e.urgency || 'monitoring',
+            costEstimate: e.cost_estimate || 0,
+          }
+        })
+        .sort((a, b) => a.score - b.score || (a.urgency === 'immediate' ? -1 : 1))
+    }
+  } catch (error) {
+    console.log("[v0] Error fetching suggestions:", error)
+  }
+
   // Group by year
   const investmentsByYear = years.map(year => ({
     year,
@@ -176,6 +245,55 @@ export default async function TimelinePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Suggested repairs from inspections */}
+      {suggestions.length > 0 && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-base">Ehdotetut korjaukset kuntoarvioiden perusteella</CardTitle>
+            </div>
+            <CardDescription>
+              Nämä kohteet vaativat huomiota tarkastusten perusteella
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {suggestions.slice(0, 5).map(s => (
+                <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${s.score === 1 ? 'bg-red-500' : 'bg-amber-500'}`} />
+                    <div>
+                      <p className="font-medium text-sm">{s.categoryName}</p>
+                      <p className="text-xs text-muted-foreground">{s.buildingName}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge variant="outline" className={s.urgency === 'immediate' ? 'border-red-500 text-red-500' : ''}>
+                      {s.urgency === 'immediate' ? 'Välitön' : s.urgency === 'soon' ? '1-2v' : '3-5v'}
+                    </Badge>
+                    {s.costEstimate > 0 && (
+                      <span className="text-sm font-medium">{formatEur(s.costEstimate)}</span>
+                    )}
+                    <Link href={`/app/timeline/new?category=${s.categoryId}&building=${s.buildingId}&cost=${s.costEstimate}`}>
+                      <Button size="sm" variant="outline">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Lisää
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+              {suggestions.length > 5 && (
+                <p className="text-sm text-muted-foreground text-center pt-2">
+                  + {suggestions.length - 5} muuta ehdotusta
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filter */}
       <div className="flex gap-2">
