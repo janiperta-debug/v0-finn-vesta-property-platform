@@ -743,12 +743,10 @@ export default function EditPropertyPage() {
                       <Plus className="h-4 w-4 mr-2" />
                       Lisää tila
                     </Button>
-                    {formData.floors && (
-                      <Button type="button" variant="outline" onClick={generateSubSpaces}>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Generoi tilat
-                      </Button>
-                    )}
+                    <Button type="button" variant="outline" onClick={generateSubSpaces}>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generoi tilat
+                    </Button>
                   </div>
                 </CardContent>
               )}
