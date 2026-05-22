@@ -143,11 +143,13 @@ export default function PropertyDetailPage() {
       setProperty(prop)
 
       // Load sub-spaces (child buildings where property_id = this building)
-      const { data: spaces } = await supabase
+      const { data: spaces, error: spacesError } = await supabase
         .from("buildings")
         .select("*")
         .eq("property_id", parseInt(propertyId))
         .order("name", { ascending: true })
+
+      console.log("[v0] Loading spaces for property_id:", propertyId, "found:", spaces?.length, "error:", spacesError)
 
       if (spaces) {
         setSubSpaces(spaces.map(s => ({
