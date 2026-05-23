@@ -153,7 +153,7 @@ export default async function TimelinePage() {
       suggestions = evals
         .filter((e: any) => e.inspections?.org_id === orgUser?.org_id)
         .map((e: any) => {
-          const category = categories.find(c => c.id === e.category_id)
+          const category = categories.find(c => String(c.id) === String(e.category_id))
           return {
             id: e.id,
             buildingId: e.inspections?.building_id,
@@ -278,7 +278,7 @@ export default async function TimelinePage() {
                     {s.costEstimate > 0 && (
                       <span className="text-sm font-medium">{formatEur(s.costEstimate)}</span>
                     )}
-                    <Link href={`/app/timeline/new?category=${s.categoryId}&building=${s.buildingId}&cost=${s.costEstimate}`}>
+                    <Link href={`/app/timeline/new?building=${s.buildingId}&title=${encodeURIComponent(s.categoryName + ' - ' + s.buildingName)}&cost=${s.costEstimate}`}>
                       <Button size="sm" variant="outline">
                         <Plus className="h-3 w-3 mr-1" />
                         Lisää

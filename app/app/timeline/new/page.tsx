@@ -39,16 +39,21 @@ const categories = [
 function NewInvestointiForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const preselectedBuildingId = searchParams.get("building_id")
+  
+  // Read URL parameters from suggestion
+  const preselectedBuildingId = searchParams.get("building") || searchParams.get("building_id") || ""
+  const preselectedCategory = searchParams.get("category") || ""
+  const preselectedCost = searchParams.get("cost") || ""
+  const preselectedTitle = searchParams.get("title") || ""
   
   const [isLoading, setIsLoading] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
   const [formData, setFormData] = useState({
-    property_id: preselectedBuildingId || "",
-    title: "",
-    category: "",
+    property_id: preselectedBuildingId,
+    title: preselectedTitle,
+    category: preselectedCategory,
     description: "",
-    estimated_cost: "",
+    estimated_cost: preselectedCost,
     priority: "medium",
     planned_year: new Date().getFullYear() + 1,
   })
