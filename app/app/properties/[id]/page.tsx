@@ -756,50 +756,183 @@ export default function PropertyDetailPage() {
               )}
             </div>
           </div>
+
+          {/* Komponenttikohtaiset arviot */}
+          {categoryEvaluations.length > 0 && (
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Rakennusosien kunto</h3>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {categoryEvaluations
+                  .filter(e => e.score !== null)
+                  .sort((a, b) => (a.score || 5) - (b.score || 5))
+                  .map(evaluation => {
+                    const category = categories.find(c => String(c.id) === String(evaluation.category_id))
+                    const scorePercent = ((evaluation.score || 3) / 5) * 100
+                    return (
+                      <div key={evaluation.id} className="p-3 rounded-lg bg-muted/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">{category?.name || `Kategoria ${evaluation.category_id}`}</span>
+                          <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className={`h-full rounded-full ${
+                              scorePercent >= 80 ? "bg-emerald-400" : 
+                              scorePercent >= 60 ? "bg-lime-400" : 
+                              scorePercent >= 40 ? "bg-amber-400" : "bg-red-400"
+                            }`}
+                            style={{ width: `${scorePercent}%` }}
+                          />
+                        </div>
+                        {evaluation.urgency && evaluation.urgency !== 'monitoring' && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Kiireellisyys: {evaluation.urgency === 'immediate' ? 'Välitön' : 
+                              evaluation.urgency === 'soon' ? '1-2 vuotta' : '3-5 vuotta'}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* Korjausvelka Tab */}
         <TabsContent value="korjausvelka" className="space-y-4">
-          <div className="rounded-xl border border-border/50 bg-card p-5">
-            <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausvelka</h3>
-            {korjausVelka > 0 ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Korjausvelka yhteensä</span>
-                    <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausvelka yhteenveto</h3>
+              {korjausVelka > 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Korjausvelka yhteensä</span>
+                      <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
+                    </div>
+                    {property.area_m2 && (
+                      <p className="mt-0.5 text-right text-xs text-muted-foreground">
+                        {formatEur(korjausVelka / property.area_m2)}/m²
+                      </p>
+                    )}
                   </div>
-                  {property.area_m2 && (
-                    <p className="mt-0.5 text-right text-xs text-muted-foreground">
-                      {formatEur(korjausVelka / property.area_m2)}/m²
-                    </p>
-                  )}
+                  <div className="space-y-2 border-t border-border/50 pt-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Kunnossapitotarve</span>
+                      <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Peruskorjaustarve</span>
+                      <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Kehitys- ja muutostarve</span>
+                      <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2 border-t border-border/50 pt-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Kunnossapitotarve</span>
-                    <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Peruskorjaustarve</span>
-                    <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Kehitys- ja muutostarve</span>
-                    <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
-                  </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    {kuntoluokka > 0 
+                      ? "Ei merkittävää korjausvelkaa" 
+                      : "Tee kuntoarvio nähdäksesi korjausvelka"}
+                  </p>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {kuntoluokka > 0 
-                    ? "Ei merkittävää korjausvelkaa" 
-                    : "Tee kuntoarvio nähdäksesi korjausvelka"}
-                </p>
-              </div>
-            )}
+              )}
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Tavoitesuunnitelma</h3>
+              {categoryEvaluations.filter(e => e.cost_estimate && e.cost_estimate > 0).length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-3">Arvioidut korjauskustannukset kiireellisyysjärjestyksessä:</p>
+                  {categoryEvaluations
+                    .filter(e => e.cost_estimate && e.cost_estimate > 0)
+                    .sort((a, b) => {
+                      const urgencyOrder = { 'immediate': 0, 'soon': 1, 'planned': 2, 'monitoring': 3 }
+                      return (urgencyOrder[a.urgency as keyof typeof urgencyOrder] || 3) - 
+                             (urgencyOrder[b.urgency as keyof typeof urgencyOrder] || 3)
+                    })
+                    .slice(0, 5)
+                    .map(evaluation => {
+                      const category = categories.find(c => String(c.id) === String(evaluation.category_id))
+                      return (
+                        <div key={evaluation.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              evaluation.urgency === 'immediate' ? 'bg-red-500' : 
+                              evaluation.urgency === 'soon' ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`} />
+                            <span className="text-sm">{category?.name || `Kategoria ${evaluation.category_id}`}</span>
+                          </div>
+                          <span className="text-sm font-medium">{formatEur(evaluation.cost_estimate || 0)}</span>
+                        </div>
+                      )
+                    })}
+                  <Link href={`/app/timeline/new?building=${property.id}`}>
+                    <Button variant="outline" size="sm" className="w-full mt-2">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Lisää PTS-suunnitelmaan
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    {inspections.length > 0 
+                      ? "Ei arvioituja korjauskustannuksia" 
+                      : "Tee kuntoarvio nähdäksesi tavoitesuunnitelma"}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Komponenttikohtaiset korjaustarpeet */}
+          {categoryEvaluations.filter(e => e.score && e.score <= 3).length > 0 && (
+            <div className="rounded-xl border border-border/50 bg-card p-5">
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausta vaativat kohteet</h3>
+              <div className="space-y-2">
+                {categoryEvaluations
+                  .filter(e => e.score && e.score <= 3)
+                  .sort((a, b) => (a.score || 5) - (b.score || 5))
+                  .map(evaluation => {
+                    const category = categories.find(c => String(c.id) === String(evaluation.category_id))
+                    return (
+                      <div key={evaluation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
+                          <div>
+                            <p className="text-sm font-medium">{category?.name || `Kategoria ${evaluation.category_id}`}</p>
+                            {evaluation.comment && (
+                              <p className="text-xs text-muted-foreground line-clamp-1">{evaluation.comment}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {evaluation.urgency && (
+                            <Badge variant="outline" className={
+                              evaluation.urgency === 'immediate' ? 'border-red-500 text-red-500' : 
+                              evaluation.urgency === 'soon' ? 'border-amber-500 text-amber-500' : ''
+                            }>
+                              {evaluation.urgency === 'immediate' ? 'Välitön' : 
+                               evaluation.urgency === 'soon' ? '1-2v' : 
+                               evaluation.urgency === 'planned' ? '3-5v' : 'Seuranta'}
+                            </Badge>
+                          )}
+                          {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {formatEur(evaluation.cost_estimate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
