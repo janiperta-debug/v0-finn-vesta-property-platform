@@ -269,7 +269,7 @@ export default function NewPropertyPage() {
         const subSpaceInserts = subSpaces.map(s => ({
           org_id: orgUser.org_id,
           property_id: property.id,
-          name: s.number || s.name,
+          name: s.number,
           area_m2: s.squareMeters || null,
           usage_category: s.type,
           notes: s.notes || null,
