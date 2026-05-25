@@ -384,36 +384,51 @@ export default function EditPropertyPage() {
           
           const orgId = orgUsers?.[0]?.org_id
           if (orgId) {
-            const overallScore = calculateOverallCondition(previewAssessment)
+            // Generate assessment if not previewed
+            let assessmentToSave = previewAssessment
+            if (!assessmentToSave) {
+              const buildYear = parseInt(formData.buildYear)
+              const area = parseFloat(formData.squareMeters) || 500
+              if (buildYear > 0) {
+                assessmentToSave = generateInitialAssessment(buildYear, structures, area)
+              }
+            }
             
-            const { data: inspection, error: inspError } = await supabase
-              .from("inspections")
-              .insert({
-                org_id: orgId,
-                building_id: parseInt(propertyId),
-                inspection_date: new Date().toISOString().split('T')[0],
-                inspector_name: "RT-standardi (automaattinen)",
-                inspector_type: null,
-                status: 'completed',
-                overall_score: overallScore,
-                notes: `Automaattisesti generoitu kuntoarvio RT-standardien käyttöikätietojen perusteella. Rakennusvuosi: ${formData.buildYear}.`,
-              })
-              .select()
-              .single()
+            if (assessmentToSave && assessmentToSave.length > 0) {
+              const overallScore = calculateOverallCondition(assessmentToSave)
+              
+              const { data: inspection, error: inspError } = await supabase
+                .from("inspections")
+                .insert({
+                  org_id: orgId,
+                  building_id: parseInt(propertyId),
+                  inspection_date: new Date().toISOString().split('T')[0],
+                  inspector_name: "RT-standardi (automaattinen)",
+                  inspector_type: null,
+                  status: 'completed',
+                  overall_score: overallScore,
+                  notes: `Automaattisesti generoitu kuntoarvio RT-standardien käyttöikätietojen perusteella. Rakennusvuosi: ${formData.buildYear}.`,
+                })
+                .select()
+                .single()
 
-            if (!inspError && inspection) {
-              const categoryEvals = previewAssessment.map(a => ({
-                inspection_id: inspection.id,
-                category_id: a.categoryId,
-                condition_score: a.conditionScore,
-                urgency_class: a.urgencyClass,
-                notes: a.notes,
-                repair_cost_estimate: a.estimatedRepairCost,
-              }))
+              if (!inspError && inspection) {
+                const categoryEvals = assessmentToSave.map(a => ({
+                  inspection_id: inspection.id,
+                  category_id: a.categoryId,
+                  score: a.conditionScore,
+                  urgency: a.urgencyClass,
+                  comment: a.notes,
+                  cost_estimate: a.estimatedRepairCost,
+                  mode: 'basic',
+                  is_applicable: true,
+                  is_migrated: false,
+                }))
 
-              await supabase
-                .from("category_evaluations")
-                .insert(categoryEvals)
+                await supabase
+                  .from("category_evaluations")
+                  .insert(categoryEvals)
+              }
             }
           }
         }
