@@ -163,21 +163,26 @@ export default function PropertyDetailPage() {
       }
 
       // Load inspections for this building
-      const { data: insps } = await supabase
+      const { data: insps, error: inspError } = await supabase
         .from("inspections")
         .select("*")
         .eq("building_id", parseInt(propertyId))
         .order("inspection_date", { ascending: false })
+
+      console.log("[v0] Inspections loaded:", insps?.length, "error:", inspError)
 
       if (insps) {
         setInspections(insps)
         
         // Load category evaluations for the latest inspection
         if (insps.length > 0) {
-          const { data: evals } = await supabase
+          console.log("[v0] Loading category_evaluations for inspection_id:", insps[0].id)
+          const { data: evals, error: evalsError } = await supabase
             .from("category_evaluations")
             .select("*")
             .eq("inspection_id", insps[0].id)
+          
+          console.log("[v0] Category evaluations loaded:", evals?.length, "error:", evalsError, "data:", evals)
           
           if (evals) {
             setCategoryEvaluations(evals)
