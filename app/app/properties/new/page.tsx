@@ -289,8 +289,10 @@ export default function NewPropertyPage() {
       }
 
       // Create initial inspection with RT assessment if enabled
+      console.log("[v0] generateAssessment:", generateAssessment, "previewAssessment:", previewAssessment?.length, "property:", property?.id)
       if (generateAssessment && previewAssessment && previewAssessment.length > 0 && property) {
         const overallScore = calculateOverallCondition(previewAssessment)
+        console.log("[v0] Creating inspection with overallScore:", overallScore)
         
         // Create inspection
         const { data: inspection, error: inspError } = await supabase
@@ -308,6 +310,8 @@ export default function NewPropertyPage() {
           .select()
           .single()
 
+        console.log("[v0] Inspection insert result:", inspection?.id, "error:", inspError)
+
         if (inspError) {
           console.error("Inspection insert error:", inspError)
         } else if (inspection) {
@@ -324,9 +328,14 @@ export default function NewPropertyPage() {
             is_migrated: false,
           }))
 
-          const { error: catError } = await supabase
+          console.log("[v0] Inserting categoryEvals:", categoryEvals.length, "items")
+
+          const { data: catData, error: catError } = await supabase
             .from("category_evaluations")
             .insert(categoryEvals)
+            .select()
+
+          console.log("[v0] Category evaluation insert result:", catData?.length, "error:", catError)
 
           if (catError) {
             console.error("Category evaluation insert error:", catError)
