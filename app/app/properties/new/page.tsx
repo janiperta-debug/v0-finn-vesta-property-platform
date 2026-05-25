@@ -231,10 +231,20 @@ export default function NewPropertyPage() {
       const orgUser = orgUsers?.[0]
       if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt")
 
+      // Generate assessment if enabled (even if not previewed)
+      let assessmentToSave = previewAssessment
+      if (generateAssessment && !assessmentToSave) {
+        const buildYear = parseInt(formData.buildYear)
+        const area = parseFloat(formData.squareMeters) || 500
+        if (buildYear > 0) {
+          assessmentToSave = generateInitialAssessment(buildYear, structures, area)
+        }
+      }
+
       // Calculate overall condition if assessment is generated
       let conditionClass = null
-      if (generateAssessment && previewAssessment && previewAssessment.length > 0) {
-        conditionClass = calculateOverallCondition(previewAssessment)
+      if (generateAssessment && assessmentToSave && assessmentToSave.length > 0) {
+        conditionClass = calculateOverallCondition(assessmentToSave)
       }
 
       // Combine notes with structure data as JSON
@@ -289,9 +299,9 @@ export default function NewPropertyPage() {
       }
 
       // Create initial inspection with RT assessment if enabled
-      console.log("[v0] generateAssessment:", generateAssessment, "previewAssessment:", previewAssessment?.length, "property:", property?.id)
-      if (generateAssessment && previewAssessment && previewAssessment.length > 0 && property) {
-        const overallScore = calculateOverallCondition(previewAssessment)
+      console.log("[v0] generateAssessment:", generateAssessment, "assessmentToSave:", assessmentToSave?.length, "property:", property?.id)
+      if (generateAssessment && assessmentToSave && assessmentToSave.length > 0 && property) {
+        const overallScore = calculateOverallCondition(assessmentToSave)
         console.log("[v0] Creating inspection with overallScore:", overallScore)
         
         // Create inspection
@@ -316,7 +326,7 @@ export default function NewPropertyPage() {
           console.error("Inspection insert error:", inspError)
         } else if (inspection) {
           // Save category evaluations with correct column names
-          const categoryEvals = previewAssessment.map(a => ({
+          const categoryEvals = assessmentToSave.map(a => ({
             inspection_id: inspection.id,
             category_id: a.categoryId,
             score: a.conditionScore,
