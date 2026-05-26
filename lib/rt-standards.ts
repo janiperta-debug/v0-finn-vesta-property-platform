@@ -4,23 +4,39 @@
 // Mapping from string category IDs to database integer IDs
 // These match the inspection_categories table in Supabase
 export const categoryIdMapping: Record<string, number> = {
+  // Rakenteet
   'perustukset': 1,
   'runko': 2,
   'julkisivut': 3,
   'ikkunat': 4,
   'ovet': 5,
+  'katto': 6,
+  'vesikate': 7,
+  // Sisätilat
+  'sisatilat-pinnat': 8,
+  'sisatilat-kalusteet': 9,
+  'markatilat': 10,
+  // LVI
+  'lvi-lammitys': 11,
+  'lvi-vesi': 12,
+  'lvi-ilmanvaihto': 13,
+  // Sähkö ja hissit
+  'sahko': 14,
+  'hissi': 15,
+  // Piha ja erityis
+  'piha': 16,
+  'erityisrakenteet': 17,
+  // Legacy mappings (for older data)
   'vesikatto': 6,
-  'ylapohja': 7,
+  'ylapohja': 6,
   'sisatilat': 8,
-  'lammitys': 9,
-  'ilmanvaihto': 10,
-  'vesi': 11,
-  'sahko': 12,
-  'hissit': 13,
-  'piha': 14,
-  'talotekniikka': 15,
-  'turvallisuus': 16,
-  'energia': 17,
+  'lammitys': 11,
+  'ilmanvaihto': 13,
+  'vesi': 12,
+  'hissit': 15,
+  'talotekniikka': 11,
+  'turvallisuus': 14,
+  'energia': 11,
 }
 
 export interface ComponentLifespan {

@@ -33,6 +33,7 @@ import { toast } from "sonner"
 import { CategoryGrid, CategorySummaryStats } from "@/components/kuntoarvio/category-card"
 import { EvaluationForm, EvaluationProgress } from "@/components/kuntoarvio/evaluation-form"
 import { allCategoryIds } from "@/lib/kuntoarvio-data"
+import { categoryIdMapping } from "@/lib/rt-standards"
 import type { CategoryEvaluation } from "@/lib/kuntoarvio-types"
 
 interface Inspection {
@@ -151,8 +152,14 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
         .eq("inspection_id", inspectionId)
 
       if (data) {
+        // Create reverse mapping: number -> string
+        const reverseMapping: Record<number, string> = {}
+        for (const [strId, numId] of Object.entries(categoryIdMapping)) {
+          reverseMapping[numId] = strId
+        }
+        
         setCategoryEvaluations(data.map((e: any) => ({
-          categoryId: String(e.category_id),
+          categoryId: reverseMapping[e.category_id] || String(e.category_id),
           date: new Date().toISOString().split('T')[0],
           mode: e.mode || 'basic',
           overallScore: e.score,
@@ -168,12 +175,20 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
     try {
       const supabase = createClient()
       
+      // Convert string category ID to numeric ID for database
+      const numericCategoryId = categoryIdMapping[evaluation.categoryId] || 0
+      if (numericCategoryId === 0) {
+        console.error("Unknown category ID:", evaluation.categoryId)
+        toast.error("Tuntematon kategoria")
+        return
+      }
+      
       // Check if exists
       const { data: existing } = await supabase
         .from("category_evaluations")
         .select("id")
         .eq("inspection_id", inspectionId)
-        .eq("category_id", parseInt(evaluation.categoryId))
+        .eq("category_id", numericCategoryId)
         .single()
 
       if (existing) {
@@ -190,7 +205,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
           .from("category_evaluations")
           .insert({
             inspection_id: inspectionId,
-            category_id: parseInt(evaluation.categoryId),
+            category_id: numericCategoryId,
             score: evaluation.overallScore,
             mode: evaluation.mode,
             comment: evaluation.notes || null,
