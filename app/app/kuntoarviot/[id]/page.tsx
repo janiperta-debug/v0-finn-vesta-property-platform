@@ -278,21 +278,26 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
   }
 
   const handleMarkComplete = async () => {
+    console.log("[v0] handleMarkComplete called, inspectionId:", inspectionId)
     setSaving(true)
     try {
       const supabase = createClient()
       
-      const { error } = await supabase
+      console.log("[v0] Updating inspection status to completed")
+      const { data, error } = await supabase
         .from("inspections")
         .update({ status: "completed" })
         .eq("id", inspectionId)
+        .select()
+
+      console.log("[v0] Update result - data:", data, "error:", error)
 
       if (error) throw error
 
       toast.success("Tarkastus merkitty valmiiksi")
       loadInspection()
     } catch (error) {
-      console.error("Error:", error)
+      console.error("[v0] Error:", error)
       toast.error("Toiminto epäonnistui")
     } finally {
       setSaving(false)
