@@ -237,7 +237,7 @@ export default function NewPropertyPage() {
         const buildYear = parseInt(formData.buildYear)
         const area = parseFloat(formData.squareMeters) || 500
         if (buildYear > 0) {
-          assessmentToSave = generateInitialAssessment(buildYear, structures, area)
+          assessmentToSave = generateInitialAssessment(buildYear, area, structures)
         }
       }
 
@@ -299,10 +299,8 @@ export default function NewPropertyPage() {
       }
 
       // Create initial inspection with RT assessment if enabled
-      console.log("[v0] generateAssessment:", generateAssessment, "assessmentToSave:", assessmentToSave?.length, "property:", property?.id)
       if (generateAssessment && assessmentToSave && assessmentToSave.length > 0 && property) {
         const overallScore = calculateOverallCondition(assessmentToSave)
-        console.log("[v0] Creating inspection with overallScore:", overallScore)
         
         // Create inspection
         const { data: inspection, error: inspError } = await supabase
@@ -320,8 +318,6 @@ export default function NewPropertyPage() {
           .select()
           .single()
 
-        console.log("[v0] Inspection insert result:", inspection?.id, "error:", inspError)
-
         if (inspError) {
           console.error("Inspection insert error:", inspError)
         } else if (inspection) {
@@ -338,14 +334,9 @@ export default function NewPropertyPage() {
             is_migrated: false,
           }))
 
-          console.log("[v0] Inserting categoryEvals:", categoryEvals.length, "items")
-
-          const { data: catData, error: catError } = await supabase
+          const { error: catError } = await supabase
             .from("category_evaluations")
             .insert(categoryEvals)
-            .select()
-
-          console.log("[v0] Category evaluation insert result:", catData?.length, "error:", catError)
 
           if (catError) {
             console.error("Category evaluation insert error:", catError)
