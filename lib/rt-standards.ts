@@ -1,6 +1,44 @@
 // RT-korttien mukaiset rakennusosien käyttöiät ja kuntoluokitus
 // Perustuu RT 18-10922 ja TALO 2000 -nimikkeistöön
 
+// Mapping from string category IDs to database integer IDs
+// These match the inspection_categories table in Supabase
+export const categoryIdMapping: Record<string, number> = {
+  // Rakenteet
+  'perustukset': 1,
+  'runko': 2,
+  'julkisivut': 3,
+  'ikkunat': 4,
+  'ovet': 5,
+  'katto': 6,
+  'vesikate': 7,
+  // Sisätilat
+  'sisatilat-pinnat': 8,
+  'sisatilat-kalusteet': 9,
+  'markatilat': 10,
+  // LVI
+  'lvi-lammitys': 11,
+  'lvi-vesi': 12,
+  'lvi-ilmanvaihto': 13,
+  // Sähkö ja hissit
+  'sahko': 14,
+  'hissi': 15,
+  // Piha ja erityis
+  'piha': 16,
+  'erityisrakenteet': 17,
+  // Legacy mappings (for older data)
+  'vesikatto': 6,
+  'ylapohja': 6,
+  'sisatilat': 8,
+  'lammitys': 11,
+  'ilmanvaihto': 13,
+  'vesi': 12,
+  'hissit': 15,
+  'talotekniikka': 11,
+  'turvallisuus': 14,
+  'energia': 11,
+}
+
 export interface ComponentLifespan {
   id: string
   name: string
@@ -204,7 +242,7 @@ export function calculateRepairCost(
 
 // Generate initial building assessment based on RT standards
 export interface GeneratedAssessment {
-  categoryId: string
+  categoryId: number // Numeric ID matching inspection_categories table
   categoryName: string
   conditionScore: number
   urgencyClass: number
@@ -257,7 +295,7 @@ export function generateInitialAssessment(
     }
 
     assessments.push({
-      categoryId: component.categoryId,
+      categoryId: categoryIdMapping[component.categoryId] || 0, // Use numeric ID for database
       categoryName: component.name,
       conditionScore,
       urgencyClass,
@@ -274,18 +312,18 @@ export function generateInitialAssessment(
 export function calculateOverallCondition(assessments: GeneratedAssessment[]): number {
   if (assessments.length === 0) return 3
 
-  // Weighted average - structural components have higher weight
-  const weights: Record<string, number> = {
-    perustukset: 1.5,
-    runko: 1.5,
-    julkisivut: 1.2,
-    vesikatto: 1.3,
-    ikkunat: 1.0,
-    lammitys: 1.1,
-    ilmanvaihto: 1.0,
-    vesi: 1.2,
-    sahko: 1.0,
-    hissit: 0.8,
+  // Weighted average - structural components have higher weight (using numeric IDs)
+  const weights: Record<number, number> = {
+    1: 1.5,  // perustukset
+    2: 1.5,  // runko
+    3: 1.2,  // julkisivut
+    6: 1.3,  // vesikatto
+    4: 1.0,  // ikkunat
+    9: 1.1,  // lammitys
+    10: 1.0, // ilmanvaihto
+    11: 1.2, // vesi
+    12: 1.0, // sahko
+    13: 0.8, // hissit
   }
 
   let totalWeight = 0
