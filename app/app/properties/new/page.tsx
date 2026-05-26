@@ -237,7 +237,20 @@ export default function NewPropertyPage() {
         const buildYear = parseInt(formData.buildYear)
         const area = parseFloat(formData.squareMeters) || 500
         if (buildYear > 0) {
-          assessmentToSave = generateInitialAssessment(buildYear, area, structures)
+          // Use default structures if not set
+          const structuresToUse: BuildingStructureData = {
+            foundation: structures.foundation || "paikallavalettu",
+            frame: structures.frame || "betoni",
+            facade: structures.facade || "rappaus",
+            roof: structures.roof || "huopa",
+            windows: structures.windows || "puu-2",
+            heating: structures.heating || "kaukolampo",
+            ventilation: structures.ventilation || "koneellinen-poisto",
+            plumbing: structures.plumbing || "kupari",
+            electrical: structures.electrical || "alkuperainen",
+            elevator: structures.elevator || "ei",
+          }
+          assessmentToSave = generateInitialAssessment(buildYear, area, structuresToUse)
         }
       }
 

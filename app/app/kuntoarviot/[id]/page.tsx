@@ -152,11 +152,11 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
 
       if (data) {
         setCategoryEvaluations(data.map((e: any) => ({
-          categoryId: e.category_id,
-          date: e.evaluation_date || new Date().toISOString().split('T')[0],
+          categoryId: String(e.category_id),
+          date: new Date().toISOString().split('T')[0],
           mode: e.mode || 'basic',
-          overallScore: e.overall_score,
-          notes: e.notes,
+          overallScore: e.score,
+          notes: e.comment,
         })))
       }
     } catch (error) {
@@ -173,17 +173,16 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
         .from("category_evaluations")
         .select("id")
         .eq("inspection_id", inspectionId)
-        .eq("category_id", evaluation.categoryId)
+        .eq("category_id", parseInt(evaluation.categoryId))
         .single()
 
       if (existing) {
         await supabase
           .from("category_evaluations")
           .update({
-            overall_score: evaluation.overallScore,
+            score: evaluation.overallScore,
             mode: evaluation.mode,
-            notes: evaluation.notes,
-            evaluation_date: evaluation.date,
+            comment: evaluation.notes || null,
           })
           .eq("id", existing.id)
       } else {
@@ -191,11 +190,12 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
           .from("category_evaluations")
           .insert({
             inspection_id: inspectionId,
-            category_id: evaluation.categoryId,
-            overall_score: evaluation.overallScore,
+            category_id: parseInt(evaluation.categoryId),
+            score: evaluation.overallScore,
             mode: evaluation.mode,
-            notes: evaluation.notes,
-            evaluation_date: evaluation.date,
+            comment: evaluation.notes || null,
+            is_applicable: true,
+            is_migrated: false,
           })
       }
 
