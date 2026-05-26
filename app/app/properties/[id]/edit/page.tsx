@@ -426,11 +426,19 @@ export default function EditPropertyPage() {
                 .single()
 
               if (!inspError && inspection) {
+                // Map urgency number to text for database
+                const urgencyMap: Record<number, string> = {
+                  1: 'immediate',
+                  2: 'soon',
+                  3: 'planned',
+                  4: 'monitoring',
+                }
+                
                 const categoryEvals = assessmentToSave.map(a => ({
                   inspection_id: inspection.id,
                   category_id: a.categoryId,
                   score: a.conditionScore,
-                  urgency: a.urgencyClass,
+                  urgency: urgencyMap[a.urgencyClass] || 'monitoring',
                   comment: a.notes,
                   cost_estimate: a.estimatedRepairCost,
                   mode: 'basic',
