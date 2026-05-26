@@ -417,8 +417,8 @@ export default function EditPropertyPage() {
                   building_id: parseInt(propertyId),
                   inspection_date: new Date().toISOString().split('T')[0],
                   inspector_name: "RT-standardi (automaattinen)",
-                  inspector_type: 'self',
-                  status: 'completed',
+                  inspector_type: 'property_manager',
+                  status: 'complete',
                   overall_score: overallScore,
                   notes: `Automaattisesti generoitu kuntoarvio RT-standardien käyttöikätietojen perusteella. Rakennusvuosi: ${formData.buildYear}.`,
                 })
@@ -428,17 +428,17 @@ export default function EditPropertyPage() {
               if (!inspError && inspection) {
                 // Map urgency number to text for database
                 const urgencyMap: Record<number, string> = {
-                  1: 'immediate',
-                  2: 'soon',
-                  3: 'planned',
-                  4: 'monitoring',
+                  1: 'valitom',
+                  2: '1_3v',
+                  3: '3_5v',
+                  4: '5_10v',
                 }
                 
                 const categoryEvals = assessmentToSave.map(a => ({
                   inspection_id: inspection.id,
                   category_id: a.categoryId,
                   score: a.conditionScore,
-                  urgency: urgencyMap[a.urgencyClass] || 'monitoring',
+                  urgency: urgencyMap[a.urgencyClass] || '5_10v',
                   comment: a.notes,
                   cost_estimate: a.estimatedRepairCost,
                   mode: 'basic',
