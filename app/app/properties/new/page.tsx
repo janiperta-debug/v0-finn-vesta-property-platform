@@ -323,8 +323,8 @@ export default function NewPropertyPage() {
             building_id: property.id,
             inspection_date: new Date().toISOString().split('T')[0],
             inspector_name: "RT-standardi (automaattinen)",
-            inspector_type: 'self',
-            status: 'completed',
+            inspector_type: 'property_manager',
+            status: 'complete',
             overall_score: overallScore,
             notes: `Automaattisesti generoitu kuntoarvio RT-standardien käyttöikätietojen perusteella. Rakennusvuosi: ${formData.buildYear}. Arvio perustuu tyypillisiin käyttöikiin eikä huomioi tehtyjä korjauksia.`,
           })
