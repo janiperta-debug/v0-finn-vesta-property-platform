@@ -283,10 +283,11 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
     try {
       const supabase = createClient()
       
-      console.log("[v0] Updating inspection status to completed")
+      // Use "approved" status - "completed" may not be allowed by database CHECK constraint
+      console.log("[v0] Updating inspection status to approved")
       const { data, error } = await supabase
         .from("inspections")
-        .update({ status: "completed" })
+        .update({ status: "approved" })
         .eq("id", inspectionId)
         .select()
 
