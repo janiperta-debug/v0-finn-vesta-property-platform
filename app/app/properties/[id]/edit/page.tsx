@@ -390,7 +390,7 @@ export default function EditPropertyPage() {
               const buildYear = parseInt(formData.buildYear)
               const area = parseFloat(formData.squareMeters) || 500
               if (buildYear > 0) {
-                assessmentToSave = generateInitialAssessment(buildYear, structures, area)
+                assessmentToSave = generateInitialAssessment(buildYear, area, structures)
               }
             }
             
