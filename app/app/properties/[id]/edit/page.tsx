@@ -417,7 +417,7 @@ export default function EditPropertyPage() {
                   building_id: parseInt(propertyId),
                   inspection_date: new Date().toISOString().split('T')[0],
                   inspector_name: "RT-standardi (automaattinen)",
-                  inspector_type: null,
+                  inspector_type: 'self',
                   status: 'completed',
                   overall_score: overallScore,
                   notes: `Automaattisesti generoitu kuntoarvio RT-standardien käyttöikätietojen perusteella. Rakennusvuosi: ${formData.buildYear}.`,
@@ -455,7 +455,7 @@ export default function EditPropertyPage() {
         }
       }
 
-      toast.success("Kiinteistö päivitetty")
+      toast.success("Kiinteistö p��ivitetty")
       router.push(`/app/properties/${propertyId}`)
     } catch (error: any) {
       console.error("Update error:", error)
