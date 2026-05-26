@@ -278,6 +278,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
   }
 
   const handleMarkComplete = async () => {
+    console.log("[v0] handleMarkComplete called, inspectionId:", inspectionId)
     setSaving(true)
     try {
       const supabase = createClient()
@@ -537,7 +538,7 @@ export default function InspectionDetailPage({ params }: { params: Promise<{ id:
                         <SelectContent>
                           <SelectItem value="draft">Luonnos</SelectItem>
                           <SelectItem value="in_progress">Käynnissä</SelectItem>
-                          <SelectItem value="completed">Valmis</SelectItem>
+                          <SelectItem value="complete">Valmis</SelectItem>
                           <SelectItem value="approved">Hyväksytty</SelectItem>
                         </SelectContent>
                       </Select>

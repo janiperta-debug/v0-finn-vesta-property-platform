@@ -100,7 +100,7 @@ export default function KomponentitPage() {
         .from("inspections")
         .select("*")
         .eq("building_id", parseInt(propertyId))
-        .in("status", ["completed", "approved"])
+        .in("status", ["complete", "approved"])
         .order("inspection_date", { ascending: false })
         .limit(1)
 

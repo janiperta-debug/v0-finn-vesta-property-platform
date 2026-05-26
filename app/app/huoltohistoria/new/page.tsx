@@ -104,7 +104,7 @@ export default function NewHuoltotyoPage() {
           kustannus: formData.cost ? parseFloat(formData.cost) : null,
           pvm: formData.completed_date,
           urakoitsija: formData.contractor,
-          tila: 'completed',
+          tila: 'complete',
         })
 
       if (error) throw error

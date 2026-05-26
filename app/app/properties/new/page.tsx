@@ -336,10 +336,10 @@ export default function NewPropertyPage() {
         } else if (inspection) {
           // Map urgency number to text for database
           const urgencyMap: Record<number, string> = {
-            1: 'valitom',
-            2: '1_3v',
-            3: '3_5v',
-            4: '5_10v',
+            1: 'immediate',
+            2: 'soon',
+            3: 'planned',
+            4: 'monitoring',
           }
           
           // Save category evaluations with correct column names
@@ -347,7 +347,7 @@ export default function NewPropertyPage() {
             inspection_id: inspection.id,
             category_id: a.categoryId,
             score: a.conditionScore,
-            urgency: urgencyMap[a.urgencyClass] || '5_10v',
+            urgency: urgencyMap[a.urgencyClass] || 'monitoring',
             comment: a.notes,
             cost_estimate: a.estimatedRepairCost,
             mode: 'basic',

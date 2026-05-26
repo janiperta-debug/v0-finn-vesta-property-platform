@@ -32,7 +32,7 @@ interface InvestmentItem {
   year: number
   estimatedCost: number
   priority: "low" | "medium" | "high" | "critical"
-  status: "planned" | "approved" | "completed"
+  status: "planned" | "approved" | "complete"
 }
 
 const priorityConfig = {

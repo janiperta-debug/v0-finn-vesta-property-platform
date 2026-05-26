@@ -42,7 +42,7 @@ interface MaintenanceTask {
   category: string
   date: string
   cost: number
-  status: 'planned' | 'in-progress' | 'completed'
+  status: 'planned' | 'in-progress' | 'complete'
   contractor?: string
 }
 
@@ -114,7 +114,7 @@ export default async function HuoltohistoriaPage() {
         }))
 
         totalCost = tasks.reduce((sum, t) => sum + t.cost, 0)
-        completedCount = tasks.filter(t => t.status === 'completed').length
+        completedCount = tasks.filter(t => t.status === 'complete').length
         plannedCount = tasks.filter(t => t.status === 'planned').length
       }
     }
@@ -125,7 +125,7 @@ export default async function HuoltohistoriaPage() {
   const statusConfig = {
     planned: { label: 'Suunniteltu', variant: 'secondary' as const, icon: Clock },
     'in-progress': { label: 'Käynnissä', variant: 'default' as const, icon: AlertCircle },
-    completed: { label: 'Valmis', variant: 'outline' as const, icon: CheckCircle },
+    complete: { label: 'Valmis', variant: 'outline' as const, icon: CheckCircle },
   }
 
   function formatEur(value: number) {
@@ -218,7 +218,7 @@ export default async function HuoltohistoriaPage() {
                   <SelectItem value="all">Kaikki</SelectItem>
                   <SelectItem value="planned">Suunnitellut</SelectItem>
                   <SelectItem value="in-progress">Käynnissä</SelectItem>
-                  <SelectItem value="completed">Valmiit</SelectItem>
+                  <SelectItem value="complete">Valmiit</SelectItem>
                 </SelectContent>
               </Select>
             </div>

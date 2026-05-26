@@ -97,7 +97,7 @@ export default function KuntoarviotPage() {
     fetchData()
   }, [router])
 
-  const completedCount = inspections.filter(i => i.status === "completed" || i.status === "approved").length
+  const completedCount = inspections.filter(i => i.status === "complete" || i.status === "approved").length
   const inProgressCount = inspections.filter(i => i.status === "draft" || i.status === "in-progress").length
 
   if (isLoading) {
@@ -222,8 +222,8 @@ export default function KuntoarviotPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <Badge variant={inspection.status === "completed" || inspection.status === "approved" ? "default" : "secondary"}>
-                        {inspection.status === "completed" || inspection.status === "approved" ? "Valmis" : "Kesken"}
+                      <Badge variant={inspection.status === "complete" || inspection.status === "approved" ? "default" : "secondary"}>
+                        {inspection.status === "complete" || inspection.status === "approved" ? "Valmis" : "Kesken"}
                       </Badge>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
