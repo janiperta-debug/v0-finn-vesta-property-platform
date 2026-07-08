@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { categories } from "@/lib/kuntoarvio-data"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -130,6 +129,10 @@ export default async function TimelinePage() {
         inspections!inner (
           building_id,
           org_id
+        ),
+        inspection_categories!inner (
+          id,
+          name
         )
       `)
       .lte('score', 2)
@@ -153,13 +156,12 @@ export default async function TimelinePage() {
       suggestions = evals
         .filter((e: any) => e.inspections?.org_id === orgUser?.org_id)
         .map((e: any) => {
-          const category = categories.find(c => String(c.id) === String(e.category_id))
           return {
             id: e.id,
             buildingId: e.inspections?.building_id,
             buildingName: buildingMap.get(e.inspections?.building_id) || 'Tuntematon',
             categoryId: e.category_id,
-            categoryName: category?.name || `Kategoria ${e.category_id}`,
+            categoryName: e.inspection_categories?.name || `Kategoria ${e.category_id}`,
             score: e.score,
             urgency: e.urgency || 'monitoring',
             costEstimate: e.cost_estimate || 0,
