@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/kuntoarvio-data"
+import { categoryIdMapping } from "@/lib/rt-standards"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -111,6 +112,37 @@ const getKlaBgColor = (score: number) => {
 
 const formatEur = (value: number) => 
   new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+
+// Reverse mapping: numeric category_id (from database) -> string category id (used in categories list)
+const numericToStringCategoryId: Record<number, string> = Object.fromEntries(
+  Object.entries(categoryIdMapping).map(([strId, numId]) => [numId, strId])
+)
+
+// Resolve a display name for a category_id that may be numeric (database) or a string id
+const getCategoryName = (categoryId: number | string): string => {
+  // Try direct string match first (e.g. "perustukset")
+  let category = categories.find(c => String(c.id) === String(categoryId))
+  // If not found, treat categoryId as a numeric database id and map it back to the string id
+  if (!category) {
+    const strId = numericToStringCategoryId[Number(categoryId)]
+    if (strId) {
+      category = categories.find(c => c.id === strId)
+    }
+  }
+  return category?.name || `Kategoria ${categoryId}`
+}
+
+// Urgency values stored in the database (matches the inspections/category_evaluations CHECK constraint)
+const URGENCY_META: Record<string, { label: string; rank: number; dot: string; badge: string }> = {
+  valitom: { label: "Välitön", rank: 0, dot: "bg-red-500", badge: "border-red-500 text-red-500" },
+  "1_3v": { label: "1-3 vuotta", rank: 1, dot: "bg-amber-500", badge: "border-amber-500 text-amber-500" },
+  "3_5v": { label: "3-5 vuotta", rank: 2, dot: "bg-lime-500", badge: "" },
+  "5_10v": { label: "5-10 vuotta", rank: 3, dot: "bg-emerald-500", badge: "" },
+}
+const getUrgencyLabel = (u?: string | null) => (u ? URGENCY_META[u]?.label : undefined) || "Seuranta"
+const getUrgencyRank = (u?: string | null) => (u && URGENCY_META[u] ? URGENCY_META[u].rank : 3)
+const getUrgencyDot = (u?: string | null) => (u ? URGENCY_META[u]?.dot : undefined) || "bg-emerald-500"
+const getUrgencyBadge = (u?: string | null) => (u ? URGENCY_META[u]?.badge : undefined) || ""
 
 export default function PropertyDetailPage() {
   const params = useParams()
@@ -483,18 +515,15 @@ export default function PropertyDetailPage() {
                       .sort((a, b) => (a.score || 0) - (b.score || 0))
                       .slice(0, 9)
                       .map(evaluation => {
-                        const category = categories.find(c => String(c.id) === String(evaluation.category_id))
                         return (
                           <div key={evaluation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                             <div className="flex items-center gap-3">
                               <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
                               <div>
-                                <p className="text-sm font-medium">{category?.name || `Kategoria ${evaluation.category_id}`}</p>
+                                <p className="text-sm font-medium">{getCategoryName(evaluation.category_id)}</p>
                                 {evaluation.urgency && (
                                   <p className="text-xs text-muted-foreground">
-                                    {evaluation.urgency === 'immediate' ? 'Välitön' : 
-                                     evaluation.urgency === 'soon' ? '1-2v' : 
-                                     evaluation.urgency === 'planned' ? '3-5v' : 'Seuranta'}
+                                    {getUrgencyLabel(evaluation.urgency)}
                                   </p>
                                 )}
                               </div>
@@ -766,12 +795,11 @@ export default function PropertyDetailPage() {
                   .filter(e => e.score !== null)
                   .sort((a, b) => (a.score || 5) - (b.score || 5))
                   .map(evaluation => {
-                    const category = categories.find(c => String(c.id) === String(evaluation.category_id))
                     const scorePercent = ((evaluation.score || 3) / 5) * 100
                     return (
                       <div key={evaluation.id} className="p-3 rounded-lg bg-muted/50">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{category?.name || `Kategoria ${evaluation.category_id}`}</span>
+                          <span className="text-sm font-medium">{getCategoryName(evaluation.category_id)}</span>
                           <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
                         </div>
                         <div className="h-2 overflow-hidden rounded-full bg-secondary">
@@ -784,10 +812,9 @@ export default function PropertyDetailPage() {
                             style={{ width: `${scorePercent}%` }}
                           />
                         </div>
-                        {evaluation.urgency && evaluation.urgency !== 'monitoring' && (
+                        {evaluation.urgency && evaluation.urgency !== '5_10v' && (
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Kiireellisyys: {evaluation.urgency === 'immediate' ? 'Välitön' : 
-                              evaluation.urgency === 'soon' ? '1-2 vuotta' : '3-5 vuotta'}
+                            Kiireellisyys: {getUrgencyLabel(evaluation.urgency)}
                           </p>
                         )}
                       </div>
@@ -849,22 +876,14 @@ export default function PropertyDetailPage() {
                   <p className="text-sm text-muted-foreground mb-3">Arvioidut korjauskustannukset kiireellisyysjärjestyksessä:</p>
                   {categoryEvaluations
                     .filter(e => e.cost_estimate && e.cost_estimate > 0)
-                    .sort((a, b) => {
-                      const urgencyOrder = { 'immediate': 0, 'soon': 1, 'planned': 2, 'monitoring': 3 }
-                      return (urgencyOrder[a.urgency as keyof typeof urgencyOrder] || 3) - 
-                             (urgencyOrder[b.urgency as keyof typeof urgencyOrder] || 3)
-                    })
+                    .sort((a, b) => getUrgencyRank(a.urgency) - getUrgencyRank(b.urgency))
                     .slice(0, 5)
                     .map(evaluation => {
-                      const category = categories.find(c => String(c.id) === String(evaluation.category_id))
                       return (
                         <div key={evaluation.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              evaluation.urgency === 'immediate' ? 'bg-red-500' : 
-                              evaluation.urgency === 'soon' ? 'bg-amber-500' : 'bg-emerald-500'
-                            }`} />
-                            <span className="text-sm">{category?.name || `Kategoria ${evaluation.category_id}`}</span>
+                            <div className={`w-2 h-2 rounded-full ${getUrgencyDot(evaluation.urgency)}`} />
+                            <span className="text-sm">{getCategoryName(evaluation.category_id)}</span>
                           </div>
                           <span className="text-sm font-medium">{formatEur(evaluation.cost_estimate || 0)}</span>
                         </div>
@@ -898,13 +917,12 @@ export default function PropertyDetailPage() {
                   .filter(e => e.score && e.score <= 3)
                   .sort((a, b) => (a.score || 5) - (b.score || 5))
                   .map(evaluation => {
-                    const category = categories.find(c => String(c.id) === String(evaluation.category_id))
                     return (
                       <div key={evaluation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                         <div className="flex items-center gap-3">
                           <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
                           <div>
-                            <p className="text-sm font-medium">{category?.name || `Kategoria ${evaluation.category_id}`}</p>
+                            <p className="text-sm font-medium">{getCategoryName(evaluation.category_id)}</p>
                             {evaluation.comment && (
                               <p className="text-xs text-muted-foreground line-clamp-1">{evaluation.comment}</p>
                             )}
@@ -912,13 +930,8 @@ export default function PropertyDetailPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           {evaluation.urgency && (
-                            <Badge variant="outline" className={
-                              evaluation.urgency === 'immediate' ? 'border-red-500 text-red-500' : 
-                              evaluation.urgency === 'soon' ? 'border-amber-500 text-amber-500' : ''
-                            }>
-                              {evaluation.urgency === 'immediate' ? 'Välitön' : 
-                               evaluation.urgency === 'soon' ? '1-2v' : 
-                               evaluation.urgency === 'planned' ? '3-5v' : 'Seuranta'}
+                            <Badge variant="outline" className={getUrgencyBadge(evaluation.urgency)}>
+                              {getUrgencyLabel(evaluation.urgency)}
                             </Badge>
                           )}
                           {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
