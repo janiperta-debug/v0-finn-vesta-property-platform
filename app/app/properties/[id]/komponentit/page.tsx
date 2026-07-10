@@ -16,24 +16,13 @@ import {
   ClipboardCheck,
 } from "lucide-react"
 import { toast } from "sonner"
-
-interface ComponentCategory {
-  id: string
-  name: string
-  description: string | null
-  sort_order: number
-}
-
-interface CategoryEvaluation {
-  id: string
-  inspection_id: string
-  category_id: number
-  score: number
-  comment: string | null
-  urgency: string | null
-  cost_estimate: number | null
-  category?: ComponentCategory
-}
+import {
+  derivePlanItems,
+  overallCondition,
+  totalRepairCost,
+  URGENCY_LABELS,
+  type PlanItem,
+} from "@/lib/building-plan"
 
 interface Inspection {
   id: string
@@ -52,22 +41,20 @@ const conditionLabels: Record<number, { label: string; color: string; bg: string
   1: { label: "Heikko", color: "text-red-500", bg: "bg-red-500" },
 }
 
-// Urgency-arvot vastaavat tietokannan CHECK-rajoitusta
-const urgencyLabels: Record<string, { label: string; color: string }> = {
-  valitom: { label: "Välitön korjaus", color: "text-red-500" },
-  "1_3v": { label: "1-3 vuotta", color: "text-orange-500" },
-  "3_5v": { label: "3-5 vuotta", color: "text-yellow-500" },
-  "5_10v": { label: "5-10 vuotta", color: "text-muted-foreground" },
+const urgencyColor: Record<string, string> = {
+  valitom: "text-red-500",
+  "1_3v": "text-orange-500",
+  "3_5v": "text-yellow-500",
+  "5_10v": "text-muted-foreground",
 }
 
 export default function KomponentitPage() {
   const params = useParams()
   const propertyId = params.id as string
-  
+
   const [loading, setLoading] = useState(true)
   const [property, setProperty] = useState<any>(null)
-  const [categories, setCategories] = useState<ComponentCategory[]>([])
-  const [evaluations, setEvaluations] = useState<CategoryEvaluation[]>([])
+  const [items, setItems] = useState<PlanItem[]>([])
   const [latestInspection, setLatestInspection] = useState<Inspection | null>(null)
 
   useEffect(() => {
@@ -79,22 +66,14 @@ export default function KomponentitPage() {
     try {
       const supabase = createClient()
 
-      // Load property
+      // Load property basics
       const { data: prop } = await supabase
         .from("buildings")
         .select("*")
-        .eq("id", propertyId)
+        .eq("id", parseInt(propertyId))
         .single()
 
       if (prop) setProperty(prop)
-
-      // Load inspection categories (reference data)
-      const { data: cats } = await supabase
-        .from("inspection_categories")
-        .select("*")
-        .order("sort_order", { ascending: true })
-
-      if (cats) setCategories(cats)
 
       // Load latest inspection for this building (any status, including drafts)
       const { data: inspections } = await supabase
@@ -104,21 +83,30 @@ export default function KomponentitPage() {
         .order("inspection_date", { ascending: false })
         .limit(1)
 
+      let evaluations: any[] = []
       if (inspections && inspections.length > 0) {
         setLatestInspection(inspections[0])
 
-        // Load evaluations for this inspection
         const { data: evals } = await supabase
           .from("category_evaluations")
-          .select("*, inspection_categories(*)")
+          .select("*")
           .eq("inspection_id", inspections[0].id)
 
-        if (evals) {
-          setEvaluations(evals.map(e => ({
-            ...e,
-            category: e.inspection_categories,
-          })))
-        }
+        if (evals) evaluations = evals
+      }
+
+      // Derive per-component condition from building basics + RT standards,
+      // refined by any stored evaluations. Always shows a baseline.
+      if (prop) {
+        const planItems = derivePlanItems(
+          {
+            construction_year: prop.construction_year,
+            area_m2: prop.area_m2,
+            building_type: prop.building_type,
+          },
+          evaluations
+        )
+        setItems(planItems)
       }
     } catch (error) {
       console.error("Load error:", error)
@@ -128,16 +116,10 @@ export default function KomponentitPage() {
     }
   }
 
-  // Calculate stats
-  const avgCondition = evaluations.length > 0
-    ? evaluations.reduce((sum, e) => sum + (e.score || 0), 0) / evaluations.length
-    : 0
-  
-  const urgentCount = evaluations.filter(e => 
-    e.urgency === "valitom" || e.urgency === "1_3v"
-  ).length
-
-  const totalEstimatedCost = evaluations.reduce((sum, e) => sum + (e.cost_estimate || 0), 0)
+  // Stats derived from the plan
+  const avgCondition = overallCondition(items)
+  const urgentCount = items.filter(i => i.urgency === "valitom" || i.urgency === "1_3v").length
+  const totalEstimatedCost = totalRepairCost(items)
 
   function formatEur(value: number) {
     return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
@@ -214,35 +196,40 @@ export default function KomponentitPage() {
         </Card>
       </div>
 
-      {/* Latest inspection info */}
-      {latestInspection && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Viimeisin tarkastus</CardTitle>
+      {/* Source info */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">
+              {latestInspection ? "Viimeisin tarkastus" : "RT-standardiarvio"}
+            </CardTitle>
+            {latestInspection && (
               <Badge variant="outline">
                 {new Date(latestInspection.inspection_date).toLocaleDateString("fi-FI")}
               </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Tarkastaja: {latestInspection.inspector_name || "-"}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            {latestInspection
+              ? `Tarkastaja: ${latestInspection.inspector_name || "-"}. Arviot tarkennettu tarkastuksen tiedoilla.`
+              : "Arviot perustuvat rakennuksen ikään ja RT-standardien käyttöikiin. Tee kuntoarvio tarkentaaksesi."}
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Component list */}
-      {evaluations.length === 0 ? (
+      {items.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="rounded-full bg-muted p-4 mb-4">
               <Layers className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei komponenttiarvioita</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Ei komponenttitietoja</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Komponenttiarviot luodaan kuntoarvion yhteydessä. Tee ensin kuntoarvio tälle kiinteistölle.
+              Lisää rakennuksen perustiedot (rakennusvuosi, pinta-ala, tyyppi) nähdäksesi
+              komponenttikohtaisen kuntoarvion.
             </p>
             <Button asChild>
               <Link href={`/app/kuntoarviot/new?building_id=${propertyId}`}>
@@ -255,47 +242,41 @@ export default function KomponentitPage() {
       ) : (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Komponenttiarviot</h2>
-          {categories.map((category) => {
-            const evaluation = evaluations.find(e => String(e.category_id) === String(category.id))
-            if (!evaluation) return null
-
-            const condition = conditionLabels[evaluation.score] || conditionLabels[3]
-            const urgency = evaluation.urgency ? urgencyLabels[evaluation.urgency] : undefined
-
-            return (
-              <Card key={category.id} className="hover:bg-muted/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`h-3 w-3 rounded-full ${condition.bg}`} />
-                      <div>
-                        <p className="font-medium">{category.name}</p>
-                        <div className="flex items-center gap-3 mt-1 text-sm">
-                          <span className={condition.color}>{condition.label}</span>
-                          {urgency && (
-                            <>
-                              <span className="text-muted-foreground">|</span>
-                              <span className={urgency.color}>{urgency.label}</span>
-                            </>
-                          )}
+          {[...items]
+            .sort((a, b) => a.conditionScore - b.conditionScore)
+            .map((item) => {
+              const condition = conditionLabels[item.conditionScore] || conditionLabels[3]
+              return (
+                <Card key={item.categoryId} className="hover:bg-muted/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`h-3 w-3 rounded-full shrink-0 ${condition.bg}`} />
+                        <div className="min-w-0">
+                          <p className="font-medium">{item.categoryName}</p>
+                          <div className="flex items-center gap-3 mt-1 text-sm flex-wrap">
+                            <span className={condition.color}>{condition.label}</span>
+                            <span className="text-muted-foreground">|</span>
+                            <span className={urgencyColor[item.urgency]}>{URGENCY_LABELS[item.urgency]}</span>
+                            {!item.fromInspection && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">RT-arvio</Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
-                        <p className="font-medium">{formatEur(evaluation.cost_estimate)}</p>
-                      )}
-                      {evaluation.comment && (
-                        <p className="text-xs text-muted-foreground max-w-48 truncate">
-                          {evaluation.comment}
+                      <div className="text-right shrink-0">
+                        {item.cost > 0 && (
+                          <p className="font-medium">{formatEur(item.cost)}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {item.remainingLifespan > 0 ? `~${item.remainingLifespan}v jäljellä` : "käyttöikä ylittynyt"}
                         </p>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                  </CardContent>
+                </Card>
+              )
+            })}
         </div>
       )}
     </div>
