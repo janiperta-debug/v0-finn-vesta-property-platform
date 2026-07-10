@@ -7,38 +7,46 @@ import { Badge } from "@/components/ui/badge"
 import {
   CalendarRange,
   Plus,
-  Euro,
   Building2,
-  ChevronRight,
   AlertTriangle,
-  TrendingUp,
   Download,
 } from "lucide-react"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  derivePlanItems,
+  repairItems,
+  type UrgencyCode,
+} from "@/lib/building-plan"
 
 interface InvestmentItem {
   id: string
   propertyId: string
   propertyName: string
   title: string
-  category: string
   year: number
   estimatedCost: number
   priority: 'low' | 'medium' | 'high' | 'critical'
-  status: 'planned' | 'approved' | 'complete'
+  derived: boolean
 }
 
 const priorityConfig = {
-  low: { label: 'Matala', color: 'text-slate-400', bg: 'bg-slate-500/20' },
-  medium: { label: 'Normaali', color: 'text-blue-400', bg: 'bg-blue-500/20' },
-  high: { label: 'Korkea', color: 'text-amber-400', bg: 'bg-amber-500/20' },
-  critical: { label: 'Kriittinen', color: 'text-red-400', bg: 'bg-red-500/20' },
+  low: { label: 'Matala', color: 'text-slate-400' },
+  medium: { label: 'Normaali', color: 'text-blue-400' },
+  high: { label: 'Korkea', color: 'text-amber-400' },
+  critical: { label: 'Kriittinen', color: 'text-red-400' },
+}
+
+// Map a derived urgency bucket to a target year offset and priority
+const URGENCY_YEAR_OFFSET: Record<UrgencyCode, number> = {
+  valitom: 0,
+  "1_3v": 2,
+  "3_5v": 4,
+  "5_10v": 8,
+}
+const URGENCY_PRIORITY: Record<UrgencyCode, InvestmentItem['priority']> = {
+  valitom: 'critical',
+  "1_3v": 'high',
+  "3_5v": 'medium',
+  "5_10v": 'low',
 }
 
 export default async function TimelinePage() {
@@ -49,9 +57,9 @@ export default async function TimelinePage() {
     redirect("/auth/login")
   }
 
-  let investments: InvestmentItem[] = []
   const currentYear = new Date().getFullYear()
   const years = Array.from({ length: 15 }, (_, i) => currentYear + i)
+  let investments: InvestmentItem[] = []
 
   // Get org_id first
   const { data: orgUsers } = await supabase
@@ -64,123 +72,110 @@ export default async function TimelinePage() {
 
   try {
     if (orgUser?.org_id) {
+      // 1. All buildings in the org (basics needed for RT-derived baseline)
+      const { data: buildings } = await supabase
+        .from('buildings')
+        .select('id, name, construction_year, area_m2, building_type')
+        .eq('org_id', orgUser.org_id)
+
+      // 2. Latest inspection per building
+      const { data: inspections } = await supabase
+        .from('inspections')
+        .select('id, building_id, inspection_date')
+        .eq('org_id', orgUser.org_id)
+        .order('inspection_date', { ascending: false })
+
+      const latestInspectionByBuilding = new Map<number, string>()
+      for (const insp of inspections || []) {
+        if (!latestInspectionByBuilding.has(insp.building_id)) {
+          latestInspectionByBuilding.set(insp.building_id, insp.id)
+        }
+      }
+
+      // 3. Evaluations for those latest inspections
+      const inspectionIds = [...latestInspectionByBuilding.values()]
+      let evalsByBuilding = new Map<number, any[]>()
+      if (inspectionIds.length > 0) {
+        const { data: evals } = await supabase
+          .from('category_evaluations')
+          .select('category_id, score, urgency, cost_estimate, inspection_id')
+          .in('inspection_id', inspectionIds)
+
+        const buildingByInspection = new Map<string, number>()
+        for (const [buildingId, inspId] of latestInspectionByBuilding.entries()) {
+          buildingByInspection.set(inspId, buildingId)
+        }
+        for (const e of evals || []) {
+          const bId = buildingByInspection.get(e.inspection_id)
+          if (bId == null) continue
+          if (!evalsByBuilding.has(bId)) evalsByBuilding.set(bId, [])
+          evalsByBuilding.get(bId)!.push(e)
+        }
+      }
+
+      // 4. Derive a portfolio-wide plan: one set of repair items per building
+      for (const b of buildings || []) {
+        const planItems = derivePlanItems(
+          {
+            construction_year: b.construction_year,
+            area_m2: b.area_m2,
+            building_type: b.building_type,
+          },
+          evalsByBuilding.get(b.id) || []
+        )
+        for (const item of repairItems(planItems)) {
+          investments.push({
+            id: `${b.id}-${item.categoryStringId}`,
+            propertyId: String(b.id),
+            propertyName: b.name || 'Nimetön kiinteistö',
+            title: item.categoryName,
+            year: currentYear + URGENCY_YEAR_OFFSET[item.urgency],
+            estimatedCost: item.cost,
+            priority: URGENCY_PRIORITY[item.urgency],
+            derived: true,
+          })
+        }
+      }
+
+      // 5. Merge any manually planned investments
       const { data: invData } = await supabase
         .from('investment_plans')
         .select('*')
         .eq('org_id', orgUser.org_id)
-        .order('vuosi', { ascending: true })
 
-      if (invData) {
-        // Get building names separately
-        const buildingIds = [...new Set(invData.map((i: any) => i.kiinteisto_id).filter(Boolean))]
-        let buildingMap = new Map<number, string>()
-        
-        if (buildingIds.length > 0) {
-          const { data: buildingsData } = await supabase
-            .from('buildings')
-            .select('id, name')
-            .in('id', buildingIds)
-          if (buildingsData) {
-            buildingMap = new Map(buildingsData.map(b => [b.id, b.name]))
-          }
-        }
-
-        investments = invData.map((i: any) => ({
-          id: i.id,
-          propertyId: i.kiinteisto_id,
-          propertyName: buildingMap.get(i.kiinteisto_id) || 'Tuntematon',
-          title: i.otsikko || '-',
-          category: i.kategoria || 'other',
-          year: i.vuosi,
-          estimatedCost: i.arvioitu_kustannus || 0,
-          priority: i.prioriteetti || 'medium',
-          status: i.tila || 'planned',
-        }))
-      }
-    }
-  } catch (error) {
-    console.log("[v0] Error fetching investments:", error)
-  }
-
-  // Load suggested repairs from category evaluations with poor condition
-  interface SuggestedRepair {
-    id: string
-    buildingId: number
-    buildingName: string
-    categoryId: number
-    categoryName: string
-    score: number
-    urgency: string
-    costEstimate: number
-  }
-  let suggestions: SuggestedRepair[] = []
-  
-  try {
-    // Get all category evaluations with score <= 2 (poor/critical condition)
-    const { data: evals } = await supabase
-      .from('category_evaluations')
-      .select(`
-        id,
-        category_id,
-        score,
-        urgency,
-        cost_estimate,
-        inspection_id,
-        inspections!inner (
-          building_id,
-          org_id
-        ),
-        inspection_categories!inner (
-          id,
-          name
+      if (invData && invData.length > 0) {
+        const buildingMap = new Map<number, string>(
+          (buildings || []).map(b => [b.id, b.name])
         )
-      `)
-      .lte('score', 2)
-      .not('score', 'is', null)
-    
-    if (evals && evals.length > 0) {
-      // Get building names
-      const buildingIds = [...new Set(evals.map((e: any) => e.inspections?.building_id).filter(Boolean))]
-      let buildingMap = new Map<number, string>()
-      
-      if (buildingIds.length > 0) {
-        const { data: buildings } = await supabase
-          .from('buildings')
-          .select('id, name')
-          .in('id', buildingIds)
-        if (buildings) {
-          buildingMap = new Map(buildings.map(b => [b.id, b.name]))
+        for (const i of invData as any[]) {
+          investments.push({
+            id: `manual-${i.id}`,
+            propertyId: String(i.kiinteisto_id),
+            propertyName: buildingMap.get(i.kiinteisto_id) || 'Tuntematon',
+            title: i.otsikko || '-',
+            year: i.vuosi || currentYear,
+            estimatedCost: i.arvioitu_kustannus || 0,
+            priority: (i.prioriteetti as InvestmentItem['priority']) || 'medium',
+            derived: false,
+          })
         }
       }
-      
-      suggestions = evals
-        .filter((e: any) => e.inspections?.org_id === orgUser?.org_id)
-        .map((e: any) => {
-          return {
-            id: e.id,
-            buildingId: e.inspections?.building_id,
-            buildingName: buildingMap.get(e.inspections?.building_id) || 'Tuntematon',
-            categoryId: e.category_id,
-            categoryName: e.inspection_categories?.name || `Kategoria ${e.category_id}`,
-            score: e.score,
-            urgency: e.urgency || 'monitoring',
-            costEstimate: e.cost_estimate || 0,
-          }
-        })
-        .sort((a, b) => a.score - b.score || (a.urgency === 'immediate' ? -1 : 1))
     }
   } catch (error) {
-    console.log("[v0] Error fetching suggestions:", error)
+    console.log("[v0] Error building portfolio PTS:", error)
   }
 
   // Group by year
   const investmentsByYear = years.map(year => ({
     year,
-    items: investments.filter(i => i.year === year),
+    items: investments
+      .filter(i => i.year === year)
+      .sort((a, b) => b.estimatedCost - a.estimatedCost),
     total: investments.filter(i => i.year === year).reduce((sum, i) => sum + i.estimatedCost, 0),
   }))
 
   const totalInvestment = investments.reduce((sum, i) => sum + i.estimatedCost, 0)
+  const next5 = investments.filter(i => i.year <= currentYear + 5).reduce((s, i) => s + i.estimatedCost, 0)
   const criticalCount = investments.filter(i => i.priority === 'critical').length
 
   function formatEur(value: number) {
@@ -194,7 +189,7 @@ export default async function TimelinePage() {
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">Investointiaikajana</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            15 vuoden pitkän tähtäimen suunnitelma (PTS)
+            Koko portfolion 15 vuoden pitkän tähtäimen suunnitelma (PTS)
           </p>
         </div>
         <div className="flex gap-2">
@@ -229,9 +224,7 @@ export default async function TimelinePage() {
             <CardDescription>Seuraavat 5 vuotta</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatEur(investments.filter(i => i.year <= currentYear + 5).reduce((s, i) => s + i.estimatedCost, 0))}
-            </div>
+            <div className="text-2xl font-bold">{formatEur(next5)}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {currentYear} - {currentYear + 5}
             </p>
@@ -250,79 +243,6 @@ export default async function TimelinePage() {
         </Card>
       </div>
 
-      {/* Suggested repairs from inspections */}
-      {suggestions.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              <CardTitle className="text-base">Ehdotetut korjaukset kuntoarvioiden perusteella</CardTitle>
-            </div>
-            <CardDescription>
-              Nämä kohteet vaativat huomiota tarkastusten perusteella
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {suggestions.slice(0, 5).map(s => (
-                <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${s.score === 1 ? 'bg-red-500' : 'bg-amber-500'}`} />
-                    <div>
-                      <p className="font-medium text-sm">{s.categoryName}</p>
-                      <p className="text-xs text-muted-foreground">{s.buildingName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline" className={s.urgency === 'immediate' ? 'border-red-500 text-red-500' : ''}>
-                      {s.urgency === 'immediate' ? 'Välitön' : s.urgency === 'soon' ? '1-2v' : '3-5v'}
-                    </Badge>
-                    {s.costEstimate > 0 && (
-                      <span className="text-sm font-medium">{formatEur(s.costEstimate)}</span>
-                    )}
-                    <Link href={`/app/timeline/new?building=${s.buildingId}&title=${encodeURIComponent(s.categoryName + ' - ' + s.buildingName)}&cost=${s.costEstimate}`}>
-                      <Button size="sm" variant="outline">
-                        <Plus className="h-3 w-3 mr-1" />
-                        Lisää
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-              {suggestions.length > 5 && (
-                <p className="text-sm text-muted-foreground text-center pt-2">
-                  + {suggestions.length - 5} muuta ehdotusta
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Filter */}
-      <div className="flex gap-2">
-        <Select defaultValue="all">
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Kiinteistö" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Kaikki kiinteistöt</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Prioriteetti" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Kaikki</SelectItem>
-            <SelectItem value="critical">Kriittinen</SelectItem>
-            <SelectItem value="high">Korkea</SelectItem>
-            <SelectItem value="medium">Normaali</SelectItem>
-            <SelectItem value="low">Matala</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Timeline */}
       {investments.length === 0 ? (
         <Card>
@@ -330,14 +250,14 @@ export default async function TimelinePage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <CalendarRange className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei investointisuunnitelmaa</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Ei kiinteistöjä</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Luo pitkän tähtäimen suunnitelma (PTS) lisäämällä tulevia investointeja ja korjaustarpeita.
+              Lisää kiinteistö saadaksesi automaattisen pitkän tähtäimen suunnitelman RT-standardien perusteella.
             </p>
             <Button asChild>
-              <Link href="/app/timeline/new">
+              <Link href="/app/properties/new">
                 <Plus className="mr-2 h-4 w-4" />
-                Lisää investointi
+                Lisää kiinteistö
               </Link>
             </Button>
           </CardContent>
@@ -370,9 +290,7 @@ export default async function TimelinePage() {
                           className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`h-2 w-2 rounded-full ${priority.bg}`}>
-                              <div className={`h-2 w-2 rounded-full ${priority.color.replace('text-', 'bg-')}`} />
-                            </div>
+                            <div className={`h-2 w-2 rounded-full ${priority.color.replace('text-', 'bg-')}`} />
                             <div>
                               <p className="font-medium text-sm">{item.title}</p>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
