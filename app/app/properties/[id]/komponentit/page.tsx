@@ -27,11 +27,11 @@ interface ComponentCategory {
 interface CategoryEvaluation {
   id: string
   inspection_id: string
-  category_id: string
-  condition_rating: number
-  notes: string | null
-  repair_urgency: string | null
-  estimated_cost: number | null
+  category_id: number
+  score: number
+  comment: string | null
+  urgency: string | null
+  cost_estimate: number | null
   category?: ComponentCategory
 }
 
@@ -43,20 +43,21 @@ interface Inspection {
   overall_score: number | null
 }
 
+// RT-standardin kuntoluokka: 5 = erinomainen, 1 = heikko
 const conditionLabels: Record<number, { label: string; color: string; bg: string }> = {
-  1: { label: "Uusi/Erinomainen", color: "text-emerald-500", bg: "bg-emerald-500" },
-  2: { label: "Hyvä", color: "text-green-500", bg: "bg-green-500" },
+  5: { label: "Uusi/Erinomainen", color: "text-emerald-500", bg: "bg-emerald-500" },
+  4: { label: "Hyvä", color: "text-lime-500", bg: "bg-lime-500" },
   3: { label: "Tyydyttävä", color: "text-yellow-500", bg: "bg-yellow-500" },
-  4: { label: "Välttävä", color: "text-orange-500", bg: "bg-orange-500" },
-  5: { label: "Heikko", color: "text-red-500", bg: "bg-red-500" },
+  2: { label: "Välttävä", color: "text-orange-500", bg: "bg-orange-500" },
+  1: { label: "Heikko", color: "text-red-500", bg: "bg-red-500" },
 }
 
+// Urgency-arvot vastaavat tietokannan CHECK-rajoitusta
 const urgencyLabels: Record<string, { label: string; color: string }> = {
-  none: { label: "Ei toimenpiteitä", color: "text-muted-foreground" },
-  monitor: { label: "Seurattava", color: "text-blue-500" },
-  plan: { label: "Suunniteltava", color: "text-yellow-500" },
-  soon: { label: "Korjattava pian", color: "text-orange-500" },
-  immediate: { label: "Välitön korjaus", color: "text-red-500" },
+  valitom: { label: "Välitön korjaus", color: "text-red-500" },
+  "1_3v": { label: "1-3 vuotta", color: "text-orange-500" },
+  "3_5v": { label: "3-5 vuotta", color: "text-yellow-500" },
+  "5_10v": { label: "5-10 vuotta", color: "text-muted-foreground" },
 }
 
 export default function KomponentitPage() {
@@ -130,14 +131,14 @@ export default function KomponentitPage() {
 
   // Calculate stats
   const avgCondition = evaluations.length > 0
-    ? evaluations.reduce((sum, e) => sum + (e.condition_rating || 0), 0) / evaluations.length
+    ? evaluations.reduce((sum, e) => sum + (e.score || 0), 0) / evaluations.length
     : 0
   
   const urgentCount = evaluations.filter(e => 
-    e.repair_urgency === "immediate" || e.repair_urgency === "soon"
+    e.urgency === "valitom" || e.urgency === "1_3v"
   ).length
 
-  const totalEstimatedCost = evaluations.reduce((sum, e) => sum + (e.estimated_cost || 0), 0)
+  const totalEstimatedCost = evaluations.reduce((sum, e) => sum + (e.cost_estimate || 0), 0)
 
   function formatEur(value: number) {
     return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
@@ -186,7 +187,7 @@ export default function KomponentitPage() {
               <span className="text-sm text-muted-foreground">/ 5</span>
             </div>
             {avgCondition > 0 && (
-              <Progress value={(5 - avgCondition) / 4 * 100} className="mt-2 h-2" />
+              <Progress value={avgCondition / 5 * 100} className="mt-2 h-2" />
             )}
           </CardContent>
         </Card>
@@ -256,11 +257,11 @@ export default function KomponentitPage() {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold">Komponenttiarviot</h2>
           {categories.map((category) => {
-            const evaluation = evaluations.find(e => e.category_id === category.id)
+            const evaluation = evaluations.find(e => String(e.category_id) === String(category.id))
             if (!evaluation) return null
 
-            const condition = conditionLabels[evaluation.condition_rating] || conditionLabels[3]
-            const urgency = urgencyLabels[evaluation.repair_urgency || "none"]
+            const condition = conditionLabels[evaluation.score] || conditionLabels[3]
+            const urgency = evaluation.urgency ? urgencyLabels[evaluation.urgency] : undefined
 
             return (
               <Card key={category.id} className="hover:bg-muted/50 transition-colors">
@@ -272,18 +273,22 @@ export default function KomponentitPage() {
                         <p className="font-medium">{category.name}</p>
                         <div className="flex items-center gap-3 mt-1 text-sm">
                           <span className={condition.color}>{condition.label}</span>
-                          <span className="text-muted-foreground">|</span>
-                          <span className={urgency.color}>{urgency.label}</span>
+                          {urgency && (
+                            <>
+                              <span className="text-muted-foreground">|</span>
+                              <span className={urgency.color}>{urgency.label}</span>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      {evaluation.estimated_cost && evaluation.estimated_cost > 0 && (
-                        <p className="font-medium">{formatEur(evaluation.estimated_cost)}</p>
+                      {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
+                        <p className="font-medium">{formatEur(evaluation.cost_estimate)}</p>
                       )}
-                      {evaluation.notes && (
+                      {evaluation.comment && (
                         <p className="text-xs text-muted-foreground max-w-48 truncate">
-                          {evaluation.notes}
+                          {evaluation.comment}
                         </p>
                       )}
                     </div>

@@ -9,63 +9,84 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   ArrowLeft,
   CalendarRange,
-  Plus,
   AlertTriangle,
-  Download,
+  ClipboardCheck,
+  TrendingUp,
 } from "lucide-react"
 import { toast } from "sonner"
 
-interface InvestmentItem {
+interface PlanItem {
   id: string
-  propertyId: number
-  title: string
-  category: string
-  year: number
-  estimatedCost: number
-  priority: "low" | "medium" | "high" | "critical"
-  status: "planned" | "approved" | "complete"
+  categoryId: number
+  categoryName: string
+  score: number
+  urgency: string
+  cost: number
+  comment: string | null
 }
 
-const priorityConfig = {
-  low: { label: "Matala", color: "text-slate-400", bg: "bg-slate-500/20" },
-  medium: { label: "Normaali", color: "text-blue-400", bg: "bg-blue-500/20" },
-  high: { label: "Korkea", color: "text-amber-400", bg: "bg-amber-500/20" },
-  critical: { label: "Kriittinen", color: "text-red-400", bg: "bg-red-500/20" },
+// Urgency-arvot vastaavat tietokannan CHECK-rajoitusta.
+// Nämä muodostavat PTS-aikajanan (pitkän tähtäimen suunnitelma).
+interface TimeframeBucket {
+  key: string
+  label: string
+  range: string
+  priorityLabel: string
+  dot: string
+  badge: string
+  // Onko tämä osa "seuraavat 5 vuotta" -laskentaa
+  within5Years: boolean
 }
 
-const categoryLabels: Record<string, string> = {
-  roof: "Vesikatto",
-  facade: "Julkisivu",
-  windows: "Ikkunat",
-  hvac: "LVIA",
-  electrical: "Sähkö",
-  plumbing: "Putkistot",
-  foundation: "Perustukset",
-  interior: "Sisätilat",
-  yard: "Piha-alueet",
-  other: "Muu",
-}
+const TIMEFRAMES: TimeframeBucket[] = [
+  {
+    key: "valitom",
+    label: "Välitön",
+    range: "0-1 vuotta",
+    priorityLabel: "Kriittinen",
+    dot: "bg-red-500",
+    badge: "border-red-500 text-red-500",
+    within5Years: true,
+  },
+  {
+    key: "1_3v",
+    label: "Lyhyt aikaväli",
+    range: "1-3 vuotta",
+    priorityLabel: "Korkea",
+    dot: "bg-orange-500",
+    badge: "border-orange-500 text-orange-500",
+    within5Years: true,
+  },
+  {
+    key: "3_5v",
+    label: "Keskipitkä aikaväli",
+    range: "3-5 vuotta",
+    priorityLabel: "Normaali",
+    dot: "bg-yellow-500",
+    badge: "border-yellow-500 text-yellow-600",
+    within5Years: true,
+  },
+  {
+    key: "5_10v",
+    label: "Pitkä aikaväli",
+    range: "5-10 vuotta",
+    priorityLabel: "Matala",
+    dot: "bg-emerald-500",
+    badge: "border-emerald-500 text-emerald-500",
+    within5Years: false,
+  },
+]
 
 export default function TavoitesuunnitteluPage() {
   const params = useParams()
   const propertyId = params.id as string
-  
+
   const [loading, setLoading] = useState(true)
   const [property, setProperty] = useState<any>(null)
-  const [investments, setInvestments] = useState<InvestmentItem[]>([])
-  const [filterPriority, setFilterPriority] = useState<string>("all")
-
-  const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 15 }, (_, i) => currentYear + i)
+  const [items, setItems] = useState<PlanItem[]>([])
+  const [inspectionDate, setInspectionDate] = useState<string | null>(null)
 
   useEffect(() => {
     loadData()
@@ -85,28 +106,41 @@ export default function TavoitesuunnitteluPage() {
 
       if (prop) setProperty(prop)
 
-      // Load investments for this building only
-      const { data: invData, error } = await supabase
-        .from("investment_plans")
+      // Load latest completed/approved inspection for this building
+      const { data: inspections } = await supabase
+        .from("inspections")
         .select("*")
-        .eq("kiinteisto_id", parseInt(propertyId))
-        .order("vuosi", { ascending: true })
+        .eq("building_id", parseInt(propertyId))
+        .in("status", ["complete", "approved"])
+        .order("inspection_date", { ascending: false })
+        .limit(1)
 
-      if (error) {
-        console.error("Investment load error:", error)
-      }
+      if (inspections && inspections.length > 0) {
+        const inspection = inspections[0]
+        setInspectionDate(inspection.inspection_date)
 
-      if (invData) {
-        setInvestments(invData.map((i: any) => ({
-          id: i.id,
-          propertyId: i.kiinteisto_id,
-          title: i.otsikko || "-",
-          category: i.kategoria || "other",
-          year: i.vuosi,
-          estimatedCost: i.arvioitu_kustannus || 0,
-          priority: i.prioriteetti || "medium",
-          status: i.tila || "planned",
-        })))
+        // Load evaluations with category names from inspection_categories
+        const { data: evals } = await supabase
+          .from("category_evaluations")
+          .select("*, inspection_categories(*)")
+          .eq("inspection_id", inspection.id)
+
+        if (evals) {
+          // Automaattinen tavoitesuunnittelu: sisällytä komponentit, joille
+          // RT-standardi on määrittänyt korjaustarpeen (kustannus > 0).
+          const planItems: PlanItem[] = evals
+            .filter((e: any) => (e.cost_estimate || 0) > 0 && e.urgency)
+            .map((e: any) => ({
+              id: e.id,
+              categoryId: e.category_id,
+              categoryName: e.inspection_categories?.name || `Kategoria ${e.category_id}`,
+              score: e.score,
+              urgency: e.urgency,
+              cost: e.cost_estimate || 0,
+              comment: e.comment,
+            }))
+          setItems(planItems)
+        }
       }
     } catch (error) {
       console.error("Load error:", error)
@@ -116,23 +150,23 @@ export default function TavoitesuunnitteluPage() {
     }
   }
 
-  // Filter investments
-  const filteredInvestments = filterPriority === "all" 
-    ? investments 
-    : investments.filter(i => i.priority === filterPriority)
+  // Group items by urgency timeframe
+  const buckets = TIMEFRAMES.map(tf => {
+    const bucketItems = items
+      .filter(i => i.urgency === tf.key)
+      .sort((a, b) => a.score - b.score) // huonoin kunto ensin
+    return {
+      ...tf,
+      items: bucketItems,
+      total: bucketItems.reduce((sum, i) => sum + i.cost, 0),
+    }
+  })
 
-  // Group by year
-  const investmentsByYear = years.map(year => ({
-    year,
-    items: filteredInvestments.filter(i => i.year === year),
-    total: filteredInvestments.filter(i => i.year === year).reduce((sum, i) => sum + i.estimatedCost, 0),
-  }))
-
-  const totalInvestment = filteredInvestments.reduce((sum, i) => sum + i.estimatedCost, 0)
-  const next5YearsTotal = filteredInvestments
-    .filter(i => i.year <= currentYear + 5)
-    .reduce((sum, i) => sum + i.estimatedCost, 0)
-  const criticalCount = filteredInvestments.filter(i => i.priority === "critical").length
+  const totalInvestment = items.reduce((sum, i) => sum + i.cost, 0)
+  const next5YearsTotal = items
+    .filter(i => TIMEFRAMES.find(tf => tf.key === i.urgency)?.within5Years)
+    .reduce((sum, i) => sum + i.cost, 0)
+  const criticalCount = items.filter(i => i.urgency === "valitom").length
 
   function formatEur(value: number) {
     return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
@@ -164,148 +198,137 @@ export default function TavoitesuunnitteluPage() {
           </Button>
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground">Tavoitesuunnittelu</h1>
-            <p className="text-sm text-muted-foreground">{property?.name} - 15v PTS</p>
+            <p className="text-sm text-muted-foreground">{property?.name} - 10v PTS</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="mr-2 h-4 w-4" />
-            Vie Excel
-          </Button>
-          <Button size="sm" asChild>
-            <Link href={`/app/timeline/new?building_id=${propertyId}`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Lisää investointi
-            </Link>
-          </Button>
-        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Investoinnit yhteensä (15v)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatEur(totalInvestment)}</div>
+      {/* Info banner - automaattinen suunnitelma */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardContent className="flex items-start gap-3 py-4">
+          <TrendingUp className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Automaattinen pitkän tähtäimen suunnitelma</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {filteredInvestments.length} suunniteltua toimenpidettä
+              Suunnitelma on luotu RT-standardien ja kuntoarvion perusteella. Toimenpiteet on
+              jaettu kiireellisyyden mukaan aikajaksoihin.
+              {inspectionDate && (
+                <> Perustuu tarkastukseen {new Date(inspectionDate).toLocaleDateString("fi-FI")}.</>
+              )}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Seuraavat 5 vuotta</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatEur(next5YearsTotal)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {currentYear} - {currentYear + 5}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Kriittiset toimenpiteet</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold">{criticalCount}</span>
-              {criticalCount > 0 && <AlertTriangle className="h-5 w-5 text-red-500" />}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Filter */}
-      <div className="flex gap-2">
-        <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Prioriteetti" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Kaikki</SelectItem>
-            <SelectItem value="critical">Kriittinen</SelectItem>
-            <SelectItem value="high">Korkea</SelectItem>
-            <SelectItem value="medium">Normaali</SelectItem>
-            <SelectItem value="low">Matala</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Timeline */}
-      {investments.length === 0 ? (
+      {items.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="rounded-full bg-muted p-4 mb-4">
               <CalendarRange className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei investointisuunnitelmaa</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Ei tavoitesuunnitelmaa</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Luo pitkän tähtäimen suunnitelma (PTS) lisäämällä tulevia investointeja ja korjaustarpeita tälle kiinteistölle.
+              Tavoitesuunnitelma luodaan automaattisesti kuntoarvion perusteella. Tee ensin
+              kuntoarvio tälle kiinteistölle, niin näet korjaustoimenpiteiden aikajanan ja
+              kustannusarviot.
             </p>
             <Button asChild>
-              <Link href={`/app/timeline/new?building_id=${propertyId}`}>
-                <Plus className="mr-2 h-4 w-4" />
-                Lisää investointi
+              <Link href={`/app/kuntoarviot/new?building_id=${propertyId}`}>
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Aloita kuntoarvio
               </Link>
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {investmentsByYear.filter(y => y.items.length > 0 || y.year <= currentYear + 5).map(({ year, items, total }) => (
-            <Card key={year} className={items.length === 0 ? "opacity-50" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant={year === currentYear ? "default" : "outline"} className="text-sm">
-                      {year}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {items.length} toimenpidettä
-                    </span>
-                  </div>
-                  <span className="font-semibold">{formatEur(total)}</span>
-                </div>
+        <>
+          {/* Stats */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Investoinnit yhteensä (10v)</CardDescription>
               </CardHeader>
-              {items.length > 0 && (
+              <CardContent>
+                <div className="text-2xl font-bold">{formatEur(totalInvestment)}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {items.length} suunniteltua toimenpidettä
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Seuraavat 5 vuotta</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatEur(next5YearsTotal)}</div>
+                <p className="text-xs text-muted-foreground mt-1">Kiireellisimmät toimenpiteet</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Kriittiset toimenpiteet</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold">{criticalCount}</span>
+                  {criticalCount > 0 && <AlertTriangle className="h-5 w-5 text-red-500" />}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">vaativat välitöntä huomiota</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Timeline by timeframe */}
+          <div className="space-y-4">
+            {buckets.filter(b => b.items.length > 0).map((bucket) => (
+              <Card key={bucket.key}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-3 w-3 rounded-full ${bucket.dot}`} />
+                      <div>
+                        <CardTitle className="text-base">{bucket.label}</CardTitle>
+                        <p className="text-xs text-muted-foreground">{bucket.range}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-semibold">{formatEur(bucket.total)}</span>
+                      <p className="text-xs text-muted-foreground">{bucket.items.length} toimenpidettä</p>
+                    </div>
+                  </div>
+                </CardHeader>
                 <CardContent className="pt-0">
                   <div className="space-y-2">
-                    {items.map((item) => {
-                      const priority = priorityConfig[item.priority] || priorityConfig.medium
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`h-2 w-2 rounded-full ${priority.bg}`}>
-                              <div className={`h-2 w-2 rounded-full ${priority.color.replace("text-", "bg-")}`} />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{item.title}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {categoryLabels[item.category] || item.category}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <Badge variant="outline" className={priority.color}>
-                              {priority.label}
-                            </Badge>
-                            <span className="text-sm font-medium">{formatEur(item.estimatedCost)}</span>
+                    {bucket.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="shrink-0">
+                            {item.score}/5
+                          </Badge>
+                          <div>
+                            <p className="font-medium text-sm">{item.categoryName}</p>
+                            {item.comment && (
+                              <p className="text-xs text-muted-foreground line-clamp-1">{item.comment}</p>
+                            )}
                           </div>
                         </div>
-                      )
-                    })}
+                        <div className="flex items-center gap-3 shrink-0">
+                          <Badge variant="outline" className={bucket.badge}>
+                            {bucket.priorityLabel}
+                          </Badge>
+                          <span className="text-sm font-medium">{formatEur(item.cost)}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
