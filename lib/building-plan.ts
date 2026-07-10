@@ -93,7 +93,7 @@ function deriveUrgency(score: number, remainingLifespan: number): UrgencyCode {
 // Which categories apply to a given building type (falls back to all 17)
 function applicableCategoryIds(buildingType?: string | null): string[] {
   const template = buildingTypeTemplates.find(t => t.id === buildingType)
-  if (template) return template.includedCategories
+  if (template && template.includedCategories.length > 0) return template.includedCategories
   return categories.map(c => c.id)
 }
 

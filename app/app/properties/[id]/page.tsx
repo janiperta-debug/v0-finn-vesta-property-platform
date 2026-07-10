@@ -6,6 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/kuntoarvio-data"
 import { categoryIdMapping } from "@/lib/rt-standards"
+import { derivePlanItems, overallCondition, totalRepairCost, repairItems } from "@/lib/building-plan"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -292,13 +293,29 @@ export default function PropertyDetailPage() {
     )
   }
 
-  // Calculate some demo values (replace with real data when available)
-  const kuntoluokka = inspections.length > 0 && inspections[0].overall_score 
-    ? Math.round(inspections[0].overall_score * 20) 
-    : 0
+  // Derive the building's condition & long-term plan from basics + RT standards,
+  // refined by any stored category evaluations. This gives a meaningful baseline
+  // even before an inspection exists.
+  const planItems = derivePlanItems(
+    {
+      construction_year: property.construction_year,
+      area_m2: property.area_m2,
+      building_type: property.building_type,
+    },
+    categoryEvaluations.map(e => ({
+      category_id: e.category_id,
+      score: e.score,
+      urgency: e.urgency,
+      cost_estimate: e.cost_estimate,
+      comment: e.comment,
+    }))
+  )
+  const overallCond = overallCondition(planItems) // 1-5
+  const kuntoluokka = overallCond > 0 ? Math.round(overallCond * 20) : 0 // percentage
   const jalleenhankintaArvo = (property.area_m2 || 0) * (property.cost_per_m2 || 2500)
-  const tekninenArvo = jalleenhankintaArvo * (kuntoluokka / 100 || 0.7)
-  const korjausVelka = jalleenhankintaArvo - tekninenArvo
+  const korjausVelka = totalRepairCost(planItems)
+  const tekninenArvo = Math.max(0, jalleenhankintaArvo - korjausVelka)
+  const planRepairItems = repairItems(planItems)
 
   // Group sub-spaces by floor
   const subSpacesByFloor = subSpaces.reduce((acc, space) => {
@@ -786,21 +803,26 @@ export default function PropertyDetailPage() {
             </div>
           </div>
 
-          {/* Komponenttikohtaiset arviot */}
-          {categoryEvaluations.length > 0 && (
+          {/* Komponenttikohtaiset arviot - johdettu perustiedoista + RT-standardeista */}
+          {planItems.length > 0 && (
             <div className="rounded-xl border border-border/50 bg-card p-5">
-              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Rakennusosien kunto</h3>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-heading text-base font-semibold text-foreground">Rakennusosien kunto</h3>
+                {categoryEvaluations.length === 0 && (
+                  <Badge variant="outline" className="text-xs">Arvio RT-standardeista</Badge>
+                )}
+              </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {categoryEvaluations
-                  .filter(e => e.score !== null)
-                  .sort((a, b) => (a.score || 5) - (b.score || 5))
-                  .map(evaluation => {
-                    const scorePercent = ((evaluation.score || 3) / 5) * 100
+                {planItems
+                  .slice()
+                  .sort((a, b) => a.conditionScore - b.conditionScore)
+                  .map(item => {
+                    const scorePercent = (item.conditionScore / 5) * 100
                     return (
-                      <div key={evaluation.id} className="p-3 rounded-lg bg-muted/50">
+                      <div key={item.categoryStringId} className="p-3 rounded-lg bg-muted/50">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{getCategoryName(evaluation.category_id)}</span>
-                          <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
+                          <span className="text-sm font-medium">{item.categoryName}</span>
+                          <ConditionBadge score={item.conditionScore as 1|2|3|4|5} size="sm" />
                         </div>
                         <div className="h-2 overflow-hidden rounded-full bg-secondary">
                           <div
@@ -812,9 +834,9 @@ export default function PropertyDetailPage() {
                             style={{ width: `${scorePercent}%` }}
                           />
                         </div>
-                        {evaluation.urgency && evaluation.urgency !== '5_10v' && (
+                        {item.urgency !== '5_10v' && (
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Kiireellisyys: {getUrgencyLabel(evaluation.urgency)}
+                            Kiireellisyys: {getUrgencyLabel(item.urgency)}
                           </p>
                         )}
                       </div>
@@ -870,79 +892,64 @@ export default function PropertyDetailPage() {
             </div>
 
             <div className="rounded-xl border border-border/50 bg-card p-5">
-              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Tavoitesuunnitelma</h3>
-              {categoryEvaluations.filter(e => e.cost_estimate && e.cost_estimate > 0).length > 0 ? (
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-heading text-base font-semibold text-foreground">Tavoitesuunnitelma</h3>
+                <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`} className="text-xs text-primary hover:underline">
+                  Koko PTS
+                </Link>
+              </div>
+              {planRepairItems.length > 0 ? (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-3">Arvioidut korjauskustannukset kiireellisyysjärjestyksessä:</p>
-                  {categoryEvaluations
-                    .filter(e => e.cost_estimate && e.cost_estimate > 0)
-                    .sort((a, b) => getUrgencyRank(a.urgency) - getUrgencyRank(b.urgency))
+                  {planRepairItems
                     .slice(0, 5)
-                    .map(evaluation => {
-                      return (
-                        <div key={evaluation.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${getUrgencyDot(evaluation.urgency)}`} />
-                            <span className="text-sm">{getCategoryName(evaluation.category_id)}</span>
-                          </div>
-                          <span className="text-sm font-medium">{formatEur(evaluation.cost_estimate || 0)}</span>
+                    .map(item => (
+                      <div key={item.categoryStringId} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${getUrgencyDot(item.urgency)}`} />
+                          <span className="text-sm">{item.categoryName}</span>
                         </div>
-                      )
-                    })}
-                  <Link href={`/app/timeline/new?building=${property.id}`}>
+                        <span className="text-sm font-medium">{formatEur(item.cost)}</span>
+                      </div>
+                    ))}
+                  <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`}>
                     <Button variant="outline" size="sm" className="w-full mt-2">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Lis��ä PTS-suunnitelmaan
+                      <Target className="h-4 w-4 mr-2" />
+                      Avaa tavoitesuunnitelma
                     </Button>
                   </Link>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    {inspections.length > 0 
-                      ? "Ei arvioituja korjauskustannuksia" 
-                      : "Tee kuntoarvio nähdäksesi tavoitesuunnitelma"}
-                  </p>
+                  <p className="text-muted-foreground">Ei merkittäviä korjaustarpeita lähivuosina</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Komponenttikohtaiset korjaustarpeet */}
-          {categoryEvaluations.filter(e => e.score && e.score <= 3).length > 0 && (
+          {/* Komponenttikohtaiset korjaustarpeet - johdettu suunnitelmasta */}
+          {planRepairItems.length > 0 && (
             <div className="rounded-xl border border-border/50 bg-card p-5">
               <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausta vaativat kohteet</h3>
               <div className="space-y-2">
-                {categoryEvaluations
-                  .filter(e => e.score && e.score <= 3)
-                  .sort((a, b) => (a.score || 5) - (b.score || 5))
-                  .map(evaluation => {
-                    return (
-                      <div key={evaluation.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                        <div className="flex items-center gap-3">
-                          <ConditionBadge score={evaluation.score as 1|2|3|4|5} size="sm" />
-                          <div>
-                            <p className="text-sm font-medium">{getCategoryName(evaluation.category_id)}</p>
-                            {evaluation.comment && (
-                              <p className="text-xs text-muted-foreground line-clamp-1">{evaluation.comment}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          {evaluation.urgency && (
-                            <Badge variant="outline" className={getUrgencyBadge(evaluation.urgency)}>
-                              {getUrgencyLabel(evaluation.urgency)}
-                            </Badge>
-                          )}
-                          {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {formatEur(evaluation.cost_estimate)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
+                {planRepairItems.map(item => (
+                  <div key={item.categoryStringId} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <ConditionBadge score={item.conditionScore as 1|2|3|4|5} size="sm" />
+                      <p className="text-sm font-medium">{item.categoryName}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className={getUrgencyBadge(item.urgency)}>
+                        {getUrgencyLabel(item.urgency)}
+                      </Badge>
+                      {item.cost > 0 && (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {formatEur(item.cost)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
