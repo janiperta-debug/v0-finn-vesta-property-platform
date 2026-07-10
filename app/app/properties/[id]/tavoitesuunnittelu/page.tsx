@@ -106,12 +106,11 @@ export default function TavoitesuunnitteluPage() {
 
       if (prop) setProperty(prop)
 
-      // Load latest completed/approved inspection for this building
+      // Load latest inspection for this building (any status, including drafts)
       const { data: inspections } = await supabase
         .from("inspections")
         .select("*")
         .eq("building_id", parseInt(propertyId))
-        .in("status", ["complete", "approved"])
         .order("inspection_date", { ascending: false })
         .limit(1)
 
