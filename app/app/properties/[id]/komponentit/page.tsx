@@ -96,12 +96,11 @@ export default function KomponentitPage() {
 
       if (cats) setCategories(cats)
 
-      // Load latest completed inspection for this building
+      // Load latest inspection for this building (any status, including drafts)
       const { data: inspections } = await supabase
         .from("inspections")
         .select("*")
         .eq("building_id", parseInt(propertyId))
-        .in("status", ["complete", "approved"])
         .order("inspection_date", { ascending: false })
         .limit(1)
 
