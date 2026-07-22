@@ -4,6 +4,7 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 
 import './globals.css'
 import { CookieConsent } from '@/components/cookie-consent'
+import { I18nProvider } from '@/lib/i18n'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -46,8 +47,10 @@ export default function RootLayout({
   return (
     <html lang="fi" className="bg-background" suppressHydrationWarning>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`} suppressHydrationWarning>
-        {children}
-        <CookieConsent />
+        <I18nProvider>
+          {children}
+          <CookieConsent />
+        </I18nProvider>
       </body>
     </html>
   )
