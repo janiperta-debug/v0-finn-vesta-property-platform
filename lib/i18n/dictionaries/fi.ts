@@ -37,4 +37,10 @@ const fi = {
 export default fi
 
 // The Finnish dictionary defines the required key structure for all languages.
-export type Dictionary = typeof fi
+// Values are widened to `string` so other dictionaries can supply their own
+// translations for the same keys (rather than matching the Finnish literals).
+export type Dictionary = {
+  [Section in keyof typeof fi]: {
+    [Key in keyof (typeof fi)[Section]]: string
+  }
+}
