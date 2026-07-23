@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { getTranslation } from "@/lib/i18n/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,32 +39,29 @@ const mockStats: PortfolioStats = {
   upcomingInspections: 0,
 }
 
-function formatEur(value: number) {
+function formatEur(value: number, locale: string) {
   if (value >= 1000000000) {
     return `${(value / 1000000000).toFixed(2)} mrd €`
   }
   if (value >= 1000000) {
     return `${(value / 1000000).toFixed(1)} M€`
   }
-  return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-}
-
-function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 10) return "Hyvää huomenta"
-  if (hour < 18) return "Hyvää päivää"
-  return "Hyvää iltaa"
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
 }
 
 export default async function AppPage() {
   const supabase = await createClient()
+  const { t, locale } = await getTranslation()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect("/auth/login")
   }
 
-  let userName = user.email?.split("@")[0] || "käyttäjä"
+  const hour = new Date().getHours()
+  const greeting = hour < 10 ? t("dashboard.greetingMorning") : hour < 18 ? t("dashboard.greetingDay") : t("dashboard.greetingEvening")
+
+  let userName = user.email?.split("@")[0] || t("dashboard.defaultUser")
   let stats = mockStats
   let recentProperties: Array<{ id: string; name: string; address: string; condition: number; type: string }> = []
   let hasData = false
@@ -125,7 +123,7 @@ export default async function AppPage() {
         <div className="absolute inset-0 hidden md:block">
           <Image
             src="/images/hero-cityscape.jpg"
-            alt="Portfolio näkymä"
+            alt={t("dashboard.heroAlt")}
             fill
             className="object-cover"
             priority
@@ -135,7 +133,7 @@ export default async function AppPage() {
         <div className="absolute inset-0 md:hidden">
           <Image
             src="/images/hero-cityscape-mobile.jpg"
-            alt="Portfolio näkymä"
+            alt={t("dashboard.heroAlt")}
             fill
             className="object-cover object-top"
             priority
@@ -151,17 +149,17 @@ export default async function AppPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">
-                {getGreeting()}, {userName}
+                {greeting}, {userName}
               </h1>
               <p className="mt-1 text-muted-foreground">
-                Tässä on kiinteistösalkkusi tilannekuva
+                {t("dashboard.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70">
                 <Search className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Hae kiinteistöjä</span>
-                <span className="sm:hidden">Hae</span>
+                <span className="hidden sm:inline">{t("dashboard.searchProperties")}</span>
+                <span className="sm:hidden">{t("common.search")}</span>
               </Button>
               <Button variant="outline" size="icon" className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70">
                 <Bell className="h-4 w-4" />
@@ -173,8 +171,8 @@ export default async function AppPage() {
           {hasData && (
             <div className="mt-auto grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
               <div className="rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md">
-                <p className="text-xs text-muted-foreground">Salkun arvo</p>
-                <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{formatEur(stats.totalValue)}</p>
+                <p className="text-xs text-muted-foreground">{t("dashboard.portfolioValue")}</p>
+                <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{formatEur(stats.totalValue, locale)}</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-emerald-500">
                   <TrendingUp className="h-3 w-3" />
                   +4,7%
@@ -182,13 +180,13 @@ export default async function AppPage() {
               </div>
 
               <div className="rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md">
-                <p className="text-xs text-muted-foreground">Kiinteistöjä</p>
+                <p className="text-xs text-muted-foreground">{t("dashboard.propertiesCount")}</p>
                 <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{stats.totalProperties}</p>
-                <p className="mt-1 text-xs text-muted-foreground">+3 kpl</p>
+                <p className="mt-1 text-xs text-muted-foreground">+3 {t("dashboard.piecesSuffix")}</p>
               </div>
 
               <div className="rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md">
-                <p className="text-xs text-muted-foreground">Käyttöaste</p>
+                <p className="text-xs text-muted-foreground">{t("dashboard.occupancyRate")}</p>
                 <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">89%</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-emerald-500">
                   <TrendingUp className="h-3 w-3" />
@@ -197,7 +195,7 @@ export default async function AppPage() {
               </div>
 
               <div className="hidden rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md md:block">
-                <p className="text-xs text-muted-foreground">Riskiscore</p>
+                <p className="text-xs text-muted-foreground">{t("dashboard.riskScore")}</p>
                 <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">41<span className="text-sm font-normal text-muted-foreground">/100</span></p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-emerald-500">
                   <TrendingDown className="h-3 w-3" />
@@ -206,8 +204,8 @@ export default async function AppPage() {
               </div>
 
               <div className="hidden rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md lg:block">
-                <p className="text-xs text-muted-foreground">Kunnossapitovelka</p>
-                <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{formatEur(stats.repairDebt)}</p>
+                <p className="text-xs text-muted-foreground">{t("dashboard.maintenanceDebt")}</p>
+                <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{formatEur(stats.repairDebt, locale)}</p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-red-400">
                   <TrendingDown className="h-3 w-3" />
                   -3,2 M€
@@ -224,12 +222,12 @@ export default async function AppPage() {
             <div className="rounded-full bg-amber-500/10 p-4 mb-4">
               <AlertTriangle className="h-8 w-8 text-amber-500" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei organisaatiota</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("dashboard.noOrgTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Käyttäjätiliäsi ei ole vielä liitetty mihinkään organisaatioon.
+              {t("dashboard.noOrgDescription")}
             </p>
             <Button variant="outline" asChild>
-              <Link href="mailto:info@janope.fi">Ota yhteyttä tukeen</Link>
+              <Link href="mailto:info@janope.fi">{t("dashboard.contactSupport")}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -239,16 +237,16 @@ export default async function AppPage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <Building2 className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei vielä kiinteistöjä</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("dashboard.noPropertiesTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Aloita lisäämällä ensimmäinen kiinteistö portfolioosi.
+              {t("dashboard.noPropertiesDescription")}
             </p>
             <div className="flex gap-3">
               <Button variant="outline" asChild>
-                <Link href="/app/properties/import">Tuo CSV-tiedostosta</Link>
+                <Link href="/app/properties/import">{t("dashboard.importCsv")}</Link>
               </Button>
               <Button asChild>
-                <Link href="/app/properties/new">Lisää kiinteistö</Link>
+                <Link href="/app/properties/new">{t("dashboard.addProperty")}</Link>
               </Button>
             </div>
           </CardContent>
@@ -260,12 +258,12 @@ export default async function AppPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Kiinteistöt</CardTitle>
-                  <CardDescription>Viimeksi muokatut</CardDescription>
+                  <CardTitle>{t("dashboard.propertiesTitle")}</CardTitle>
+                  <CardDescription>{t("dashboard.recentlyEdited")}</CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/app/properties">
-                    Näytä kaikki
+                    {t("dashboard.showAll")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -294,7 +292,7 @@ export default async function AppPage() {
                           <span className={`h-2 w-2 rounded-full ${property.condition >= 70 ? 'bg-emerald-500' : property.condition >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} />
                           <span className="font-medium">{property.condition}%</span>
                         </div>
-                        <p className="text-xs text-muted-foreground">Kuntoluokka</p>
+                        <p className="text-xs text-muted-foreground">{t("dashboard.conditionClass")}</p>
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />
                     </div>
@@ -307,8 +305,8 @@ export default async function AppPage() {
           {/* Quick actions */}
           <Card className="bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>Pikatoiminnot</CardTitle>
-              <CardDescription>Yleisimmät toiminnot</CardDescription>
+              <CardTitle>{t("dashboard.quickActions")}</CardTitle>
+              <CardDescription>{t("dashboard.commonActions")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start gap-3 border-border/50 bg-muted/30 hover:bg-muted/50" asChild>
@@ -316,7 +314,7 @@ export default async function AppPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                     <Building2 className="h-4 w-4 text-primary" />
                   </div>
-                  Lisää kiinteistö
+                  {t("dashboard.addProperty")}
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start gap-3 border-border/50 bg-muted/30 hover:bg-muted/50" asChild>
@@ -324,7 +322,7 @@ export default async function AppPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
                     <ClipboardCheck className="h-4 w-4 text-emerald-500" />
                   </div>
-                  Uusi kuntoarvio
+                  {t("dashboard.newInspection")}
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start gap-3 border-border/50 bg-muted/30 hover:bg-muted/50" asChild>
@@ -332,7 +330,7 @@ export default async function AppPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
                     <Calendar className="h-4 w-4 text-blue-500" />
                   </div>
-                  Investointisuunnitelma
+                  {t("dashboard.investmentPlan")}
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start gap-3 border-border/50 bg-muted/30 hover:bg-muted/50" asChild>
@@ -340,7 +338,7 @@ export default async function AppPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
                     <BarChart3 className="h-4 w-4 text-amber-500" />
                   </div>
-                  Luo raportti
+                  {t("dashboard.createReport")}
                 </Link>
               </Button>
             </CardContent>

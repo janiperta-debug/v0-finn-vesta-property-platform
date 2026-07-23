@@ -5,6 +5,7 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import { CookieConsent } from '@/components/cookie-consent'
 import { I18nProvider } from '@/lib/i18n'
+import { getLocale } from '@/lib/i18n/server'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,13 +40,14 @@ export const viewport: Viewport = {
   userScalable: false,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
   return (
-    <html lang="fi" className="bg-background" suppressHydrationWarning>
+    <html lang={locale} className="bg-background" suppressHydrationWarning>
       <body className={`${inter.variable} ${spaceGrotesk.variable} font-sans antialiased`} suppressHydrationWarning>
         <I18nProvider>
           {children}

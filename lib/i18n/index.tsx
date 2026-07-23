@@ -1,10 +1,21 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { defaultLocale, isLocale, type Locale } from "./config"
 import { dictionaries, type Dictionary } from "./dictionaries"
 
 const STORAGE_KEY = "finnvesta-locale"
+// Same key is mirrored to a cookie so Server Components can read the locale
+// (localStorage is not available on the server). Keep this in sync with
+// `LOCALE_COOKIE` in ./server.ts.
+const COOKIE_KEY = "finnvesta-locale"
+
+function writeLocaleCookie(locale: Locale) {
+  if (typeof document === "undefined") return
+  // 1 year, root path, Lax so it is sent on top-level navigations (SSR reads it).
+  document.cookie = `${COOKIE_KEY}=${locale};path=/;max-age=31536000;samesite=lax`
+}
 
 // A dot-path into the dictionary, e.g. "nav.overview". This gives editor
 // autocomplete and catches typos at build time for the top two levels.
@@ -22,6 +33,7 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null)
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const [locale, setLocaleState] = useState<Locale>(defaultLocale)
 
   // Load the saved preference on mount (client-only, so no hydration mismatch
@@ -30,6 +42,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const stored = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
     if (isLocale(stored)) {
       setLocaleState(stored)
+      // Ensure the cookie reflects the stored preference (e.g. first visit after
+      // this feature shipped, when only localStorage was set previously).
+      writeLocaleCookie(stored)
     }
   }, [])
 
@@ -45,7 +60,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, next)
     }
-  }, [])
+    writeLocaleCookie(next)
+    // Server Components rendered the current page with the old locale, so refresh
+    // to re-render them with the new one. Client components already updated via state.
+    router.refresh()
+  }, [router])
 
   const t = useCallback(
     (key: TranslationKey): string => {
