@@ -51,6 +51,7 @@ import {
 } from "lucide-react"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
 import type { ConditionScore } from "@/lib/kuntoarvio-types"
+import { useTranslation } from "@/lib/i18n"
 
 // Type matching Supabase kiinteistot schema
 interface Property {
