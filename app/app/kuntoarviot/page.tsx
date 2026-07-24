@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslation } from "@/lib/i18n"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +33,7 @@ interface Inspection {
 
 export default function KuntoarviotPage() {
   const router = useRouter()
+  const { t, locale } = useTranslation()
   const [inspections, setInspections] = useState<Inspection[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -82,7 +84,7 @@ export default function KuntoarviotPage() {
         setInspections(inspectionsData.map((i: any) => ({
           id: String(i.id),
           propertyId: String(i.building_id),
-          propertyName: buildingMap.get(i.building_id) || 'Tuntematon',
+          propertyName: buildingMap.get(i.building_id) || t('inspections.unknownProperty'),
           date: i.inspection_date || '',
           inspector: i.inspector_name || '-',
           overallScore: (i.overall_score ? Math.round(i.overall_score) : 3) as ConditionScore,
@@ -103,7 +105,7 @@ export default function KuntoarviotPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-muted-foreground">Ladataan...</div>
+        <div className="text-muted-foreground">{t("common.loading")}</div>
       </div>
     )
   }
@@ -112,15 +114,15 @@ export default function KuntoarviotPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Kuntoarviot</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("inspections.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Hallinnoi ja seuraa kuntoarvioita
+            {t("inspections.subtitle")}
           </p>
         </div>
         <Button asChild className="gap-2">
           <Link href="/app/kuntoarviot/new">
             <Plus className="h-4 w-4" />
-            Uusi kuntoarvio
+            {t("inspections.newButton")}
           </Link>
         </Button>
       </div>
@@ -135,7 +137,7 @@ export default function KuntoarviotPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{inspections.length}</p>
-                <p className="text-sm text-muted-foreground">Kuntoarviota yhteensä</p>
+                <p className="text-sm text-muted-foreground">{t("inspections.statTotal")}</p>
               </div>
             </div>
           </CardContent>
@@ -148,7 +150,7 @@ export default function KuntoarviotPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{completedCount}</p>
-                <p className="text-sm text-muted-foreground">Valmista</p>
+                <p className="text-sm text-muted-foreground">{t("inspections.statComplete")}</p>
               </div>
             </div>
           </CardContent>
@@ -161,7 +163,7 @@ export default function KuntoarviotPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{inProgressCount}</p>
-                <p className="text-sm text-muted-foreground">Kesken</p>
+                <p className="text-sm text-muted-foreground">{t("inspections.statInProgress")}</p>
               </div>
             </div>
           </CardContent>
@@ -171,13 +173,13 @@ export default function KuntoarviotPage() {
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Hae kuntoarvioita..." className="pl-9" />
+        <Input placeholder={t("inspections.searchPlaceholder")} className="pl-9" />
       </div>
 
       {/* Inspections List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Kuntoarviot</CardTitle>
+          <CardTitle className="text-base">{t("inspections.listTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           {inspections.length === 0 ? (
@@ -185,14 +187,14 @@ export default function KuntoarviotPage() {
               <div className="rounded-full bg-muted p-4 mb-4">
                 <ClipboardCheck className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Ei kuntoarvioita</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t("inspections.emptyTitle")}</h3>
               <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-                Aloita luomalla ensimmäinen kuntoarvio kiinteistöllesi.
+                {t("inspections.emptyDescription")}
               </p>
               <Button asChild>
                 <Link href="/app/kuntoarviot/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  Luo kuntoarvio
+                  {t("inspections.createButton")}
                 </Link>
               </Button>
             </div>
@@ -211,7 +213,7 @@ export default function KuntoarviotPage() {
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(inspection.date).toLocaleDateString("fi-FI")}
+                          {new Date(inspection.date).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}
                         </span>
                         <span className="flex items-center gap-1">
                           <User className="h-3 w-3" />
@@ -223,7 +225,7 @@ export default function KuntoarviotPage() {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <Badge variant={inspection.status === "complete" || inspection.status === "approved" ? "default" : "secondary"}>
-                        {inspection.status === "complete" || inspection.status === "approved" ? "Valmis" : "Kesken"}
+                        {inspection.status === "complete" || inspection.status === "approved" ? t("inspections.statusComplete") : t("inspections.statusInProgress")}
                       </Badge>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
