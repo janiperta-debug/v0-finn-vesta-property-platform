@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, ClipboardCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslation } from "@/lib/i18n"
 
 interface Property {
   id: string
@@ -18,6 +19,7 @@ interface Property {
 
 function NewKuntoarvioForm() {
   const router = useRouter()
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const preselectedBuildingId = searchParams.get("building_id")
   
@@ -80,7 +82,7 @@ function NewKuntoarvioForm() {
 
       const orgUser = orgUsers2?.[0]
       if (!orgUser) {
-        alert('Organisaatiota ei löytynyt')
+        alert(t('inspectionNew.orgNotFoundAlert'))
         return
       }
 
@@ -109,7 +111,7 @@ function NewKuntoarvioForm() {
       }
     } catch (error) {
       console.error('Error creating inspection:', error)
-      alert('Virhe kuntoarvion luomisessa')
+      alert(t('inspectionNew.createErrorAlert'))
     } finally {
       setIsLoading(false)
     }
@@ -124,8 +126,8 @@ function NewKuntoarvioForm() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Uusi kuntoarvio</h1>
-          <p className="text-sm text-muted-foreground">Luo uusi kuntoarvio kiinteistölle</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("inspectionNew.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("inspectionNew.subtitle")}</p>
         </div>
       </div>
 
@@ -134,23 +136,23 @@ function NewKuntoarvioForm() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5" />
-              Kuntoarvion tiedot
+              {t("inspectionNew.formTitle")}
             </CardTitle>
             <CardDescription>
-              Valitse kiinteistö ja arvioinnin tyyppi
+              {t("inspectionNew.formDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="property">Kiinteistö *</Label>
+                <Label htmlFor="property">{t("inspectionNew.propertyLabel")}</Label>
                 <Select value={selectedProperty} onValueChange={setSelectedProperty} required>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse kiinteistö" />
+                    <SelectValue placeholder={t("inspectionNew.propertyPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {properties.length === 0 ? (
-                      <SelectItem value="placeholder" disabled>Ei kiinteistöjä</SelectItem>
+                      <SelectItem value="placeholder" disabled>{t("inspectionNew.noProperties")}</SelectItem>
                     ) : (
                       properties.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.nimi}</SelectItem>
@@ -161,27 +163,27 @@ function NewKuntoarvioForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Tarkastajan tyyppi *</Label>
+                <Label htmlFor="type">{t("inspectionNew.inspectorTypeLabel")}</Label>
                 <Select value={inspectionType} onValueChange={setInspectionType}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="property_manager">Isännöitsijä</SelectItem>
-                    <SelectItem value="internal">Sisäinen</SelectItem>
-                    <SelectItem value="external">Ulkoinen</SelectItem>
+                    <SelectItem value="property_manager">{t("inspectionNew.typePropertyManager")}</SelectItem>
+                    <SelectItem value="internal">{t("inspectionNew.typeInternal")}</SelectItem>
+                    <SelectItem value="external">{t("inspectionNew.typeExternal")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Lisätiedot</Label>
+              <Label htmlFor="notes">{t("inspectionNew.notesLabel")}</Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Erityishuomiot, keskittymisalueet tms."
+                placeholder={t("inspectionNew.notesPlaceholder")}
                 rows={4}
               />
             </div>
@@ -189,10 +191,10 @@ function NewKuntoarvioForm() {
             <div className="flex gap-3 pt-4">
               <Button type="submit" disabled={isLoading || !selectedProperty}>
                 <Save className="mr-2 h-4 w-4" />
-                {isLoading ? "Tallennetaan..." : "Luo kuntoarvio"}
+                {isLoading ? t("inspectionNew.saving") : t("inspections.createButton")}
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link href="/app/kuntoarviot">Peruuta</Link>
+                <Link href="/app/kuntoarviot">{t("common.cancel")}</Link>
               </Button>
             </div>
           </CardContent>
@@ -203,8 +205,9 @@ function NewKuntoarvioForm() {
 }
 
 export default function NewKuntoarvioPage() {
+  const { t } = useTranslation()
   return (
-    <Suspense fallback={<div className="p-8">Ladataan...</div>}>
+    <Suspense fallback={<div className="p-8">{t("common.loading")}</div>}>
       <NewKuntoarvioForm />
     </Suspense>
   )
