@@ -73,27 +73,28 @@ interface Property {
   municipality: string | null
 }
 
-const buildingTypes = [
-  { value: "all", label: "Kaikki tyypit" },
-  { value: "kerrostalo", label: "Kerrostalo" },
-  { value: "rivitalo", label: "Rivitalo" },
-  { value: "omakotitalo", label: "Omakotitalo" },
-  { value: "toimisto", label: "Toimistorakennus" },
-  { value: "koulu", label: "Koulu" },
-  { value: "paivakoti", label: "Päiväkoti" },
-  { value: "liikunta", label: "Liikuntarakennus" },
-  { value: "teollisuus", label: "Teollisuusrakennus" },
-  { value: "varasto", label: "Varastorakennus" },
-]
+const buildingTypeKeys = [
+  { value: "all", key: "properties.typeAll" },
+  { value: "kerrostalo", key: "properties.typeKerrostalo" },
+  { value: "rivitalo", key: "properties.typeRivitalo" },
+  { value: "omakotitalo", key: "properties.typeOmakotitalo" },
+  { value: "toimisto", key: "properties.typeToimisto" },
+  { value: "koulu", key: "properties.typeKoulu" },
+  { value: "paivakoti", key: "properties.typePaivakoti" },
+  { value: "liikunta", key: "properties.typeLiikunta" },
+  { value: "teollisuus", key: "properties.typeTeollisuus" },
+  { value: "varasto", key: "properties.typeVarasto" },
+] as const
 
-const conditionFilters = [
-  { value: "all", label: "Kaikki kuntoluokat" },
-  { value: "critical", label: "Kriittinen (1-2)" },
-  { value: "attention", label: "Huomioitava (3)" },
-  { value: "good", label: "Hyvä (4-5)" },
-]
+const conditionFilterKeys = [
+  { value: "all", key: "properties.condAll" },
+  { value: "critical", key: "properties.condCritical" },
+  { value: "attention", key: "properties.condAttention" },
+  { value: "good", key: "properties.condGood" },
+] as const
 
 export default function PropertiesPage() {
+  const { t } = useTranslation()
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -157,9 +158,9 @@ export default function PropertiesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Kiinteistöt</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("properties.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Hallitse rakennuksia ja niiden tiloja
+            {t("properties.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -167,14 +168,14 @@ export default function PropertiesPage() {
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <Upload className="h-4 w-4" />
-                Tuo tiedostosta
+                {t("properties.importFromFile")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Tuo kiinteistöjä</DialogTitle>
+                <DialogTitle>{t("properties.importTitle")}</DialogTitle>
                 <DialogDescription>
-                  Lataa Excel- tai CSV-tiedosto kiinteistötiedoilla. Tiedoston tulee sisältää sarakkeet: nimi, osoite, rakennusvuosi, pinta-ala.
+                  {t("properties.importDescription")}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -182,10 +183,10 @@ export default function PropertiesPage() {
                   <div className="text-center">
                     <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Vedä tiedosto tähän tai klikkaa valitaksesi
+                      {t("properties.dropFileHint")}
                     </p>
                     <Button variant="outline" size="sm" className="mt-4">
-                      Valitse tiedosto
+                      {t("properties.selectFile")}
                     </Button>
                   </div>
                 </div>
@@ -195,7 +196,7 @@ export default function PropertiesPage() {
           <Link href="/app/properties/new">
             <Button size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" />
-              Lisää kiinteistö
+              {t("properties.addProperty")}
             </Button>
           </Link>
         </div>
@@ -211,7 +212,7 @@ export default function PropertiesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{filteredProperties.length}</p>
-                <p className="text-sm text-muted-foreground">Kiinteistöä</p>
+                <p className="text-sm text-muted-foreground">{t("properties.countLabel")}</p>
               </div>
             </div>
           </CardContent>
@@ -225,7 +226,7 @@ export default function PropertiesPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{totalSquareMeters.toLocaleString('fi-FI')}</p>
-                <p className="text-sm text-muted-foreground">m² yhteensä</p>
+                <p className="text-sm text-muted-foreground">{t("properties.totalArea")}</p>
               </div>
             </div>
           </CardContent>
@@ -237,7 +238,7 @@ export default function PropertiesPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Hae nimellä tai osoitteella..."
+            placeholder={t("properties.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -245,21 +246,21 @@ export default function PropertiesPage() {
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Rakennustyyppi" />
+            <SelectValue placeholder={t("properties.buildingType")} />
           </SelectTrigger>
           <SelectContent>
-            {buildingTypes.map(type => (
-              <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+            {buildingTypeKeys.map(type => (
+              <SelectItem key={type.value} value={type.value}>{t(type.key)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={conditionFilter} onValueChange={setConditionFilter}>
           <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="Kuntoluokka" />
+            <SelectValue placeholder={t("properties.conditionClass")} />
           </SelectTrigger>
           <SelectContent>
-            {conditionFilters.map(filter => (
-              <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>
+            {conditionFilterKeys.map(filter => (
+              <SelectItem key={filter.value} value={filter.value}>{t(filter.key)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -292,23 +293,23 @@ export default function PropertiesPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold text-foreground">Ei kiinteistöjä</h3>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">{t("properties.noPropertiesTitle")}</h3>
             <p className="mt-1 text-sm text-muted-foreground text-center max-w-sm">
               {searchQuery || typeFilter !== "all" || conditionFilter !== "all"
-                ? "Hakuehdoilla ei löytynyt kiinteistöjä. Kokeile muuttaa suodattimia."
-                : "Aloita lisäämällä ensimmäinen kiinteistö tai tuomalla tiedot tiedostosta."
+                ? t("properties.noPropertiesFiltered")
+                : t("properties.noPropertiesEmpty")
               }
             </p>
             {!searchQuery && typeFilter === "all" && conditionFilter === "all" && (
               <div className="mt-4 flex gap-2">
                 <Button variant="outline" size="sm" className="gap-1.5">
                   <Upload className="h-4 w-4" />
-                  Tuo tiedostosta
+                  {t("properties.importFromFile")}
                 </Button>
                 <Link href="/app/properties/new">
                   <Button size="sm" className="gap-1.5">
                     <Plus className="h-4 w-4" />
-                    Lisää kiinteistö
+                    {t("properties.addProperty")}
                   </Button>
                 </Link>
               </div>
@@ -320,13 +321,13 @@ export default function PropertiesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nimi</TableHead>
-                <TableHead className="hidden sm:table-cell">Osoite</TableHead>
-                <TableHead className="hidden md:table-cell">Tyyppi</TableHead>
-                <TableHead className="hidden lg:table-cell">Vuosi</TableHead>
+                <TableHead>{t("properties.colName")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("properties.colAddress")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("properties.colType")}</TableHead>
+                <TableHead className="hidden lg:table-cell">{t("properties.colYear")}</TableHead>
                 <TableHead className="text-right">m²</TableHead>
-                <TableHead className="text-center">Kunto</TableHead>
-                <TableHead className="text-center hidden sm:table-cell">Tilat</TableHead>
+                <TableHead className="text-center">{t("properties.colCondition")}</TableHead>
+                <TableHead className="text-center hidden sm:table-cell">{t("properties.colSpaces")}</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
@@ -370,18 +371,18 @@ export default function PropertiesPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/app/properties/${property.id}`}>
                             <Eye className="mr-2 h-4 w-4" />
-                            Näytä
+                            {t("properties.actionShow")}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/app/properties/${property.id}/edit`}>
                             <Pencil className="mr-2 h-4 w-4" />
-                            Muokkaa
+                            {t("properties.actionEdit")}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Poista
+                          {t("properties.actionDelete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
