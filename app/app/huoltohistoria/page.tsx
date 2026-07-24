@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { getTranslation } from "@/lib/i18n/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -52,17 +53,6 @@ interface MaintenanceTask {
   contractor?: string
 }
 
-const categoryLabels: Record<string, string> = {
-  hvac: "LVI",
-  electrical: "Sähkö",
-  structural: "Rakenne",
-  roof: "Katto",
-  facade: "Julkisivu",
-  interior: "Sisätilat",
-  outdoor: "Piha-alueet",
-  other: "Muu",
-}
-
 const urgencyBadge: Record<UrgencyCode, string> = {
   valitom: "border-red-500 text-red-500",
   "1_3v": "border-amber-500 text-amber-500",
@@ -70,12 +60,13 @@ const urgencyBadge: Record<UrgencyCode, string> = {
   "5_10v": "",
 }
 
-function formatEur(value: number) {
-  return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+function formatEur(value: number, locale: string) {
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
 }
 
 export default async function HuoltohistoriaPage() {
   const supabase = await createClient()
+  const { t, locale } = await getTranslation()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -150,7 +141,7 @@ export default async function HuoltohistoriaPage() {
           recommended.push({
             id: `${b.id}-${item.categoryStringId}`,
             propertyId: String(b.id),
-            propertyName: b.name || "Nimetön kiinteistö",
+            propertyName: b.name || t("maintenance.defaultPropertyName"),
             categoryName: item.categoryName,
             conditionScore: item.conditionScore,
             urgency: item.urgency,
@@ -175,17 +166,17 @@ export default async function HuoltohistoriaPage() {
 
       if (tasksData && tasksData.length > 0) {
         const buildingNameMap = new Map<number, string>(
-          (buildings || []).map(b => [b.id, b.name || "Nimetön kiinteistö"])
+          (buildings || []).map(b => [b.id, b.name || t("maintenance.defaultPropertyName")])
         )
-        tasks = tasksData.map((t: any) => ({
-          id: t.id,
-          propertyName: buildingNameMap.get(t.kiinteisto_id) || "Tuntematon",
-          title: t.otsikko || "-",
-          category: t.kategoria || "other",
-          date: t.pvm,
-          cost: t.kustannus || 0,
-          status: t.tila || "planned",
-          contractor: t.urakoitsija,
+        tasks = tasksData.map((row: any) => ({
+          id: row.id,
+          propertyName: buildingNameMap.get(row.kiinteisto_id) || t("maintenance.unknownProperty"),
+          title: row.otsikko || "-",
+          category: row.kategoria || "other",
+          date: row.pvm,
+          cost: row.kustannus || 0,
+          status: row.tila || "planned",
+          contractor: row.urakoitsija,
         }))
       }
     }
@@ -195,12 +186,23 @@ export default async function HuoltohistoriaPage() {
 
   const totalRecommendedCost = recommended.reduce((sum, r) => sum + r.cost, 0)
   const criticalCount = recommended.filter(r => r.urgency === "valitom").length
-  const completedCount = tasks.filter(t => t.status === "complete").length
+  const completedCount = tasks.filter(task => task.status === "complete").length
+
+  const categoryLabels: Record<string, string> = {
+    hvac: t("maintenance.categoryHvac"),
+    electrical: t("maintenance.categoryElectrical"),
+    structural: t("maintenance.categoryStructural"),
+    roof: t("maintenance.categoryRoof"),
+    facade: t("maintenance.categoryFacade"),
+    interior: t("maintenance.categoryInterior"),
+    outdoor: t("maintenance.categoryOutdoor"),
+    other: t("maintenance.categoryOther"),
+  }
 
   const statusConfig = {
-    planned: { label: "Suunniteltu", variant: "secondary" as const, icon: Clock },
-    "in-progress": { label: "Käynnissä", variant: "default" as const, icon: AlertTriangle },
-    complete: { label: "Valmis", variant: "outline" as const, icon: CheckCircle },
+    planned: { label: t("maintenance.statusPlanned"), variant: "secondary" as const, icon: Clock },
+    "in-progress": { label: t("maintenance.statusInProgress"), variant: "default" as const, icon: AlertTriangle },
+    complete: { label: t("maintenance.statusComplete"), variant: "outline" as const, icon: CheckCircle },
   }
 
   // Group recommended items by urgency for display
@@ -215,15 +217,15 @@ export default async function HuoltohistoriaPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Huoltotoimenpiteet</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("maintenance.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            RT-standardeihin perustuvat suositellut huoltotoimenpiteet koko portfoliolle
+            {t("maintenance.subtitle")}
           </p>
         </div>
         <Button size="sm" asChild>
           <Link href="/app/huoltohistoria/new">
             <Plus className="mr-2 h-4 w-4" />
-            Kirjaa tehty työ
+            {t("maintenance.logWorkButton")}
           </Link>
         </Button>
       </div>
@@ -232,7 +234,7 @@ export default async function HuoltohistoriaPage() {
       <div className="grid gap-4 sm:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Suositellut toimenpiteet</CardDescription>
+            <CardDescription>{t("maintenance.statRecommended")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{recommended.length}</div>
@@ -240,7 +242,7 @@ export default async function HuoltohistoriaPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Kriittiset</CardDescription>
+            <CardDescription>{t("maintenance.statCritical")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -251,15 +253,15 @@ export default async function HuoltohistoriaPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Arvioitu kustannus</CardDescription>
+            <CardDescription>{t("maintenance.statEstimatedCost")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatEur(totalRecommendedCost)}</div>
+            <div className="text-2xl font-bold">{formatEur(totalRecommendedCost, locale)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Kirjatut työt</CardDescription>
+            <CardDescription>{t("maintenance.statLoggedWorks")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -273,9 +275,9 @@ export default async function HuoltohistoriaPage() {
       {/* Recommended maintenance */}
       <Card>
         <CardHeader>
-          <CardTitle>Suositellut huoltotoimenpiteet</CardTitle>
+          <CardTitle>{t("maintenance.recommendedTitle")}</CardTitle>
           <CardDescription>
-            Johdettu rakennustiedoista ja RT-standardeista. Tarkentuu tehtyjen tarkastusten mukaan.
+            {t("maintenance.recommendedDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -284,9 +286,9 @@ export default async function HuoltohistoriaPage() {
               <div className="rounded-full bg-muted p-4 mb-4">
                 <Wrench className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Ei kiireellisiä toimenpiteitä</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t("maintenance.emptyTitle")}</h3>
               <p className="text-sm text-muted-foreground text-center max-w-md">
-                Portfolion rakennukset ovat hyvässä kunnossa, tai lisää ensin kiinteistöjä nähdäksesi suositukset.
+                {t("maintenance.emptyDescription")}
               </p>
             </div>
           ) : (
@@ -304,7 +306,7 @@ export default async function HuoltohistoriaPage() {
                       <Badge variant="secondary" className="text-xs">{group.items.length}</Badge>
                     </div>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {formatEur(group.items.reduce((sum, i) => sum + i.cost, 0))}
+                      {formatEur(group.items.reduce((sum, i) => sum + i.cost, 0), locale)}
                     </span>
                   </div>
                   <div className="space-y-2">
@@ -320,7 +322,7 @@ export default async function HuoltohistoriaPage() {
                             <Building2 className="h-3 w-3" />
                             <span className="truncate">{item.propertyName}</span>
                             {!item.fromInspection && (
-                              <span className="text-muted-foreground/60">· arvio</span>
+                              <span className="text-muted-foreground/60">· {t("maintenance.estimateSuffix")}</span>
                             )}
                           </div>
                         </div>
@@ -328,7 +330,7 @@ export default async function HuoltohistoriaPage() {
                           <Badge variant="outline" className={urgencyBadge[item.urgency]}>
                             KL {item.conditionScore}
                           </Badge>
-                          <span className="text-sm font-medium">{formatEur(item.cost)}</span>
+                          <span className="text-sm font-medium">{formatEur(item.cost, locale)}</span>
                         </div>
                       </Link>
                     ))}
@@ -344,19 +346,19 @@ export default async function HuoltohistoriaPage() {
       {tasks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Kirjatut huoltotyöt</CardTitle>
-            <CardDescription>Toteutuneet ja suunnitellut työt</CardDescription>
+            <CardTitle>{t("maintenance.loggedTitle")}</CardTitle>
+            <CardDescription>{t("maintenance.loggedDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Työ</TableHead>
-                  <TableHead>Kiinteistö</TableHead>
-                  <TableHead>Kategoria</TableHead>
-                  <TableHead>Päivämäärä</TableHead>
-                  <TableHead>Kustannus</TableHead>
-                  <TableHead>Tila</TableHead>
+                  <TableHead>{t("maintenance.colWork")}</TableHead>
+                  <TableHead>{t("maintenance.colProperty")}</TableHead>
+                  <TableHead>{t("maintenance.colCategory")}</TableHead>
+                  <TableHead>{t("maintenance.colDate")}</TableHead>
+                  <TableHead>{t("maintenance.colCost")}</TableHead>
+                  <TableHead>{t("maintenance.colStatus")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -387,11 +389,11 @@ export default async function HuoltohistoriaPage() {
                       <TableCell>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
-                          {new Date(task.date).toLocaleDateString("fi-FI")}
+                          {new Date(task.date).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">{formatEur(task.cost)}</span>
+                        <span className="text-sm">{formatEur(task.cost, locale)}</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusInfo.variant} className="gap-1">
