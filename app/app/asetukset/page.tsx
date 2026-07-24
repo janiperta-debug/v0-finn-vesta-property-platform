@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { getTranslation } from "@/lib/i18n/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,7 @@ import {
 
 export default async function AsetuksetPage() {
   const supabase = await createClient()
+  const { t } = await getTranslation()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -49,7 +51,7 @@ export default async function AsetuksetPage() {
     if (orgUser?.org_id) {
       organization = {
         id: String(orgUser.org_id),
-        name: (orgUser.organizations as any)?.name || 'Organisaatio',
+        name: (orgUser.organizations as any)?.name || t("settings.orgDefaultName"),
       }
       isPaakayttaja = orgUser.org_role === 'paakayttaja'
 
@@ -62,7 +64,7 @@ export default async function AsetuksetPage() {
       if (users) {
         orgUsers = users.map(u => ({
           id: String(u.id),
-          email: u.user_email || (u.user_id === user.id ? user.email || '' : 'käyttäjä'),
+          email: u.user_email || (u.user_id === user.id ? user.email || '' : t("settings.userManagementUnknownUser")),
           role: u.org_role || 'kayttaja',
         }))
         userStats.paakayttajat = users.filter(u => u.org_role === 'paakayttaja').length
@@ -86,20 +88,20 @@ export default async function AsetuksetPage() {
   }
 
   // Calculate monthly cost estimate
-  const monthlyCost = 
-    userStats.paakayttajat * 79 + 
-    userStats.kayttajat * 49 + 
-    buildingStats.small * 9 + 
-    buildingStats.medium * 15 + 
+  const monthlyCost =
+    userStats.paakayttajat * 79 +
+    userStats.kayttajat * 49 +
+    buildingStats.small * 9 +
+    buildingStats.medium * 15 +
     buildingStats.large * 25
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">Asetukset</h1>
+        <h1 className="font-heading text-2xl font-bold text-foreground">{t("settings.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Hallitse profiiliasi ja organisaatiota
+          {t("settings.subtitle")}
         </p>
       </div>
 
@@ -107,11 +109,11 @@ export default async function AsetuksetPage() {
         <TabsList className="w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
-            Profiili
+            {t("settings.tabProfile")}
           </TabsTrigger>
           <TabsTrigger value="organization" className="gap-2">
             <Building2 className="h-4 w-4" />
-            Organisaatio
+            {t("settings.tabOrganization")}
           </TabsTrigger>
         </TabsList>
 
@@ -119,62 +121,62 @@ export default async function AsetuksetPage() {
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Profiilitiedot</CardTitle>
-              <CardDescription>Omat tili- ja yhteystietosi</CardDescription>
+              <CardTitle>{t("settings.profileTitle")}</CardTitle>
+              <CardDescription>{t("settings.profileDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Sähköposti</Label>
+                  <Label htmlFor="email">{t("settings.emailLabel")}</Label>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <Input id="email" value={user.email || ''} disabled className="bg-muted" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Puhelinnumero</Label>
+                  <Label htmlFor="phone">{t("settings.phoneLabel")}</Label>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <Input id="phone" placeholder="+358 40 123 4567" />
+                    <Input id="phone" placeholder={t("settings.phonePlaceholder")} />
                   </div>
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">Etunimi</Label>
-                  <Input id="firstName" placeholder="Matti" />
+                  <Label htmlFor="firstName">{t("settings.firstNameLabel")}</Label>
+                  <Input id="firstName" placeholder={t("settings.firstNamePlaceholder")} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Sukunimi</Label>
-                  <Input id="lastName" placeholder="Meikäläinen" />
+                  <Label htmlFor="lastName">{t("settings.lastNameLabel")}</Label>
+                  <Input id="lastName" placeholder={t("settings.lastNamePlaceholder")} />
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button>Tallenna muutokset</Button>
+                <Button>{t("settings.saveButton")}</Button>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Ilmoitukset</CardTitle>
-              <CardDescription>Hallitse sähköposti-ilmoituksia</CardDescription>
+              <CardTitle>{t("settings.notificationsTitle")}</CardTitle>
+              <CardDescription>{t("settings.notificationsDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Kuntoarviomuistutukset</p>
-                  <p className="text-sm text-muted-foreground">Saat muistutuksen kun kuntoarvio vanhenee</p>
+                  <p className="font-medium">{t("settings.inspectionRemindersTitle")}</p>
+                  <p className="text-sm text-muted-foreground">{t("settings.inspectionRemindersDescription")}</p>
                 </div>
-                <Button variant="outline" size="sm">Käytössä</Button>
+                <Button variant="outline" size="sm">{t("settings.notificationsEnabled")}</Button>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium">Viikkoraportti</p>
-                  <p className="text-sm text-muted-foreground">Viikoittainen yhteenveto portfolion tilasta</p>
+                  <p className="font-medium">{t("settings.weeklyReportTitle")}</p>
+                  <p className="text-sm text-muted-foreground">{t("settings.weeklyReportDescription")}</p>
                 </div>
-                <Button variant="outline" size="sm">Pois käytöstä</Button>
+                <Button variant="outline" size="sm">{t("settings.notificationsDisabled")}</Button>
               </div>
             </CardContent>
           </Card>
@@ -185,52 +187,52 @@ export default async function AsetuksetPage() {
           {/* Billing Stats - Informative only */}
           <Card>
             <CardHeader>
-              <CardTitle>Tilastot</CardTitle>
-              <CardDescription>Organisaation käyttötilastot laskutusta varten</CardDescription>
+              <CardTitle>{t("settings.orgStatsTitle")}</CardTitle>
+              <CardDescription>{t("settings.orgStatsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Käyttäjät</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("settings.orgUsersLabel")}</p>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold">{userStats.paakayttajat}</span>
-                    <span className="text-sm text-muted-foreground">pääkäyttäjää</span>
+                    <span className="text-sm text-muted-foreground">{t("settings.orgAdmins")}</span>
                   </div>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-2xl font-bold">{userStats.kayttajat}</span>
-                    <span className="text-sm text-muted-foreground">käyttäjää</span>
+                    <span className="text-sm text-muted-foreground">{t("settings.orgUsers")}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    79 €/kk + 49 €/kk
+                    {t("settings.orgUserPricingLine")}
                   </p>
                 </div>
-                
+
                 <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Rakennukset koon mukaan</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("settings.orgBuildingsBySizeLabel")}</p>
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span>Pieni {"(<1000m²)"}</span>
+                      <span>{t("settings.orgSmall")}</span>
                       <span className="font-medium">{buildingStats.small} × 9 €</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Keskikoko</span>
+                      <span>{t("settings.orgMedium")}</span>
                       <span className="font-medium">{buildingStats.medium} × 15 €</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Suuri {"(>5000m²)"}</span>
+                      <span>{t("settings.orgLarge")}</span>
                       <span className="font-medium">{buildingStats.large} × 25 €</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Arvioitu kuukausihinta</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("settings.orgEstimatedMonthlyLabel")}</p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-bold text-primary">{monthlyCost}</span>
                     <span className="text-sm text-muted-foreground">€/kk</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Laskutus hoidetaan erikseen
+                    {t("settings.orgBillingNote")}
                   </p>
                 </div>
               </div>
@@ -244,18 +246,18 @@ export default async function AsetuksetPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    Käyttäjähallinta
+                    {t("settings.userManagementTitle")}
                   </CardTitle>
                   <CardDescription>
-                    {isPaakayttaja 
-                      ? "Hallinnoi organisaation käyttäjiä ja rooleja" 
-                      : "Vain pääkäyttäjät voivat hallita käyttäjiä"}
+                    {isPaakayttaja
+                      ? t("settings.userManagementDescriptionAdmin")
+                      : t("settings.userManagementDescriptionNonAdmin")}
                   </CardDescription>
                 </div>
                 {isPaakayttaja && (
                   <Button>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Kutsu käyttäjä
+                    {t("settings.userManagementInviteButton")}
                   </Button>
                 )}
               </div>
@@ -264,9 +266,9 @@ export default async function AsetuksetPage() {
               {orgUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Ei käyttäjiä vielä</p>
+                  <p>{t("settings.userManagementEmptyTitle")}</p>
                   {isPaakayttaja && (
-                    <p className="text-sm">Kutsu käyttäjiä liittymään organisaatioosi</p>
+                    <p className="text-sm">{t("settings.userManagementEmptyDescription")}</p>
                   )}
                 </div>
               ) : (
@@ -279,14 +281,14 @@ export default async function AsetuksetPage() {
                         </div>
                         <div>
                           <p className="font-medium">{orgUser.email}</p>
-                          <Badge 
-                            variant={orgUser.role === 'paakayttaja' ? 'default' : 'secondary'} 
+                          <Badge
+                            variant={orgUser.role === 'paakayttaja' ? 'default' : 'secondary'}
                             className="mt-1"
                           >
                             {orgUser.role === 'paakayttaja' ? (
-                              <><Crown className="mr-1 h-3 w-3" /> Pääkäyttäjä</>
+                              <><Crown className="mr-1 h-3 w-3" /> {t("settings.userManagementRoleAdmin")}</>
                             ) : (
-                              <><Shield className="mr-1 h-3 w-3" /> Käyttäjä</>
+                              <><Shield className="mr-1 h-3 w-3" /> {t("settings.userManagementRoleUser")}</>
                             )}
                           </Badge>
                         </div>
@@ -296,15 +298,15 @@ export default async function AsetuksetPage() {
                           {orgUser.role === 'kayttaja' ? (
                             <Button variant="outline" size="sm">
                               <Crown className="mr-1 h-4 w-4" />
-                              Ylennä
+                              {t("settings.userManagementPromoteButton")}
                             </Button>
                           ) : (
                             <Button variant="outline" size="sm">
-                              Poista ylläpito
+                              {t("settings.userManagementDemoteButton")}
                             </Button>
                           )}
                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                            Poista
+                            {t("settings.userManagementRemoveButton")}
                           </Button>
                         </div>
                       )}
@@ -312,10 +314,10 @@ export default async function AsetuksetPage() {
                   ))}
                 </div>
               )}
-              
+
               {!isPaakayttaja && orgUsers.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-4">
-                  Ota yhteyttä organisaatiosi pääkäyttäjään, jos tarvitset muutoksia käyttöoikeuksiin.
+                  {t("settings.userManagementContactAdminNote")}
                 </p>
               )}
             </CardContent>
