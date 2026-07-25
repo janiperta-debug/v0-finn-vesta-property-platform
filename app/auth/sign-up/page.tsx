@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,6 +17,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function Page() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
@@ -30,7 +32,7 @@ export default function Page() {
     setError(null)
 
     if (password !== repeatPassword) {
-      setError('Passwords do not match')
+      setError(t('auth.passwordMismatchError'))
       setIsLoading(false)
       return
     }
@@ -51,7 +53,7 @@ export default function Page() {
       if (error) throw error
       router.push('/auth/sign-up-success')
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : t('auth.genericError'))
     } finally {
       setIsLoading(false)
     }
@@ -63,14 +65,14 @@ export default function Page() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Sign up</CardTitle>
-              <CardDescription>Create a new account</CardDescription>
+              <CardTitle className="text-2xl">{t("auth.signUpTitle")}</CardTitle>
+              <CardDescription>{t("auth.signUpDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSignUp}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t("auth.emailLabel")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -82,7 +84,7 @@ export default function Page() {
                   </div>
                   <div className="grid gap-2">
                     <div className="flex items-center">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password">{t("auth.passwordLabel")}</Label>
                     </div>
                     <Input
                       id="password"
@@ -94,7 +96,7 @@ export default function Page() {
                   </div>
                   <div className="grid gap-2">
                     <div className="flex items-center">
-                      <Label htmlFor="repeat-password">Repeat Password</Label>
+                      <Label htmlFor="repeat-password">{t("auth.repeatPasswordLabel")}</Label>
                     </div>
                     <Input
                       id="repeat-password"
@@ -106,16 +108,16 @@ export default function Page() {
                   </div>
                   {error && <p className="text-sm text-red-500">{error}</p>}
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Creating an account...' : 'Sign up'}
+                    {isLoading ? t("auth.creatingAccount") : t("auth.signUpTitle")}
                   </Button>
                 </div>
                 <div className="mt-4 text-center text-sm">
-                  Already have an account?{' '}
+                  {t("auth.alreadyHaveAccount")}{' '}
                   <Link
                     href="/auth/login"
                     className="underline underline-offset-4"
                   >
-                    Login
+                    {t("auth.loginLinkText")}
                   </Link>
                 </div>
               </form>
