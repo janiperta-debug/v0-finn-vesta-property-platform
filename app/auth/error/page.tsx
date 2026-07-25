@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getTranslation } from '@/lib/i18n/server'
 
 export default async function Page({
   searchParams,
@@ -6,6 +7,7 @@ export default async function Page({
   searchParams: Promise<{ error: string }>
 }) {
   const params = await searchParams
+  const { t } = await getTranslation()
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -14,17 +16,17 @@ export default async function Page({
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Sorry, something went wrong.
+                {t("auth.errorTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {params?.error ? (
                 <p className="text-sm text-muted-foreground">
-                  Code error: {params.error}
+                  {t("auth.errorCodePrefix")} {params.error}
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  An unspecified error occurred.
+                  {t("auth.errorUnspecified")}
                 </p>
               )}
             </CardContent>
