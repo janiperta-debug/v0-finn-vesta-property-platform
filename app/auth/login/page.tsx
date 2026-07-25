@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/i18n'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,6 +17,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function Page() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -36,7 +38,7 @@ export default function Page() {
       if (error) throw error
       router.push('/app')
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      setError(error instanceof Error ? error.message : t('auth.genericError'))
     } finally {
       setIsLoading(false)
     }
@@ -48,20 +50,20 @@ export default function Page() {
         <div className="flex flex-col gap-6">
           <div className="text-center mb-4">
             <h1 className="text-2xl font-bold text-foreground">FinnVesta</h1>
-            <p className="text-sm text-muted-foreground">Kiinteistosalkunhallinta</p>
+            <p className="text-sm text-muted-foreground">{t("auth.tagline")}</p>
           </div>
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Kirjaudu sisään</CardTitle>
+              <CardTitle className="text-2xl">{t("auth.loginTitle")}</CardTitle>
               <CardDescription>
-                Syötä sähköpostiosoitteesi ja salasanasi
+                {t("auth.loginDescription")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Sähköposti</Label>
+                    <Label htmlFor="email">{t("auth.emailLabel")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -72,7 +74,7 @@ export default function Page() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">Salasana</Label>
+                    <Label htmlFor="password">{t("auth.passwordLabel")}</Label>
                     <Input
                       id="password"
                       type="password"
@@ -83,11 +85,11 @@ export default function Page() {
                   </div>
                   {error && <p className="text-sm text-red-500">{error}</p>}
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Kirjaudutaan...' : 'Kirjaudu'}
+                    {isLoading ? t("auth.loggingIn") : t("auth.loginButton")}
                   </Button>
                 </div>
                 <div className="mt-4 text-center text-sm text-muted-foreground">
-                  Käyttäjätunnukset saat pääkäyttäjältäsi
+                  {t("auth.credentialsHint")}
                 </div>
               </form>
             </CardContent>
