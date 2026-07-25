@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n/server'
 import {
   Card,
   CardContent,
@@ -6,7 +7,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
-export default function Page() {
+export default async function Page() {
+  const { t } = await getTranslation()
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -14,14 +16,13 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Thank you for signing up!
+                {t("auth.signUpSuccessTitle")}
               </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardDescription>{t("auth.signUpSuccessDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
+                {t("auth.signUpSuccessBody")}
               </p>
             </CardContent>
           </Card>
