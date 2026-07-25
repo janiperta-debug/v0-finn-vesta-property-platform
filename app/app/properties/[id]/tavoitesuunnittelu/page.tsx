@@ -16,6 +16,7 @@ import {
   TrendingUp,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "@/lib/i18n"
 import {
   derivePlanItems,
   timelineBuckets,
@@ -24,17 +25,18 @@ import {
   type UrgencyCode,
 } from "@/lib/building-plan"
 
-// Visual styling per urgency timeframe (labels/order come from building-plan)
-const TIMEFRAME_STYLE: Record<UrgencyCode, { title: string; priorityLabel: string; dot: string; badge: string }> = {
-  valitom: { title: "Välitön", priorityLabel: "Kriittinen", dot: "bg-red-500", badge: "border-red-500 text-red-500" },
-  "1_3v": { title: "Lyhyt aikaväli", priorityLabel: "Korkea", dot: "bg-orange-500", badge: "border-orange-500 text-orange-500" },
-  "3_5v": { title: "Keskipitkä aikaväli", priorityLabel: "Normaali", dot: "bg-yellow-500", badge: "border-yellow-500 text-yellow-600" },
-  "5_10v": { title: "Pitkä aikaväli", priorityLabel: "Matala", dot: "bg-emerald-500", badge: "border-emerald-500 text-emerald-500" },
-}
-
 export default function TavoitesuunnitteluPage() {
   const params = useParams()
   const propertyId = params.id as string
+  const { t, locale } = useTranslation()
+
+  // Visual styling per urgency timeframe (labels/order come from building-plan)
+  const TIMEFRAME_STYLE: Record<UrgencyCode, { title: string; priorityLabel: string; dot: string; badge: string }> = {
+    valitom: { title: t("targetPlanning.timeframeImmediate"), priorityLabel: t("targetPlanning.priorityCritical"), dot: "bg-red-500", badge: "border-red-500 text-red-500" },
+    "1_3v": { title: t("targetPlanning.timeframeShort"), priorityLabel: t("targetPlanning.priorityHigh"), dot: "bg-orange-500", badge: "border-orange-500 text-orange-500" },
+    "3_5v": { title: t("targetPlanning.timeframeMedium"), priorityLabel: t("targetPlanning.priorityNormal"), dot: "bg-yellow-500", badge: "border-yellow-500 text-yellow-600" },
+    "5_10v": { title: t("targetPlanning.timeframeLong"), priorityLabel: t("targetPlanning.priorityLow"), dot: "bg-emerald-500", badge: "border-emerald-500 text-emerald-500" },
+  }
 
   const [loading, setLoading] = useState(true)
   const [property, setProperty] = useState<any>(null)
@@ -97,7 +99,7 @@ export default function TavoitesuunnitteluPage() {
       }
     } catch (error) {
       console.error("Load error:", error)
-      toast.error("Tietojen lataus epäonnistui")
+      toast.error(t("propertyComponents.loadError"))
     } finally {
       setLoading(false)
     }
@@ -111,7 +113,7 @@ export default function TavoitesuunnitteluPage() {
   const criticalCount = items.filter(i => i.urgency === "valitom" && i.cost > 0).length
 
   function formatEur(value: number) {
-    return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
   }
 
   if (loading) {
@@ -139,8 +141,8 @@ export default function TavoitesuunnitteluPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">Tavoitesuunnittelu</h1>
-            <p className="text-sm text-muted-foreground">{property?.name} - 10v PTS</p>
+            <h1 className="font-heading text-2xl font-bold text-foreground">{t("nav.targetPlanning")}</h1>
+            <p className="text-sm text-muted-foreground">{property?.name} - {t("targetPlanning.tenYearPts")}</p>
           </div>
         </div>
       </div>
@@ -150,14 +152,13 @@ export default function TavoitesuunnitteluPage() {
         <CardContent className="flex items-start gap-3 py-4">
           <TrendingUp className="h-5 w-5 text-primary mt-0.5 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-foreground">Automaattinen pitkän tähtäimen suunnitelma</p>
+            <p className="text-sm font-medium text-foreground">{t("targetPlanning.autoTitle")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Suunnitelma on luotu rakennuksen perustietojen ja RT-standardien perusteella.
-              Toimenpiteet on jaettu kiireellisyyden mukaan aikajaksoihin.
+              {t("targetPlanning.autoDescription")}
               {hasInspection && inspectionDate ? (
-                <> Tarkennettu tarkastuksella {new Date(inspectionDate).toLocaleDateString("fi-FI")}.</>
+                <> {t("targetPlanning.refinedByInspection")} {new Date(inspectionDate).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}.</>
               ) : (
-                <> Tee kuntoarvio tarkentaaksesi arviota.</>
+                <> {t("targetPlanning.refineHint")}</>
               )}
             </p>
           </div>
@@ -170,15 +171,14 @@ export default function TavoitesuunnitteluPage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <CalendarRange className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei korjaustarpeita</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("targetPlanning.emptyTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Rakennuksen perustietojen perusteella ei ole tunnistettu korjaustarpeita seuraavan
-              10 vuoden aikana. Tee kuntoarvio saadaksesi tarkemman arvion.
+              {t("targetPlanning.emptyDescription")}
             </p>
             <Button asChild>
               <Link href={`/app/kuntoarviot/new?building_id=${propertyId}`}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
-                Aloita kuntoarvio
+                {t("propertyComponents.startInspection")}
               </Link>
             </Button>
           </CardContent>
@@ -189,34 +189,34 @@ export default function TavoitesuunnitteluPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Investoinnit yhteensä (10v)</CardDescription>
+                <CardDescription>{t("targetPlanning.totalInvestment")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatEur(totalInvestment)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {buckets.reduce((n, b) => n + b.items.length, 0)} suunniteltua toimenpidettä
+                  {buckets.reduce((n, b) => n + b.items.length, 0)} {t("targetPlanning.plannedActionsSuffix")}
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Seuraavat 5 vuotta</CardDescription>
+                <CardDescription>{t("targetPlanning.next5Years")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatEur(next5YearsTotal)}</div>
-                <p className="text-xs text-muted-foreground mt-1">Kiireellisimmät toimenpiteet</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("targetPlanning.mostUrgentActions")}</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Kriittiset toimenpiteet</CardDescription>
+                <CardDescription>{t("targetPlanning.criticalActions")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold">{criticalCount}</span>
                   {criticalCount > 0 && <AlertTriangle className="h-5 w-5 text-red-500" />}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">vaativat välitöntä huomiota</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("targetPlanning.requiresImmediateAttention")}</p>
               </CardContent>
             </Card>
           </div>
@@ -238,7 +238,7 @@ export default function TavoitesuunnitteluPage() {
                       </div>
                       <div className="text-right">
                         <span className="font-semibold">{formatEur(bucket.total)}</span>
-                        <p className="text-xs text-muted-foreground">{bucket.items.length} toimenpidettä</p>
+                        <p className="text-xs text-muted-foreground">{bucket.items.length} {t("targetPlanning.actionsSuffix")}</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -256,10 +256,10 @@ export default function TavoitesuunnitteluPage() {
                             <div>
                               <p className="font-medium text-sm">{item.categoryName}</p>
                               <p className="text-xs text-muted-foreground">
-                                {item.fromInspection ? "Kuntoarvion perusteella" : "RT-standardiarvio"}
+                                {item.fromInspection ? t("targetPlanning.basedOnInspection") : t("propertyComponents.rtEstimate")}
                                 {item.remainingLifespan > 0
-                                  ? ` · käyttöikää jäljellä ~${item.remainingLifespan}v`
-                                  : " · käyttöikä ylittynyt"}
+                                  ? ` · ${t("targetPlanning.lifespanRemainingPrefix")} ~${item.remainingLifespan}${t("propertyComponents.yearsRemainingSuffix")}`
+                                  : ` · ${t("propertyComponents.lifespanExceeded")}`}
                               </p>
                             </div>
                           </div>
