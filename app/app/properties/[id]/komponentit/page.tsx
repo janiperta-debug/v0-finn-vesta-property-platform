@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "@/lib/i18n"
 import {
   derivePlanItems,
   overallCondition,
@@ -32,15 +33,6 @@ interface Inspection {
   overall_score: number | null
 }
 
-// RT-standardin kuntoluokka: 5 = erinomainen, 1 = heikko
-const conditionLabels: Record<number, { label: string; color: string; bg: string }> = {
-  5: { label: "Uusi/Erinomainen", color: "text-emerald-500", bg: "bg-emerald-500" },
-  4: { label: "Hyvä", color: "text-lime-500", bg: "bg-lime-500" },
-  3: { label: "Tyydyttävä", color: "text-yellow-500", bg: "bg-yellow-500" },
-  2: { label: "Välttävä", color: "text-orange-500", bg: "bg-orange-500" },
-  1: { label: "Heikko", color: "text-red-500", bg: "bg-red-500" },
-}
-
 const urgencyColor: Record<string, string> = {
   valitom: "text-red-500",
   "1_3v": "text-orange-500",
@@ -51,6 +43,16 @@ const urgencyColor: Record<string, string> = {
 export default function KomponentitPage() {
   const params = useParams()
   const propertyId = params.id as string
+  const { t, locale } = useTranslation()
+
+  // RT-standardin kuntoluokka: 5 = erinomainen, 1 = heikko
+  const conditionLabels: Record<number, { label: string; color: string; bg: string }> = {
+    5: { label: t("propertyComponents.condExcellent"), color: "text-emerald-500", bg: "bg-emerald-500" },
+    4: { label: t("propertyComponents.condGood"), color: "text-lime-500", bg: "bg-lime-500" },
+    3: { label: t("propertyComponents.condSatisfactory"), color: "text-yellow-500", bg: "bg-yellow-500" },
+    2: { label: t("propertyComponents.condPoor"), color: "text-orange-500", bg: "bg-orange-500" },
+    1: { label: t("propertyComponents.condWeak"), color: "text-red-500", bg: "bg-red-500" },
+  }
 
   const [loading, setLoading] = useState(true)
   const [property, setProperty] = useState<any>(null)
@@ -110,7 +112,7 @@ export default function KomponentitPage() {
       }
     } catch (error) {
       console.error("Load error:", error)
-      toast.error("Tietojen lataus epäonnistui")
+      toast.error(t("propertyComponents.loadError"))
     } finally {
       setLoading(false)
     }
@@ -122,7 +124,7 @@ export default function KomponentitPage() {
   const totalEstimatedCost = totalRepairCost(items)
 
   function formatEur(value: number) {
-    return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
   }
 
   if (loading) {
@@ -149,7 +151,7 @@ export default function KomponentitPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Komponentit</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("nav.components")}</h1>
           <p className="text-sm text-muted-foreground">{property?.name}</p>
         </div>
       </div>
@@ -158,7 +160,7 @@ export default function KomponentitPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Keskimääräinen kunto</CardDescription>
+            <CardDescription>{t("propertyComponents.avgCondition")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -174,7 +176,7 @@ export default function KomponentitPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Korjaustarpeet</CardDescription>
+            <CardDescription>{t("propertyComponents.repairNeeds")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -182,13 +184,13 @@ export default function KomponentitPage() {
               {urgentCount > 0 && <AlertTriangle className="h-5 w-5 text-orange-500" />}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              kiireellistä toimenpidettä
+              {t("propertyComponents.urgentActionsSuffix")}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Arvioitu korjauskustannus</CardDescription>
+            <CardDescription>{t("propertyComponents.estimatedRepairCost")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatEur(totalEstimatedCost)}</div>
@@ -201,11 +203,11 @@ export default function KomponentitPage() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
-              {latestInspection ? "Viimeisin tarkastus" : "RT-standardiarvio"}
+              {latestInspection ? t("propertyComponents.latestInspection") : t("propertyComponents.rtEstimate")}
             </CardTitle>
             {latestInspection && (
               <Badge variant="outline">
-                {new Date(latestInspection.inspection_date).toLocaleDateString("fi-FI")}
+                {new Date(latestInspection.inspection_date).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}
               </Badge>
             )}
           </div>
@@ -213,8 +215,8 @@ export default function KomponentitPage() {
         <CardContent>
           <p className="text-sm text-muted-foreground">
             {latestInspection
-              ? `Tarkastaja: ${latestInspection.inspector_name || "-"}. Arviot tarkennettu tarkastuksen tiedoilla.`
-              : "Arviot perustuvat rakennuksen ikään ja RT-standardien käyttöikiin. Tee kuntoarvio tarkentaaksesi."}
+              ? `${t("propertyComponents.inspectorPrefix")} ${latestInspection.inspector_name || "-"}. ${t("propertyComponents.refinedByInspection")}`
+              : t("propertyComponents.baselineEstimate")}
           </p>
         </CardContent>
       </Card>
@@ -226,22 +228,21 @@ export default function KomponentitPage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <Layers className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei komponenttitietoja</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("propertyComponents.emptyTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Lisää rakennuksen perustiedot (rakennusvuosi, pinta-ala, tyyppi) nähdäksesi
-              komponenttikohtaisen kuntoarvion.
+              {t("propertyComponents.emptyDescription")}
             </p>
             <Button asChild>
               <Link href={`/app/kuntoarviot/new?building_id=${propertyId}`}>
                 <ClipboardCheck className="h-4 w-4 mr-2" />
-                Aloita kuntoarvio
+                {t("propertyComponents.startInspection")}
               </Link>
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Komponenttiarviot</h2>
+          <h2 className="text-lg font-semibold">{t("propertyComponents.componentEvaluationsTitle")}</h2>
           {[...items]
             .sort((a, b) => a.conditionScore - b.conditionScore)
             .map((item) => {
@@ -259,7 +260,7 @@ export default function KomponentitPage() {
                             <span className="text-muted-foreground">|</span>
                             <span className={urgencyColor[item.urgency]}>{URGENCY_LABELS[item.urgency]}</span>
                             {!item.fromInspection && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">RT-arvio</Badge>
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t("propertyComponents.rtEstimateShort")}</Badge>
                             )}
                           </div>
                         </div>
@@ -269,7 +270,7 @@ export default function KomponentitPage() {
                           <p className="font-medium">{formatEur(item.cost)}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          {item.remainingLifespan > 0 ? `~${item.remainingLifespan}v jäljellä` : "käyttöikä ylittynyt"}
+                          {item.remainingLifespan > 0 ? `~${item.remainingLifespan}${t("propertyComponents.yearsRemainingSuffix")}` : t("propertyComponents.lifespanExceeded")}
                         </p>
                       </div>
                     </div>
