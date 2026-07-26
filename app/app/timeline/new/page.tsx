@@ -11,34 +11,36 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Save, CalendarRange } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslation } from "@/lib/i18n"
 
 interface Property {
   id: string
   nimi: string
 }
 
-const priorities = [
-  { value: "critical", label: "Kriittinen (0-1v)", color: "text-red-500" },
-  { value: "high", label: "Korkea (1-3v)", color: "text-amber-500" },
-  { value: "medium", label: "Keskitaso (3-5v)", color: "text-yellow-500" },
-  { value: "low", label: "Matala (5-10v)", color: "text-blue-500" },
-]
-
-const categories = [
-  "Katto",
-  "Julkisivu",
-  "Ikkunat ja ovet",
-  "LVI-järjestelmät",
-  "Sähköjärjestelmät",
-  "Sisätilat",
-  "Piha-alueet",
-  "Perustukset",
-  "Muu",
-]
-
 function NewInvestointiForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useTranslation()
+
+  const priorities = [
+    { value: "critical", label: t("timelineNew.priorityCritical"), color: "text-red-500" },
+    { value: "high", label: t("timelineNew.priorityHigh"), color: "text-amber-500" },
+    { value: "medium", label: t("timelineNew.priorityMedium"), color: "text-yellow-500" },
+    { value: "low", label: t("timelineNew.priorityLow"), color: "text-blue-500" },
+  ]
+
+  const categories = [
+    t("timelineNew.categoryRoof"),
+    t("timelineNew.categoryFacade"),
+    t("timelineNew.categoryWindowsDoors"),
+    t("timelineNew.categoryHvac"),
+    t("timelineNew.categoryElectrical"),
+    t("timelineNew.categoryInterior"),
+    t("timelineNew.categoryOutdoor"),
+    t("timelineNew.categoryFoundation"),
+    t("timelineNew.categoryOther"),
+  ]
   
   // Read URL parameters from suggestion
   const preselectedBuildingId = searchParams.get("building") || searchParams.get("building_id") || ""
@@ -111,7 +113,7 @@ function NewInvestointiForm() {
 
       const orgUser = orgUsers2?.[0]
       if (!orgUser) {
-        alert('Organisaatiota ei löytynyt')
+        alert(t('maintenanceNew.orgNotFoundAlert'))
         return
       }
 
@@ -134,7 +136,7 @@ function NewInvestointiForm() {
       router.push('/app/timeline')
     } catch (error) {
       console.error('Error creating investment plan:', error)
-      alert('Virhe investoinnin luomisessa')
+      alert(t('timelineNew.createErrorAlert'))
     } finally {
       setIsLoading(false)
     }
@@ -152,8 +154,8 @@ function NewInvestointiForm() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Lisää investointi</h1>
-          <p className="text-sm text-muted-foreground">Lisää uusi investointi PTS-suunnitelmaan</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("timeline.addInvestment")}</h1>
+          <p className="text-sm text-muted-foreground">{t("timelineNew.subtitle")}</p>
         </div>
       </div>
 
@@ -162,27 +164,27 @@ function NewInvestointiForm() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarRange className="h-5 w-5" />
-              Investoinnin tiedot
+              {t("timelineNew.formTitle")}
             </CardTitle>
             <CardDescription>
-              Määritä investoinnin perustiedot ja aikataulu
+              {t("timelineNew.formDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="property">Kiinteistö *</Label>
+                <Label htmlFor="property">{t("inspectionNew.propertyLabel")}</Label>
                 <Select 
                   value={formData.property_id} 
                   onValueChange={(v) => setFormData({...formData, property_id: v})}
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse kiinteistö" />
+                    <SelectValue placeholder={t("inspectionNew.propertyPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {properties.length === 0 ? (
-                      <SelectItem value="placeholder" disabled>Ei kiinteistöjä</SelectItem>
+                      <SelectItem value="placeholder" disabled>{t("inspectionNew.noProperties")}</SelectItem>
                     ) : (
                       properties.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.nimi}</SelectItem>
@@ -193,14 +195,14 @@ function NewInvestointiForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Kategoria *</Label>
+                <Label htmlFor="category">{t("maintenanceNew.categoryLabel")}</Label>
                 <Select 
                   value={formData.category} 
                   onValueChange={(v) => setFormData({...formData, category: v})}
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse kategoria" />
+                    <SelectValue placeholder={t("maintenanceNew.categoryPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map(cat => (
@@ -212,30 +214,30 @@ function NewInvestointiForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="title">Investoinnin kuvaus *</Label>
+              <Label htmlFor="title">{t("timelineNew.titleLabel")}</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder="esim. Katon uusiminen"
+                placeholder={t("timelineNew.titlePlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Lisätiedot</Label>
+              <Label htmlFor="description">{t("maintenanceNew.descriptionLabel")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Tarkempi kuvaus investoinnista"
+                placeholder={t("timelineNew.descriptionPlaceholder")}
                 rows={3}
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="cost">Arvioitu kustannus (€) *</Label>
+                <Label htmlFor="cost">{t("timelineNew.costLabel")}</Label>
                 <Input
                   id="cost"
                   type="number"
@@ -247,7 +249,7 @@ function NewInvestointiForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priority">Kiireellisyys *</Label>
+                <Label htmlFor="priority">{t("timelineNew.priorityLabel")}</Label>
                 <Select 
                   value={formData.priority} 
                   onValueChange={(v) => setFormData({...formData, priority: v})}
@@ -266,7 +268,7 @@ function NewInvestointiForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="year">Suunniteltu vuosi *</Label>
+                <Label htmlFor="year">{t("timelineNew.yearLabel")}</Label>
                 <Select 
                   value={formData.planned_year.toString()} 
                   onValueChange={(v) => setFormData({...formData, planned_year: parseInt(v)})}
@@ -286,10 +288,10 @@ function NewInvestointiForm() {
             <div className="flex gap-3 pt-4">
               <Button type="submit" disabled={isLoading || !formData.property_id || !formData.title || !formData.estimated_cost}>
                 <Save className="mr-2 h-4 w-4" />
-                {isLoading ? "Tallennetaan..." : "Tallenna investointi"}
+                {isLoading ? t("maintenanceNew.saving") : t("timelineNew.saveButton")}
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link href="/app/timeline">Peruuta</Link>
+                <Link href="/app/timeline">{t("common.cancel")}</Link>
               </Button>
             </div>
           </CardContent>
@@ -300,8 +302,9 @@ function NewInvestointiForm() {
 }
 
 export default function NewInvestointiPage() {
+  const { t } = useTranslation()
   return (
-    <Suspense fallback={<div className="p-8">Ladataan...</div>}>
+    <Suspense fallback={<div className="p-8">{t("common.loading")}</div>}>
       <NewInvestointiForm />
     </Suspense>
   )
