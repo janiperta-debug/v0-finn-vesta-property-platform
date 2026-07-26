@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getTranslation } from "@/lib/i18n/server"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,53 +17,55 @@ import {
   Mail,
 } from "lucide-react"
 
-const reportTypes = [
-  {
-    id: 'portfolio-summary',
-    title: 'Portfolio-yhteenveto',
-    description: 'Yleiskatsaus kaikkien kiinteistöjen tilasta, korjausvelasta ja kuntoluokista.',
-    icon: Building2,
-    formats: ['PDF', 'Excel'],
-  },
-  {
-    id: 'condition-report',
-    title: 'Kuntoarvioraportti',
-    description: 'Yksityiskohtainen raportti kiinteistön kuntoarviosta 17 kategorian mukaan.',
-    icon: ClipboardCheck,
-    formats: ['PDF'],
-  },
-  {
-    id: 'pts-report',
-    title: 'PTS-raportti',
-    description: '15 vuoden pitkän tähtäimen suunnitelma investoinneista ja korjauksista.',
-    icon: CalendarRange,
-    formats: ['PDF', 'Excel'],
-  },
-  {
-    id: 'comparison-report',
-    title: 'Vertailuraportti',
-    description: 'Kiinteistöjen välinen vertailu tunnuslukujen ja kunnon osalta.',
-    icon: BarChart3,
-    formats: ['PDF', 'Excel'],
-  },
-  {
-    id: 'repair-debt-report',
-    title: 'Korjausvelkaraportti',
-    description: 'Erittely korjausvelasta kiinteistöittäin ja komponenteittain.',
-    icon: TrendingUp,
-    formats: ['PDF', 'Excel'],
-  },
-  {
-    id: 'maintenance-report',
-    title: 'Huoltohistoriaraportti',
-    description: 'Yhteenveto tehdyistä huoltotöistä ja korjauksista.',
-    icon: FileSpreadsheet,
-    formats: ['PDF', 'Excel'],
-  },
-]
-
 export default async function RaportitPage() {
   const supabase = await createClient()
+  const { t } = await getTranslation()
+
+  const reportTypes = [
+    {
+      id: 'portfolio-summary',
+      title: t("reports.portfolioSummaryTitle"),
+      description: t("reports.portfolioSummaryDescription"),
+      icon: Building2,
+      formats: ['PDF', 'Excel'],
+    },
+    {
+      id: 'condition-report',
+      title: t("reports.conditionReportTitle"),
+      description: t("reports.conditionReportDescription"),
+      icon: ClipboardCheck,
+      formats: ['PDF'],
+    },
+    {
+      id: 'pts-report',
+      title: t("reports.ptsReportTitle"),
+      description: t("reports.ptsReportDescription"),
+      icon: CalendarRange,
+      formats: ['PDF', 'Excel'],
+    },
+    {
+      id: 'comparison-report',
+      title: t("reports.comparisonReportTitle"),
+      description: t("reports.comparisonReportDescription"),
+      icon: BarChart3,
+      formats: ['PDF', 'Excel'],
+    },
+    {
+      id: 'repair-debt-report',
+      title: t("reports.repairDebtReportTitle"),
+      description: t("reports.repairDebtReportDescription"),
+      icon: TrendingUp,
+      formats: ['PDF', 'Excel'],
+    },
+    {
+      id: 'maintenance-report',
+      title: t("reports.maintenanceReportTitle"),
+      description: t("reports.maintenanceReportDescription"),
+      icon: FileSpreadsheet,
+      formats: ['PDF', 'Excel'],
+    },
+  ]
+
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -97,9 +100,9 @@ export default async function RaportitPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Raportit</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("reports.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Luo ja lataa raportteja kiinteistöportfoliostasi
+            {t("reports.subtitle")}
           </p>
         </div>
       </div>
@@ -110,14 +113,14 @@ export default async function RaportitPage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei raportoitavaa dataa</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("reports.emptyTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Lisää kiinteistöjä portfolioosi luodaksesi raportteja.
+              {t("reports.emptyDescription")}
             </p>
             <Button asChild>
               <a href="/app/properties/new">
                 <Building2 className="mr-2 h-4 w-4" />
-                Lisää kiinteistö
+                {t("dashboard.addProperty")}
               </a>
             </Button>
           </CardContent>
@@ -127,22 +130,22 @@ export default async function RaportitPage() {
           {/* Quick actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Pikatoiminnot</CardTitle>
-              <CardDescription>Luo yleisimmät raportit yhdellä klikkauksella</CardDescription>
+              <CardTitle>{t("reports.quickActionsTitle")}</CardTitle>
+              <CardDescription>{t("reports.quickActionsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3">
                 <Button variant="outline" className="gap-2">
                   <Download className="h-4 w-4" />
-                  Lataa portfolio-yhteenveto (PDF)
+                  {t("reports.downloadPortfolioSummary")}
                 </Button>
                 <Button variant="outline" className="gap-2">
                   <FileSpreadsheet className="h-4 w-4" />
-                  Vie kiinteistötiedot (Excel)
+                  {t("reports.exportPropertyData")}
                 </Button>
                 <Button variant="outline" className="gap-2">
                   <Printer className="h-4 w-4" />
-                  Tulosta PTS-raportti
+                  {t("reports.printPtsReport")}
                 </Button>
               </div>
             </CardContent>
@@ -150,7 +153,7 @@ export default async function RaportitPage() {
 
           {/* Report types */}
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground mb-4">Raporttityypit</h2>
+            <h2 className="font-heading text-lg font-semibold text-foreground mb-4">{t("reports.reportTypesTitle")}</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {reportTypes.map((report) => {
                 const Icon = report.icon
@@ -180,7 +183,7 @@ export default async function RaportitPage() {
                         </div>
                         <Button size="sm" variant="outline" className="gap-1.5">
                           <Download className="h-3.5 w-3.5" />
-                          Luo
+                          {t("reports.createButton")}
                         </Button>
                       </div>
                     </CardContent>
@@ -195,21 +198,21 @@ export default async function RaportitPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Ajastetut raportit</CardTitle>
-                  <CardDescription>Automaattisesti lähetettävät raportit</CardDescription>
+                  <CardTitle>{t("reports.scheduledTitle")}</CardTitle>
+                  <CardDescription>{t("reports.scheduledDescription")}</CardDescription>
                 </div>
                 <Button size="sm" variant="outline">
                   <Mail className="mr-2 h-4 w-4" />
-                  Lisää ajastus
+                  {t("reports.addSchedule")}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8 text-muted-foreground">
                 <Mail className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">Ei ajastettuja raportteja</p>
+                <p className="text-sm">{t("reports.noScheduledReports")}</p>
                 <p className="text-xs mt-1">
-                  Voit ajastaa raporttien lähetyksen sähköpostiin viikoittain tai kuukausittain.
+                  {t("reports.scheduleHint")}
                 </p>
               </div>
             </CardContent>
