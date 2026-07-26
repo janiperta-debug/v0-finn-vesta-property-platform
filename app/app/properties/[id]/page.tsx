@@ -34,6 +34,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
 import { toast } from "sonner"
+import { useTranslation } from "@/lib/i18n"
 
 interface Property {
   id: number
@@ -87,18 +88,6 @@ interface CategoryEvaluation {
   cost_estimate: number | null
 }
 
-const buildingTypeLabels: Record<string, string> = {
-  kerrostalo: "Kerrostalo",
-  rivitalo: "Rivitalo",
-  paritalo: "Paritalo",
-  omakotitalo: "Omakotitalo",
-  toimisto: "Toimistorakennus",
-  koulu: "Koulu / Päiväkoti",
-  liikunta: "Liikuntarakennus",
-  teollisuus: "Teollisuusrakennus",
-  muu: "Muu",
-}
-
 const getKlaColor = (score: number) => {
   if (score >= 75) return "text-emerald-400"
   if (score >= 60) return "text-amber-400"
@@ -111,45 +100,56 @@ const getKlaBgColor = (score: number) => {
   return "bg-red-500/20 text-red-400"
 }
 
-const formatEur = (value: number) => 
-  new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-
 // Reverse mapping: numeric category_id (from database) -> string category id (used in categories list)
 const numericToStringCategoryId: Record<number, string> = Object.fromEntries(
   Object.entries(categoryIdMapping).map(([strId, numId]) => [numId, strId])
 )
 
-// Resolve a display name for a category_id that may be numeric (database) or a string id
-const getCategoryName = (categoryId: number | string): string => {
-  // Try direct string match first (e.g. "perustukset")
-  let category = categories.find(c => String(c.id) === String(categoryId))
-  // If not found, treat categoryId as a numeric database id and map it back to the string id
-  if (!category) {
-    const strId = numericToStringCategoryId[Number(categoryId)]
-    if (strId) {
-      category = categories.find(c => c.id === strId)
-    }
-  }
-  return category?.name || `Kategoria ${categoryId}`
-}
-
-// Urgency values stored in the database (matches the inspections/category_evaluations CHECK constraint)
-const URGENCY_META: Record<string, { label: string; rank: number; dot: string; badge: string }> = {
-  valitom: { label: "Välitön", rank: 0, dot: "bg-red-500", badge: "border-red-500 text-red-500" },
-  "1_3v": { label: "1-3 vuotta", rank: 1, dot: "bg-amber-500", badge: "border-amber-500 text-amber-500" },
-  "3_5v": { label: "3-5 vuotta", rank: 2, dot: "bg-lime-500", badge: "" },
-  "5_10v": { label: "5-10 vuotta", rank: 3, dot: "bg-emerald-500", badge: "" },
-}
-const getUrgencyLabel = (u?: string | null) => (u ? URGENCY_META[u]?.label : undefined) || "Seuranta"
-const getUrgencyRank = (u?: string | null) => (u && URGENCY_META[u] ? URGENCY_META[u].rank : 3)
-const getUrgencyDot = (u?: string | null) => (u ? URGENCY_META[u]?.dot : undefined) || "bg-emerald-500"
-const getUrgencyBadge = (u?: string | null) => (u ? URGENCY_META[u]?.badge : undefined) || ""
-
 export default function PropertyDetailPage() {
   const params = useParams()
   const router = useRouter()
   const propertyId = params.id as string
-  
+  const { t, locale } = useTranslation()
+
+  const buildingTypeLabels: Record<string, string> = {
+    kerrostalo: t("propertyTypes.kerrostalo"),
+    rivitalo: t("propertyTypes.rivitalo"),
+    paritalo: t("propertyTypes.paritalo"),
+    omakotitalo: t("propertyTypes.omakotitalo"),
+    toimisto: t("propertyTypes.toimisto"),
+    koulu: t("propertyTypes.kouluPaivakoti"),
+    liikunta: t("propertyTypes.liikunta"),
+    teollisuus: t("propertyTypes.teollisuus"),
+    muu: t("propertyTypes.muu"),
+  }
+
+  const formatEur = (value: number) =>
+    new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+
+  // Resolve a display name for a category_id that may be numeric (database) or a string id
+  const getCategoryName = (categoryId: number | string): string => {
+    let category = categories.find(c => String(c.id) === String(categoryId))
+    if (!category) {
+      const strId = numericToStringCategoryId[Number(categoryId)]
+      if (strId) {
+        category = categories.find(c => c.id === strId)
+      }
+    }
+    return category?.name || `${t("propertyDetail.categoryPrefix")} ${categoryId}`
+  }
+
+  // Urgency values stored in the database (matches the inspections/category_evaluations CHECK constraint)
+  const URGENCY_META: Record<string, { label: string; rank: number; dot: string; badge: string }> = {
+    valitom: { label: t("propertyDetail.urgencyImmediate"), rank: 0, dot: "bg-red-500", badge: "border-red-500 text-red-500" },
+    "1_3v": { label: t("propertyDetail.urgency1to3"), rank: 1, dot: "bg-amber-500", badge: "border-amber-500 text-amber-500" },
+    "3_5v": { label: t("propertyDetail.urgency3to5"), rank: 2, dot: "bg-lime-500", badge: "" },
+    "5_10v": { label: t("propertyDetail.urgency5to10"), rank: 3, dot: "bg-emerald-500", badge: "" },
+  }
+  const getUrgencyLabel = (u?: string | null) => (u ? URGENCY_META[u]?.label : undefined) || t("propertyDetail.urgencyMonitoring")
+  const getUrgencyRank = (u?: string | null) => (u && URGENCY_META[u] ? URGENCY_META[u].rank : 3)
+  const getUrgencyDot = (u?: string | null) => (u ? URGENCY_META[u]?.dot : undefined) || "bg-emerald-500"
+  const getUrgencyBadge = (u?: string | null) => (u ? URGENCY_META[u]?.badge : undefined) || ""
+
   const [property, setProperty] = useState<Property | null>(null)
   const [subSpaces, setSubSpaces] = useState<SubSpace[]>([])
   const [inspections, setInspections] = useState<Inspection[]>([])
@@ -219,14 +219,14 @@ export default function PropertyDetailPage() {
       }
     } catch (error) {
       console.error("Load error:", error)
-      toast.error("Kiinteistön lataus epäonnistui")
+      toast.error(t("propertyDetail.loadError"))
     } finally {
       setLoading(false)
     }
   }
 
   const handleDeleteSubSpace = async (subSpaceId: string) => {
-    if (!confirm("Haluatko varmasti poistaa tämän tilan?")) return
+    if (!confirm(t("propertyDetail.deleteSpaceConfirm"))) return
 
     try {
       const supabase = createClient()
@@ -237,16 +237,16 @@ export default function PropertyDetailPage() {
 
       if (error) throw error
 
-      toast.success("Tila poistettu")
+      toast.success(t("propertyDetail.spaceDeleted"))
       loadProperty()
     } catch (error) {
       console.error("Delete error:", error)
-      toast.error("Poisto epäonnistui")
+      toast.error(t("propertyDetail.deleteError"))
     }
   }
 
   const handleDeleteProperty = async () => {
-    if (!confirm("Haluatko varmasti poistaa tämän kiinteistön ja kaikki sen tiedot?")) return
+    if (!confirm(t("propertyDetail.deletePropertyConfirm"))) return
 
     try {
       const supabase = createClient()
@@ -257,11 +257,11 @@ export default function PropertyDetailPage() {
 
       if (error) throw error
 
-      toast.success("Kiinteistö poistettu")
+      toast.success(t("propertyDetail.propertyDeleted"))
       router.push("/app/properties")
     } catch (error) {
       console.error("Delete error:", error)
-      toast.error("Poisto epäonnistui")
+      toast.error(t("propertyDetail.deleteError"))
     }
   }
 
@@ -284,10 +284,10 @@ export default function PropertyDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Building2 className="h-16 w-16 text-muted-foreground/50 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Kiinteistöä ei löytynyt</h2>
-        <p className="text-muted-foreground mb-6">Kiinteistöä ei ole olemassa tai sinulla ei ole oikeuksia siihen.</p>
+        <h2 className="text-xl font-semibold mb-2">{t("propertyDetail.notFoundTitle")}</h2>
+        <p className="text-muted-foreground mb-6">{t("propertyDetail.notFoundDescription")}</p>
         <Button asChild>
-          <Link href="/app/properties">Takaisin listaan</Link>
+          <Link href="/app/properties">{t("propertyDetail.backToList")}</Link>
         </Button>
       </div>
     )
@@ -360,13 +360,13 @@ export default function PropertyDetailPage() {
           <Link href={`/app/kuntoarviot/new?building_id=${property.id}`}>
             <Button size="sm" className="gap-1.5">
               <ClipboardCheck className="h-3.5 w-3.5" />
-              Kuntoarvio
+              {t("propertyDetail.inspectionButton")}
             </Button>
           </Link>
           <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`}>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Target className="h-3.5 w-3.5" />
-              Tavoitesuunnittelu
+              {t("nav.targetPlanning")}
             </Button>
           </Link>
           <DropdownMenu>
@@ -379,7 +379,7 @@ export default function PropertyDetailPage() {
               <DropdownMenuItem asChild>
                 <Link href={`/app/properties/${propertyId}/edit`}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Muokkaa tietoja
+                  {t("propertyDetail.editInfo")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -388,7 +388,7 @@ export default function PropertyDetailPage() {
                 onClick={handleDeleteProperty}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Poista kiinteistö
+                {t("propertyDetail.deleteProperty")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -400,14 +400,14 @@ export default function PropertyDetailPage() {
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
-            Rakennusvuosi
+            {t("propertyDetail.constructionYearLabel")}
           </div>
           <p className="font-heading text-2xl font-bold text-foreground">
             {property.construction_year || "-"}
           </p>
           {property.construction_year && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {new Date().getFullYear() - property.construction_year} vuotta vanha
+              {new Date().getFullYear() - property.construction_year} {t("propertyDetail.yearsOldSuffix")}
             </p>
           )}
         </div>
@@ -415,19 +415,19 @@ export default function PropertyDetailPage() {
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <Ruler className="h-3.5 w-3.5" />
-            Pinta-ala
+            {t("propertyDetail.areaLabel")}
           </div>
           <p className="font-heading text-2xl font-bold text-foreground">
-            {property.area_m2 ? `${property.area_m2.toLocaleString("fi-FI")} m²` : "-"}
+            {property.area_m2 ? `${property.area_m2.toLocaleString(locale === "en" ? "en-US" : "fi-FI")} m²` : "-"}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {subSpaces.length} tilaa/huoneistoa
+            {subSpaces.length} {t("propertyDetail.spacesUnitsSuffix")}
           </p>
         </div>
 
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Jälleenhankinta-arvo
+            {t("propertyDetail.replacementValueLabel")}
           </div>
           <p className="font-heading text-2xl font-bold text-foreground">
             {jalleenhankintaArvo > 0 ? formatEur(jalleenhankintaArvo) : "-"}
@@ -441,14 +441,14 @@ export default function PropertyDetailPage() {
 
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Tekninen arvo
+            {t("propertyDetail.technicalValueLabel")}
           </div>
           <p className={`font-heading text-2xl font-bold ${kuntoluokka > 0 ? getKlaColor(kuntoluokka) : ''}`}>
             {tekninenArvo > 0 ? formatEur(tekninenArvo) : "-"}
           </p>
           {kuntoluokka > 0 && (
             <p className="mt-1 text-xs text-muted-foreground">
-              Kuntoluokka {kuntoluokka}%
+              {t("propertyDetail.conditionClassLabel")} {kuntoluokka}%
             </p>
           )}
         </div>
@@ -459,11 +459,11 @@ export default function PropertyDetailPage() {
         <TabsList className="bg-muted/50 w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="kuntoarvio" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
-            Kuntoarvio
+            {t("propertyDetail.inspectionButton")}
           </TabsTrigger>
           <TabsTrigger value="huoneistot" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
-            {hasApartments ? "Huoneistot" : "Tilat"}
+            {hasApartments ? t("propertyDetail.apartmentsLabel") : t("propertyDetail.spacesLabel")}
             {subSpaces.length > 0 && (
               <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs">
                 {subSpaces.length}
@@ -472,11 +472,11 @@ export default function PropertyDetailPage() {
           </TabsTrigger>
           <TabsTrigger value="kuntoluokka" className="gap-2">
             <TrendingUp className="h-4 w-4" />
-            Kuntoluokka
+            {t("propertyDetail.conditionClassLabel")}
           </TabsTrigger>
           <TabsTrigger value="korjausvelka" className="gap-2">
             <AlertTriangle className="h-4 w-4" />
-            Korjausvelka
+            {t("propertyDetail.repairDebtLabel")}
           </TabsTrigger>
         </TabsList>
 
@@ -488,10 +488,10 @@ export default function PropertyDetailPage() {
               <div className="rounded-xl border border-border/50 bg-card p-5">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex-1">
-                    <h3 className="font-heading text-base font-semibold text-foreground mb-4">Viimeisin arviointi</h3>
+                    <h3 className="font-heading text-base font-semibold text-foreground mb-4">{t("propertyDetail.latestAssessmentTitle")}</h3>
                     <div className="grid gap-4 sm:grid-cols-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">Yleisarvosana</p>
+                        <p className="text-xs text-muted-foreground">{t("inspectionDetail.scoreTitle")}</p>
                         <div className="flex items-center gap-2 mt-1">
                           {inspections[0].overall_score && (
                             <ConditionBadge score={Math.round(inspections[0].overall_score) as 1|2|3|4|5} />
@@ -500,20 +500,20 @@ export default function PropertyDetailPage() {
                         </div>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Tarkastaja</p>
+                        <p className="text-xs text-muted-foreground">{t("inspectionDetail.inspectorLabel")}</p>
                         <p className="font-medium mt-1">{inspections[0].inspector_name || "-"}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Päivämäärä</p>
+                        <p className="text-xs text-muted-foreground">{t("inspectionDetail.dateLabel")}</p>
                         <p className="font-medium mt-1">
-                          {new Date(inspections[0].inspection_date).toLocaleDateString("fi-FI")}
+                          {new Date(inspections[0].inspection_date).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}
                         </p>
                       </div>
                     </div>
                   </div>
                   <Link href={`/app/kuntoarviot/${inspections[0].id}`}>
                     <Button variant="outline" size="sm" className="gap-1.5">
-                      Avaa arviointi
+                      {t("propertyDetail.openAssessment")}
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -524,7 +524,7 @@ export default function PropertyDetailPage() {
               {categoryEvaluations.length > 0 && (
                 <div className="rounded-xl border border-border/50 bg-card p-5">
                   <h3 className="font-heading text-base font-semibold text-foreground mb-4">
-                    Rakennusosien kunto
+                    {t("propertyDetail.componentConditionTitle")}
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {categoryEvaluations
@@ -557,7 +557,7 @@ export default function PropertyDetailPage() {
                   {categoryEvaluations.filter(e => e.score !== null).length > 9 && (
                     <Link href={`/app/kuntoarviot/${inspections[0].id}`}>
                       <Button variant="link" size="sm" className="mt-2 px-0">
-                        Näytä kaikki {categoryEvaluations.filter(e => e.score !== null).length} kategoriaa
+                        {t("propertyDetail.showAllPrefix")} {categoryEvaluations.filter(e => e.score !== null).length} {t("propertyDetail.categoriesSuffix")}
                       </Button>
                     </Link>
                   )}
@@ -568,12 +568,12 @@ export default function PropertyDetailPage() {
               <div className="rounded-xl border border-border/50 bg-card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-heading text-base font-semibold text-foreground">
-                    Kaikki arvioinnit ({inspections.length})
+                    {t("propertyDetail.allAssessmentsPrefix")} ({inspections.length})
                   </h3>
                   <Link href={`/app/kuntoarviot/new?building_id=${property.id}`}>
                     <Button variant="outline" size="sm" className="gap-1.5">
                       <Plus className="h-4 w-4" />
-                      Uusi arviointi
+                      {t("propertyDetail.newAssessmentButton")}
                     </Button>
                   </Link>
                 </div>
@@ -590,10 +590,10 @@ export default function PropertyDetailPage() {
                         )}
                         <div>
                           <p className="font-medium text-sm">
-                            {new Date(insp.inspection_date).toLocaleDateString("fi-FI")}
+                            {new Date(insp.inspection_date).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {insp.inspector_name || "Ei tarkastajaa"} &bull; {insp.status}
+                            {insp.inspector_name || t("propertyDetail.noInspector")} &bull; {insp.status}
                           </p>
                         </div>
                       </div>
@@ -606,14 +606,14 @@ export default function PropertyDetailPage() {
           ) : (
             <div className="rounded-xl border border-border/50 bg-card p-8 text-center">
               <ClipboardCheck className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="font-heading text-lg font-semibold mb-2">Ei kuntoarvioita</h3>
+              <h3 className="font-heading text-lg font-semibold mb-2">{t("inspections.emptyTitle")}</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Tee ensimmäinen kuntoarvio nähdäksesi kiinteistön kunnon ja korjaustarpeet.
+                {t("propertyDetail.noInspectionsDescription")}
               </p>
               <Link href={`/app/kuntoarviot/new?building_id=${property.id}`}>
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Aloita kuntoarvio
+                  {t("propertyComponents.startInspection")}
                 </Button>
               </Link>
             </div>
@@ -625,14 +625,14 @@ export default function PropertyDetailPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-heading text-lg font-semibold">
-                {hasApartments ? "Huoneistot" : "Tilat"}
+                {hasApartments ? t("propertyDetail.apartmentsLabel") : t("propertyDetail.spacesLabel")}
               </h3>
-              <p className="text-sm text-muted-foreground">{subSpaces.length} kpl</p>
+              <p className="text-sm text-muted-foreground">{subSpaces.length} {t("dashboard.piecesSuffix")}</p>
             </div>
             <Link href={`/app/properties/${property.id}/tilat/new`}>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Lisää {hasApartments ? "huoneisto" : "tila"}
+                {t("common.add")} {hasApartments ? t("propertyDetail.apartmentSingular") : t("propertyDetail.spaceSingular")}
               </Button>
             </Link>
           </div>
@@ -644,7 +644,7 @@ export default function PropertyDetailPage() {
                 .map(([floor, spaces]) => (
                   <div key={floor}>
                     <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                      {floor === "0" ? "Kellari" : `${floor}. kerros`}
+                      {floor === "0" ? t("propertyDetail.basement") : `${floor}${t("propertyDetail.floorSuffix")}`}
                     </h4>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {spaces.map((space) => (
@@ -679,13 +679,13 @@ export default function PropertyDetailPage() {
                                 <DropdownMenuItem asChild>
                                   <Link href={`/app/kuntoarviot/new?building_id=${space.id}`}>
                                     <ClipboardCheck className="h-4 w-4 mr-2" />
-                                    Tee tarkastus
+                                    {t("propertyDetail.doInspection")}
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                   <Link href={`/app/properties/${property.id}/tilat/${space.id}/edit`}>
                                     <Edit className="h-4 w-4 mr-2" />
-                                    Muokkaa
+                                    {t("common.edit")}
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
@@ -694,7 +694,7 @@ export default function PropertyDetailPage() {
                                   onClick={() => handleDeleteSubSpace(space.id)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  Poista
+                                  {t("common.delete")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -709,15 +709,15 @@ export default function PropertyDetailPage() {
             <div className="rounded-xl border border-border/50 bg-card p-8 text-center">
               <LayoutGrid className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="font-heading text-lg font-semibold mb-2">
-                Ei {hasApartments ? "huoneistoja" : "tiloja"}
+                {t("propertyDetail.noPrefix")} {hasApartments ? t("propertyDetail.apartmentsPlural") : t("propertyDetail.spacesPlural")}
               </h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Lisää kiinteistön {hasApartments ? "huoneistot" : "tilat"} seurataksesi niiden kuntoa erikseen.
+                {t("propertyDetail.addPropertyPrefix")} {hasApartments ? t("propertyDetail.apartmentsLabel").toLowerCase() : t("propertyDetail.spacesLabel").toLowerCase()} {t("propertyDetail.addToTrackSuffix")}
               </p>
               <Link href={`/app/properties/${property.id}/tilat/new`}>
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Lisää ensimmäinen {hasApartments ? "huoneisto" : "tila"}
+                  {t("propertyDetail.addFirstPrefix")} {hasApartments ? t("propertyDetail.apartmentSingular") : t("propertyDetail.spaceSingular")}
                 </Button>
               </Link>
             </div>
@@ -728,7 +728,7 @@ export default function PropertyDetailPage() {
         <TabsContent value="kuntoluokka" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-border/50 bg-card p-5">
-              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Kuntoluokka</h3>
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t("propertyDetail.conditionClassLabel")}</h3>
               {kuntoluokka > 0 ? (
                 <>
                   <div className="flex items-end gap-4">
@@ -736,7 +736,7 @@ export default function PropertyDetailPage() {
                       {kuntoluokka}%
                     </div>
                     <div className="pb-1 text-sm text-muted-foreground">
-                      {kuntoluokka >= 75 ? "Erinomainen kunto" : kuntoluokka >= 60 ? "Tyydyttävä kunto" : "Heikko kunto - toimenpiteitä tarvitaan"}
+                      {kuntoluokka >= 75 ? t("propertyDetail.condExcellentDesc") : kuntoluokka >= 60 ? t("propertyDetail.condSatisfactoryDesc") : t("propertyDetail.condPoorDesc")}
                     </div>
                   </div>
                   <div className="mt-4 h-3 overflow-hidden rounded-full bg-secondary">
@@ -754,13 +754,13 @@ export default function PropertyDetailPage() {
                 </>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Tee kuntoarvio nähdäksesi kuntoluokka</p>
+                  <p className="text-muted-foreground">{t("propertyDetail.doInspectionToSeeClass")}</p>
                 </div>
               )}
             </div>
 
             <div className="rounded-xl border border-border/50 bg-card p-5">
-              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Tarkastustiedot</h3>
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t("propertyDetail.inspectionInfoTitle")}</h3>
               {inspections.length > 0 ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -768,9 +768,9 @@ export default function PropertyDetailPage() {
                       <Calendar className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Viimeisin tarkastus</p>
+                      <p className="text-xs text-muted-foreground">{t("propertyComponents.latestInspection")}</p>
                       <p className="text-sm font-medium text-foreground">
-                        {new Date(inspections[0].inspection_date).toLocaleDateString("fi-FI")}
+                        {new Date(inspections[0].inspection_date).toLocaleDateString(locale === "en" ? "en-US" : "fi-FI")}
                       </p>
                     </div>
                   </div>
@@ -779,7 +779,7 @@ export default function PropertyDetailPage() {
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Tarkastaja</p>
+                      <p className="text-xs text-muted-foreground">{t("inspectionDetail.inspectorLabel")}</p>
                       <p className="text-sm font-medium text-foreground">
                         {inspections[0].inspector_name || "-"}
                       </p>
@@ -790,14 +790,14 @@ export default function PropertyDetailPage() {
                       <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Tarkastuksia yhteensä</p>
-                      <p className="text-sm font-medium text-foreground">{inspections.length} kpl</p>
+                      <p className="text-xs text-muted-foreground">{t("propertyDetail.totalInspectionsLabel")}</p>
+                      <p className="text-sm font-medium text-foreground">{inspections.length} {t("dashboard.piecesSuffix")}</p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Ei tarkastuksia</p>
+                  <p className="text-muted-foreground">{t("propertyDetail.noInspectionsShort")}</p>
                 </div>
               )}
             </div>
@@ -807,9 +807,9 @@ export default function PropertyDetailPage() {
           {planItems.length > 0 && (
             <div className="rounded-xl border border-border/50 bg-card p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-heading text-base font-semibold text-foreground">Rakennusosien kunto</h3>
+                <h3 className="font-heading text-base font-semibold text-foreground">{t("propertyDetail.componentConditionTitle")}</h3>
                 {categoryEvaluations.length === 0 && (
-                  <Badge variant="outline" className="text-xs">Arvio RT-standardeista</Badge>
+                  <Badge variant="outline" className="text-xs">{t("propertyDetail.rtEstimateBadge")}</Badge>
                 )}
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -836,7 +836,7 @@ export default function PropertyDetailPage() {
                         </div>
                         {item.urgency !== '5_10v' && (
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Kiireellisyys: {getUrgencyLabel(item.urgency)}
+                            {t("propertyDetail.urgencyPrefix")} {getUrgencyLabel(item.urgency)}
                           </p>
                         )}
                       </div>
@@ -851,12 +851,12 @@ export default function PropertyDetailPage() {
         <TabsContent value="korjausvelka" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-border/50 bg-card p-5">
-              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausvelka yhteenveto</h3>
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t("propertyDetail.repairDebtSummaryTitle")}</h3>
               {korjausVelka > 0 ? (
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Korjausvelka yhteensä</span>
+                      <span className="text-muted-foreground">{t("propertyDetail.totalRepairDebtLabel")}</span>
                       <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
                     </div>
                     {property.area_m2 && (
@@ -867,15 +867,15 @@ export default function PropertyDetailPage() {
                   </div>
                   <div className="space-y-2 border-t border-border/50 pt-4">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Kunnossapitotarve</span>
+                      <span className="text-muted-foreground">{t("propertyDetail.maintenanceNeedLabel")}</span>
                       <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Peruskorjaustarve</span>
+                      <span className="text-muted-foreground">{t("propertyDetail.majorRepairNeedLabel")}</span>
                       <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Kehitys- ja muutostarve</span>
+                      <span className="text-muted-foreground">{t("propertyDetail.developmentNeedLabel")}</span>
                       <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
                     </div>
                   </div>
@@ -884,8 +884,8 @@ export default function PropertyDetailPage() {
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
                     {kuntoluokka > 0 
-                      ? "Ei merkittävää korjausvelkaa" 
-                      : "Tee kuntoarvio nähdäksesi korjausvelka"}
+                      ? t("propertyDetail.noSignificantDebt")
+                      : t("propertyDetail.doInspectionToSeeDebt")}
                   </p>
                 </div>
               )}
@@ -893,14 +893,14 @@ export default function PropertyDetailPage() {
 
             <div className="rounded-xl border border-border/50 bg-card p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-heading text-base font-semibold text-foreground">Tavoitesuunnitelma</h3>
+                <h3 className="font-heading text-base font-semibold text-foreground">{t("propertyDetail.targetPlanTitle")}</h3>
                 <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`} className="text-xs text-primary hover:underline">
-                  Koko PTS
+                  {t("propertyDetail.fullPtsLink")}
                 </Link>
               </div>
               {planRepairItems.length > 0 ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground mb-3">Arvioidut korjauskustannukset kiireellisyysjärjestyksessä:</p>
+                  <p className="text-sm text-muted-foreground mb-3">{t("propertyDetail.estimatedCostsOrderedLabel")}</p>
                   {planRepairItems
                     .slice(0, 5)
                     .map(item => (
@@ -915,13 +915,13 @@ export default function PropertyDetailPage() {
                   <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`}>
                     <Button variant="outline" size="sm" className="w-full mt-2">
                       <Target className="h-4 w-4 mr-2" />
-                      Avaa tavoitesuunnitelma
+                      {t("propertyDetail.openTargetPlan")}
                     </Button>
                   </Link>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">Ei merkittäviä korjaustarpeita lähivuosina</p>
+                  <p className="text-muted-foreground">{t("propertyDetail.noSignificantNeeds")}</p>
                 </div>
               )}
             </div>
@@ -930,7 +930,7 @@ export default function PropertyDetailPage() {
           {/* Komponenttikohtaiset korjaustarpeet - johdettu suunnitelmasta */}
           {planRepairItems.length > 0 && (
             <div className="rounded-xl border border-border/50 bg-card p-5">
-              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">Korjausta vaativat kohteet</h3>
+              <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t("propertyDetail.repairRequiredTitle")}</h3>
               <div className="space-y-2">
                 {planRepairItems.map(item => (
                   <div key={item.categoryStringId} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
