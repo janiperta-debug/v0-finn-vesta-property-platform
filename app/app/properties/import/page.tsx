@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle, X } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "@/lib/i18n"
 
 interface ParsedProperty {
   id: string
@@ -36,6 +37,7 @@ const OPTIONAL_FIELDS = ["city", "postal_code", "building_type", "build_year", "
 
 export default function ImportPropertiesPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [step, setStep] = useState<ImportStep>("upload")
   const [file, setFile] = useState<File | null>(null)
   const [headers, setHeaders] = useState<string[]>([])
@@ -50,7 +52,7 @@ export default function ImportPropertiesPage() {
     if (!selectedFile) return
 
     if (!selectedFile.name.endsWith(".csv")) {
-      toast.error("Valitse CSV-tiedosto")
+      toast.error(t("propertyImport.selectCsvError"))
       return
     }
 
@@ -65,7 +67,7 @@ export default function ImportPropertiesPage() {
       const lines = text.split("\n").filter(line => line.trim())
       
       if (lines.length < 2) {
-        toast.error("Tiedostossa ei ole tarpeeksi rivejä")
+        toast.error(t("propertyImport.notEnoughRowsError"))
         return
       }
 
@@ -112,7 +114,7 @@ export default function ImportPropertiesPage() {
 
   const processMapping = () => {
     if (!mapping.name || !mapping.address) {
-      toast.error("Nimi ja osoite ovat pakollisia kenttiä")
+      toast.error(t("propertyImport.nameAddressRequiredError"))
       return
     }
 
@@ -128,8 +130,8 @@ export default function ImportPropertiesPage() {
       const address = getField("address") || ""
       const errors: string[] = []
 
-      if (!name) errors.push("Nimi puuttuu")
-      if (!address) errors.push("Osoite puuttuu")
+      if (!name) errors.push(t("propertyImport.nameMissing"))
+      if (!address) errors.push(t("propertyImport.addressMissing"))
 
       return {
         id: `row-${index}`,
@@ -162,7 +164,7 @@ export default function ImportPropertiesPage() {
   const handleImport = async () => {
     const toImport = parsedData.filter(p => p.selected && p.valid)
     if (toImport.length === 0) {
-      toast.error("Valitse tuotavat kiinteistöt")
+      toast.error(t("propertyImport.selectPropertiesError"))
       return
     }
 
@@ -174,7 +176,7 @@ export default function ImportPropertiesPage() {
       
       // Get user's organization
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Ei kirjautunut")
+      if (!user) throw new Error(t("propertyImport.notLoggedIn"))
 
       const { data: orgUsers } = await supabase
         .from("org_users")
@@ -183,7 +185,7 @@ export default function ImportPropertiesPage() {
         .limit(1)
 
       const orgUser = orgUsers?.[0]
-      if (!orgUser) throw new Error("Organisaatiota ei löytynyt")
+      if (!orgUser) throw new Error(t("maintenanceNew.orgNotFoundAlert"))
 
       let success = 0
       let failed = 0
@@ -219,7 +221,7 @@ export default function ImportPropertiesPage() {
       setStep("complete")
     } catch (error: any) {
       console.error("Import error:", error)
-      toast.error(error.message || "Tuonti epäonnistui")
+      toast.error(error.message || t("propertyImport.importFailedError"))
       setStep("preview")
     }
   }
@@ -237,8 +239,8 @@ export default function ImportPropertiesPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Tuo kiinteistöjä</h1>
-          <p className="text-sm text-muted-foreground">Tuo kiinteistöjä CSV-tiedostosta</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("propertyImport.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("propertyImport.subtitle")}</p>
         </div>
       </div>
 
@@ -256,11 +258,11 @@ export default function ImportPropertiesPage() {
               {i + 1}
             </div>
             <span className={step === s ? "font-medium" : "text-muted-foreground"}>
-              {s === "upload" && "Lataa"}
-              {s === "mapping" && "Yhdistä"}
-              {s === "preview" && "Esikatsele"}
-              {s === "importing" && "Tuonti"}
-              {s === "complete" && "Valmis"}
+              {s === "upload" && t("propertyImport.stepUpload")}
+              {s === "mapping" && t("propertyImport.stepMapping")}
+              {s === "preview" && t("propertyImport.stepPreview")}
+              {s === "importing" && t("propertyImport.stepImporting")}
+              {s === "complete" && t("propertyImport.stepComplete")}
             </span>
             {i < 4 && <div className="h-px w-8 bg-border" />}
           </div>
@@ -271,18 +273,17 @@ export default function ImportPropertiesPage() {
       {step === "upload" && (
         <Card>
           <CardHeader>
-            <CardTitle>Lataa CSV-tiedosto</CardTitle>
+            <CardTitle>{t("propertyImport.uploadTitle")}</CardTitle>
             <CardDescription>
-              Valitse CSV-tiedosto, jossa kiinteistötiedot. Ensimmäinen rivi tulkitaan otsikkoriviksi.
-              Käytä puolipistettä (;) erottimena.
+              {t("propertyImport.uploadDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-12">
               <FileSpreadsheet className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <Label htmlFor="file-upload" className="cursor-pointer">
-                <span className="text-primary hover:underline">Valitse tiedosto</span>
-                <span className="text-muted-foreground"> tai raahaa tähän</span>
+                <span className="text-primary hover:underline">{t("propertyImport.selectFile")}</span>
+                <span className="text-muted-foreground"> {t("propertyImport.orDragHere")}</span>
               </Label>
               <Input
                 id="file-upload"
@@ -303,9 +304,9 @@ export default function ImportPropertiesPage() {
       {step === "mapping" && (
         <Card>
           <CardHeader>
-            <CardTitle>Yhdistä kentät</CardTitle>
+            <CardTitle>{t("propertyImport.mappingTitle")}</CardTitle>
             <CardDescription>
-              Yhdistä CSV-tiedoston sarakkeet FinnVestan kenttiin. Nimi ja osoite ovat pakollisia.
+              {t("propertyImport.mappingDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -313,14 +314,14 @@ export default function ImportPropertiesPage() {
               {/* Required fields */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
-                  Nimi <span className="text-destructive">*</span>
+                  {t("propertyImport.nameField")} <span className="text-destructive">*</span>
                 </Label>
                 <Select value={mapping.name || "none"} onValueChange={(v) => handleMappingChange("name", v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse sarake" />
+                    <SelectValue placeholder={t("propertyImport.selectColumnPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Ei valittu --</SelectItem>
+                    <SelectItem value="none">{t("propertyImport.notSelected")}</SelectItem>
                     {headers.map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -329,14 +330,14 @@ export default function ImportPropertiesPage() {
               </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
-                  Osoite <span className="text-destructive">*</span>
+                  {t("propertyImport.addressField")} <span className="text-destructive">*</span>
                 </Label>
                 <Select value={mapping.address || "none"} onValueChange={(v) => handleMappingChange("address", v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse sarake" />
+                    <SelectValue placeholder={t("propertyImport.selectColumnPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Ei valittu --</SelectItem>
+                    <SelectItem value="none">{t("propertyImport.notSelected")}</SelectItem>
                     {headers.map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -346,13 +347,13 @@ export default function ImportPropertiesPage() {
 
               {/* Optional fields */}
               <div className="space-y-2">
-                <Label>Kaupunki</Label>
+                <Label>{t("propertyImport.cityField")}</Label>
                 <Select value={mapping.city || "none"} onValueChange={(v) => handleMappingChange("city", v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse sarake" />
+                    <SelectValue placeholder={t("propertyImport.selectColumnPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Ei valittu --</SelectItem>
+                    <SelectItem value="none">{t("propertyImport.notSelected")}</SelectItem>
                     {headers.map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -360,13 +361,13 @@ export default function ImportPropertiesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Rakennustyyppi</Label>
+                <Label>{t("propertyEdit.buildingTypeLabel")}</Label>
                 <Select value={mapping.building_type || "none"} onValueChange={(v) => handleMappingChange("building_type", v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse sarake" />
+                    <SelectValue placeholder={t("propertyImport.selectColumnPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Ei valittu --</SelectItem>
+                    <SelectItem value="none">{t("propertyImport.notSelected")}</SelectItem>
                     {headers.map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -374,13 +375,13 @@ export default function ImportPropertiesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Rakennusvuosi</Label>
+                <Label>{t("propertyEdit.buildYearLabel")}</Label>
                 <Select value={mapping.build_year || "none"} onValueChange={(v) => handleMappingChange("build_year", v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse sarake" />
+                    <SelectValue placeholder={t("propertyImport.selectColumnPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Ei valittu --</SelectItem>
+                    <SelectItem value="none">{t("propertyImport.notSelected")}</SelectItem>
                     {headers.map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -388,13 +389,13 @@ export default function ImportPropertiesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Pinta-ala (m²)</Label>
+                <Label>{t("propertyEdit.squareMetersLabel")}</Label>
                 <Select value={mapping.square_meters || "none"} onValueChange={(v) => handleMappingChange("square_meters", v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Valitse sarake" />
+                    <SelectValue placeholder={t("propertyImport.selectColumnPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Ei valittu --</SelectItem>
+                    <SelectItem value="none">{t("propertyImport.notSelected")}</SelectItem>
                     {headers.map(h => (
                       <SelectItem key={h} value={h}>{h}</SelectItem>
                     ))}
@@ -405,10 +406,10 @@ export default function ImportPropertiesPage() {
 
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={() => setStep("upload")}>
-                Takaisin
+                {t("common.back")}
               </Button>
               <Button onClick={processMapping}>
-                Jatka esikatseluun
+                {t("propertyImport.continueToPreview")}
               </Button>
             </div>
           </CardContent>
@@ -421,17 +422,17 @@ export default function ImportPropertiesPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Esikatsele tuotavat kiinteistöt</CardTitle>
+                <CardTitle>{t("propertyImport.previewTitle")}</CardTitle>
                 <CardDescription>
-                  {selectedCount} / {validCount} kiinteistöä valittu tuontiin
+                  {selectedCount} / {validCount} {t("propertyImport.selectedForImport")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => toggleAll(true)}>
-                  Valitse kaikki
+                  {t("propertyImport.selectAll")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => toggleAll(false)}>
-                  Poista valinnat
+                  {t("propertyImport.deselectAll")}
                 </Button>
               </div>
             </div>
@@ -442,12 +443,12 @@ export default function ImportPropertiesPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12"></TableHead>
-                    <TableHead>Nimi</TableHead>
-                    <TableHead>Osoite</TableHead>
-                    <TableHead>Kaupunki</TableHead>
-                    <TableHead>Tyyppi</TableHead>
-                    <TableHead className="text-right">Pinta-ala</TableHead>
-                    <TableHead>Tila</TableHead>
+                    <TableHead>{t("propertyImport.nameField")}</TableHead>
+                    <TableHead>{t("propertyImport.addressField")}</TableHead>
+                    <TableHead>{t("propertyImport.cityField")}</TableHead>
+                    <TableHead>{t("propertyEdit.typeLabel")}</TableHead>
+                    <TableHead className="text-right">{t("propertyDetail.areaLabel")}</TableHead>
+                    <TableHead>{t("inspectionDetail.statusLabel")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -488,10 +489,10 @@ export default function ImportPropertiesPage() {
 
             <div className="flex justify-between pt-4">
               <Button variant="outline" onClick={() => setStep("mapping")}>
-                Takaisin
+                {t("common.back")}
               </Button>
               <Button onClick={handleImport} disabled={selectedCount === 0}>
-                Tuo {selectedCount} kiinteistöä
+                {t("propertyImport.importPrefix")} {selectedCount} {t("propertyImport.propertiesSuffix")}
               </Button>
             </div>
           </CardContent>
@@ -503,8 +504,8 @@ export default function ImportPropertiesPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Upload className="h-12 w-12 text-primary mb-4 animate-pulse" />
-            <h3 className="text-lg font-semibold mb-2">Tuodaan kiinteistöjä...</h3>
-            <p className="text-sm text-muted-foreground mb-6">{importProgress}% valmis</p>
+            <h3 className="text-lg font-semibold mb-2">{t("propertyImport.importingTitle")}</h3>
+            <p className="text-sm text-muted-foreground mb-6">{importProgress}% {t("propertyImport.percentDone")}</p>
             <Progress value={importProgress} className="w-64" />
           </CardContent>
         </Card>
@@ -515,10 +516,10 @@ export default function ImportPropertiesPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Tuonti valmis</h3>
+            <h3 className="text-xl font-semibold mb-2">{t("propertyImport.completeTitle")}</h3>
             <p className="text-muted-foreground mb-6">
-              {importResults.success} kiinteistöä tuotu onnistuneesti
-              {importResults.failed > 0 && `, ${importResults.failed} epäonnistui`}
+              {importResults.success} {t("propertyImport.importedSuccessfully")}
+              {importResults.failed > 0 && `, ${importResults.failed} ${t("propertyImport.failedSuffix")}`}
             </p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => {
@@ -529,10 +530,10 @@ export default function ImportPropertiesPage() {
                 setMapping({})
                 setParsedData([])
               }}>
-                Tuo lisää
+                {t("propertyImport.importMore")}
               </Button>
               <Button asChild>
-                <Link href="/app/properties">Kiinteistölistaan</Link>
+                <Link href="/app/properties">{t("propertyImport.toPropertyList")}</Link>
               </Button>
             </div>
           </CardContent>
