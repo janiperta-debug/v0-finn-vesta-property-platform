@@ -22,18 +22,7 @@ import {
   type BuildingStructureData 
 } from "@/lib/rt-standards"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
-
-const buildingTypes = [
-  { value: "kerrostalo", label: "Kerrostalo" },
-  { value: "rivitalo", label: "Rivitalo" },
-  { value: "paritalo", label: "Paritalo" },
-  { value: "omakotitalo", label: "Omakotitalo" },
-  { value: "toimisto", label: "Toimistorakennus" },
-  { value: "koulu", label: "Koulu / Päiväkoti" },
-  { value: "liikunta", label: "Liikuntarakennus" },
-  { value: "teollisuus", label: "Teollisuusrakennus" },
-  { value: "muu", label: "Muu" },
-]
+import { useTranslation } from "@/lib/i18n"
 
 interface SubSpace {
   id: string
@@ -47,6 +36,20 @@ interface SubSpace {
 
 export default function NewPropertyPage() {
   const router = useRouter()
+  const { t } = useTranslation()
+
+  const buildingTypes = [
+    { value: "kerrostalo", label: t("propertyTypes.kerrostalo") },
+    { value: "rivitalo", label: t("propertyTypes.rivitalo") },
+    { value: "paritalo", label: t("propertyTypes.paritalo") },
+    { value: "omakotitalo", label: t("propertyTypes.omakotitalo") },
+    { value: "toimisto", label: t("propertyTypes.toimisto") },
+    { value: "koulu", label: t("propertyTypes.kouluPaivakoti") },
+    { value: "liikunta", label: t("propertyTypes.liikunta") },
+    { value: "teollisuus", label: t("propertyTypes.teollisuus") },
+    { value: "muu", label: t("propertyTypes.muu") },
+  ]
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasSubSpaces, setHasSubSpaces] = useState(false)
   const [subSpaces, setSubSpaces] = useState<SubSpace[]>([])
@@ -95,20 +98,20 @@ export default function NewPropertyPage() {
     const squareMeters = parseFloat(formData.squareMeters)
     
     if (!buildYear || !squareMeters) {
-      toast.error("Syötä ensin rakennusvuosi ja pinta-ala")
+      toast.error(t("propertyEdit.missingBasicsError"))
       return
     }
 
     // Check that at least some structures are selected
     const filledStructures = Object.entries(structures).filter(([key, value]) => value && value !== 'ei').length
     if (filledStructures < 3) {
-      toast.error("Valitse vähintään 3 rakennetyyppiä arvion luomiseksi")
+      toast.error(t("propertyEdit.minStructuresError"))
       return
     }
 
     const assessment = generateInitialAssessment(buildYear, squareMeters, structures)
     setPreviewAssessment(assessment)
-    toast.success("Esikatselu luotu RT-standardien perusteella")
+    toast.success(t("propertyEdit.previewGenerated"))
   }
 
   const addSubSpace = () => {
@@ -165,7 +168,7 @@ export default function NewPropertyPage() {
       })
       setSubSpaces(generated)
       setHasSubSpaces(true)
-      toast.success(`Luotiin ${generated.length} tila`)
+      toast.success(`${t("propertyEdit.spacesCreatedPrefix")} ${generated.length} ${t("propertyEdit.spaceSingular")}`)
       return
     } else if (buildingType === "toimisto" || buildingType === "teollisuus") {
       unitsPerFloor = 2
@@ -209,7 +212,7 @@ export default function NewPropertyPage() {
     
     setSubSpaces(generated)
     setHasSubSpaces(true)
-    toast.success(`Luotiin ${generated.length} ${buildingType === "toimisto" || buildingType === "teollisuus" ? "tilaa" : "huoneistoa"}`)
+    toast.success(`${t("propertyEdit.spacesCreatedPrefix")} ${generated.length} ${buildingType === "toimisto" || buildingType === "teollisuus" ? t("propertyEdit.spacePlural") : t("propertyNew.apartmentsPlural")}`)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -220,7 +223,7 @@ export default function NewPropertyPage() {
       const supabase = createClient()
       
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error("Ei kirjautunut sisään")
+      if (!user) throw new Error(t("propertyEdit.notLoggedIn"))
 
       const { data: orgUsers, error: orgError } = await supabase
         .from("org_users")
@@ -229,7 +232,7 @@ export default function NewPropertyPage() {
         .limit(1)
 
       const orgUser = orgUsers?.[0]
-      if (orgError || !orgUser) throw new Error("Organisaatiota ei löytynyt")
+      if (orgError || !orgUser) throw new Error(t("maintenanceNew.orgNotFoundAlert"))
 
       // Generate assessment if enabled (even if not previewed)
       let assessmentToSave = previewAssessment
@@ -307,7 +310,7 @@ export default function NewPropertyPage() {
 
         if (subError) {
           console.error("Sub-space insert error:", subError)
-          toast.error("Huoneistojen tallennus epäonnistui osittain")
+          toast.error(t("propertyNew.subSpacesSaveError"))
         }
       }
 
@@ -322,11 +325,11 @@ export default function NewPropertyPage() {
             org_id: orgUser.org_id,
             building_id: property.id,
             inspection_date: new Date().toISOString().split('T')[0],
-            inspector_name: "RT-standardi (automaattinen)",
+            inspector_name: t("propertyEdit.autoInspectorName"),
             inspector_type: 'property_manager',
             status: 'complete',
             overall_score: overallScore,
-            notes: `Automaattisesti generoitu kuntoarvio RT-standardien käyttöikätietojen perusteella. Rakennusvuosi: ${formData.buildYear}. Arvio perustuu tyypillisiin käyttöikiin eikä huomioi tehtyjä korjauksia.`,
+            notes: `${t('propertyEdit.autoNotesPrefix')} ${formData.buildYear}. ${t('propertyNew.autoNotesExtra')}`,
           })
           .select()
           .single()
@@ -365,11 +368,11 @@ export default function NewPropertyPage() {
         }
       }
 
-      toast.success("Kiinteistö lisätty onnistuneesti")
+      toast.success(t("propertyNew.createSuccess"))
       router.push(`/app/properties/${property.id}`)
     } catch (error: any) {
       console.error("Submit error:", error)
-      toast.error(error.message || "Kiinteistön lisäys epäonnistui")
+      toast.error(error.message || t("propertyNew.createError"))
     } finally {
       setIsSubmitting(false)
     }
@@ -385,17 +388,17 @@ export default function NewPropertyPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Lisää kiinteistö</h1>
-          <p className="text-sm text-muted-foreground">Syötä kiinteistön perustiedot ja rakennetiedot</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("propertyNew.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("propertyNew.subtitle")}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="basic" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="basic">Perustiedot</TabsTrigger>
+            <TabsTrigger value="basic">{t("propertyEdit.tabBasic")}</TabsTrigger>
             <TabsTrigger value="structures">
-              Rakenteet
+              {t("propertyEdit.tabStructures")}
               {Object.values(structures).filter(v => v && v !== 'ei').length > 0 && (
                 <span className="ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs">
                   {Object.values(structures).filter(v => v && v !== 'ei').length}
@@ -403,7 +406,7 @@ export default function NewPropertyPage() {
               )}
             </TabsTrigger>
             <TabsTrigger value="subspaces" disabled={!hasSubSpaces}>
-              Huoneistot
+              {t("propertyDetail.apartmentsLabel")}
               {subSpaces.length > 0 && (
                 <span className="ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs">
                   {subSpaces.length}
@@ -412,9 +415,9 @@ export default function NewPropertyPage() {
             </TabsTrigger>
             {previewAssessment && previewAssessment.length > 0 && (
               <TabsTrigger value="preview">
-                Kuntoarvio
+                {t("propertyEdit.tabInspectionPreview")}
                 <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
-                  Esikatselu
+                  {t("propertyEdit.previewBadge")}
                 </span>
               </TabsTrigger>
             )}
@@ -424,26 +427,26 @@ export default function NewPropertyPage() {
           <TabsContent value="basic" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Kiinteistön tiedot</CardTitle>
-                <CardDescription>Perustiedot kiinteistöstä</CardDescription>
+                <CardTitle>{t("propertyEdit.propertyInfoTitle")}</CardTitle>
+                <CardDescription>{t("propertyEdit.propertyInfoDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nimi *</Label>
+                    <Label htmlFor="name">{t("propertyEdit.nameLabel")}</Label>
                     <Input
                       id="name"
-                      placeholder="esim. Keskustan kerrostalo"
+                      placeholder={t("propertyEdit.namePlaceholder")}
                       value={formData.name}
                       onChange={(e) => handleInputChange("name", e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tunnus">Tunnus</Label>
+                    <Label htmlFor="tunnus">{t("propertyNew.identifierLabel")}</Label>
                     <Input
                       id="tunnus"
-                      placeholder="esim. KT-001"
+                      placeholder={t("propertyNew.identifierPlaceholder")}
                       value={formData.tunnus}
                       onChange={(e) => handleInputChange("tunnus", e.target.value)}
                     />
@@ -452,10 +455,10 @@ export default function NewPropertyPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="address">Osoite *</Label>
+                    <Label htmlFor="address">{t("propertyEdit.addressLabel")}</Label>
                     <Input
                       id="address"
-                      placeholder="Esimerkkikatu 1"
+                      placeholder={t("propertyEdit.addressPlaceholder")}
                       value={formData.address}
                       onChange={(e) => handleInputChange("address", e.target.value)}
                       required
@@ -463,7 +466,7 @@ export default function NewPropertyPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postinumero</Label>
+                      <Label htmlFor="postalCode">{t("propertyNew.postalCodeLabel")}</Label>
                       <Input
                         id="postalCode"
                         placeholder="00100"
@@ -472,7 +475,7 @@ export default function NewPropertyPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="city">Kaupunki</Label>
+                      <Label htmlFor="city">{t("propertyImport.cityField")}</Label>
                       <Input
                         id="city"
                         placeholder="Helsinki"
@@ -485,13 +488,13 @@ export default function NewPropertyPage() {
 
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="buildingType">Rakennustyyppi *</Label>
+                    <Label htmlFor="buildingType">{t("propertyNew.buildingTypeRequiredLabel")}</Label>
                     <Select
                       value={formData.buildingType}
                       onValueChange={(value) => handleInputChange("buildingType", value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Valitse tyyppi" />
+                        <SelectValue placeholder={t("propertyEdit.selectTypePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
                         {buildingTypes.map((type) => (
@@ -503,7 +506,7 @@ export default function NewPropertyPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="buildYear">Rakennusvuosi *</Label>
+                    <Label htmlFor="buildYear">{t("propertyNew.buildYearRequiredLabel")}</Label>
                     <Input
                       id="buildYear"
                       type="number"
@@ -516,7 +519,7 @@ export default function NewPropertyPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="floors">Kerroksia</Label>
+                    <Label htmlFor="floors">{t("propertyEdit.floorsLabel")}</Label>
                     <Input
                       id="floors"
                       type="number"
@@ -530,7 +533,7 @@ export default function NewPropertyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="squareMeters">Pinta-ala (m2) *</Label>
+                  <Label htmlFor="squareMeters">{t("propertyNew.squareMetersRequiredLabel")}</Label>
                   <Input
                     id="squareMeters"
                     type="number"
@@ -543,10 +546,10 @@ export default function NewPropertyPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Lisätiedot</Label>
+                  <Label htmlFor="notes">{t("propertyEdit.notesLabel")}</Label>
                   <Textarea
                     id="notes"
-                    placeholder="Vapaamuotoiset lisätiedot..."
+                    placeholder={t("propertyEdit.notesPlaceholder")}
                     rows={3}
                     value={formData.notes}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
@@ -560,9 +563,9 @@ export default function NewPropertyPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Huoneistot / Alatilat</CardTitle>
+                    <CardTitle>{t("propertyNew.subSpacesTitle")}</CardTitle>
                   <CardDescription>
-                    Jaa kiinteistö huoneistoihin tai muihin alatiloihin seurantaa varten
+                    {t("propertyNew.subSpacesDescription")}
                     </CardDescription>
                   </div>
                   <Switch
@@ -574,10 +577,10 @@ export default function NewPropertyPage() {
               {hasSubSpaces && (
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Voit lisätä huoneistot seuraavalla välilehdellä tai generoida ne automaattisesti kerrosten perusteella.
+                    {t("propertyNew.subSpacesHint")}
                   </p>
                   <Button type="button" variant="outline" onClick={generateSubSpaces}>
-                    Generoi huoneistot
+                    {t("propertyNew.generateApartments")}
                   </Button>
                 </CardContent>
               )}
@@ -590,10 +593,10 @@ export default function NewPropertyPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-amber-400" />
-                  Rakennetiedot - RT-standardit
+                  {t("propertyEdit.structuresTitle")}
                 </CardTitle>
                 <CardDescription>
-                  Valitse rakenteiden tyypit. FinnVesta laskee automaattisesti rakennuksen lahtotilanteen RT-korttien kayttoikatietojen perusteella.
+                  {t("propertyNew.structuresDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -601,11 +604,9 @@ export default function NewPropertyPage() {
                   <div className="flex gap-3">
                     <Info className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-200">
-                      <p className="font-medium mb-1">Miten tama toimii?</p>
+                      <p className="font-medium mb-1">{t("propertyNew.howItWorksTitle")}</p>
                       <p className="text-amber-200/80">
-                        Kun valitset rakenteiden tyypit, FinnVesta laskee kunkin osan kunnon kayttaen RT-korttien mukaisia tyypillisia kayttoikia. 
-                        Esimerkiksi 1975 rakennetun talon huopakatto (kayttoika 25v) saa automaattisesti heikon arvosanan, 
-                        kun taas tiilijulkisivu (kayttoika 60v) on yha tyydyttavassa kunnossa.
+                        {t("propertyNew.howItWorksDescription")}
                       </p>
                     </div>
                   </div>
@@ -620,7 +621,7 @@ export default function NewPropertyPage() {
                         onValueChange={(value) => handleStructureChange(component.id as keyof BuildingStructureData, value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Valitse tyyppi" />
+                          <SelectValue placeholder={t("propertyEdit.selectTypePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
                           {component.options.map((option) => (
@@ -640,11 +641,11 @@ export default function NewPropertyPage() {
                       checked={generateAssessment}
                       onCheckedChange={setGenerateAssessment}
                     />
-                    <Label>Luo automaattinen kuntoarvio lisayksen yhteydessa</Label>
+                    <Label>{t("propertyNew.autoGenerateLabel")}</Label>
                   </div>
                   <Button type="button" variant="outline" onClick={handlePreviewAssessment}>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Esikatsele arvio
+                    {t("propertyNew.previewAssessmentButton")}
                   </Button>
                 </div>
               </CardContent>
@@ -657,18 +658,18 @@ export default function NewPropertyPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Huoneistot ja tilat ({subSpaces.length})</CardTitle>
+                    <CardTitle>{t("propertyNew.apartmentsAndSpacesTitle")} ({subSpaces.length})</CardTitle>
                     <CardDescription>
-                      Hallinnoi kiinteiston huoneistoja ja alatiloja
+                      {t("propertyNew.manageApartmentsDescription")}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={generateSubSpaces}>
-                      Generoi
+                      {t("propertyNew.generateShort")}
                     </Button>
                     <Button type="button" size="sm" onClick={addSubSpace}>
                       <Plus className="h-4 w-4 mr-1" />
-                      Lisaa
+                      {t("common.add")}
                     </Button>
                   </div>
                 </div>
@@ -677,14 +678,14 @@ export default function NewPropertyPage() {
                 {subSpaces.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Building2 className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <p className="text-muted-foreground mb-4">Ei huoneistoja viela</p>
+                    <p className="text-muted-foreground mb-4">{t("propertyNew.noApartmentsYet")}</p>
                     <div className="flex gap-2">
                       <Button type="button" variant="outline" onClick={generateSubSpaces}>
-                        Generoi automaattisesti
+                        {t("propertyNew.generateAutomatically")}
                       </Button>
                       <Button type="button" onClick={addSubSpace}>
                         <Plus className="h-4 w-4 mr-1" />
-                        Lisaa huoneisto
+                        {t("propertyNew.addApartment")}
                       </Button>
                     </div>
                   </div>
@@ -697,13 +698,13 @@ export default function NewPropertyPage() {
                       >
                         <div className="grid flex-1 gap-3 sm:grid-cols-5">
                           <Input
-                            placeholder="Numero"
+                            placeholder={t("propertyNew.numberPlaceholder")}
                             value={space.number}
                             onChange={(e) => updateSubSpace(space.id, "number", e.target.value)}
                           />
                           <Input
                             type="number"
-                            placeholder="Kerros"
+                            placeholder={t("propertyNew.floorPlaceholder")}
                             value={space.floor}
                             onChange={(e) => updateSubSpace(space.id, "floor", parseInt(e.target.value) || 1)}
                           />
@@ -714,7 +715,7 @@ export default function NewPropertyPage() {
                             onChange={(e) => updateSubSpace(space.id, "squareMeters", parseFloat(e.target.value) || 0)}
                           />
                           <Input
-                            placeholder="Huoneet"
+                            placeholder={t("propertyNew.roomsPlaceholder")}
                             value={space.rooms}
                             onChange={(e) => updateSubSpace(space.id, "rooms", e.target.value)}
                           />
@@ -726,11 +727,11 @@ export default function NewPropertyPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="apartment">Asunto</SelectItem>
-                              <SelectItem value="commercial">Liiketila</SelectItem>
-                              <SelectItem value="storage">Varasto</SelectItem>
-                              <SelectItem value="parking">Autopaikka</SelectItem>
-                              <SelectItem value="other">Muu</SelectItem>
+                              <SelectItem value="apartment">{t("propertyEdit.spaceTypeApartment")}</SelectItem>
+                              <SelectItem value="commercial">{t("propertyEdit.spaceTypeCommercial")}</SelectItem>
+                              <SelectItem value="storage">{t("propertyEdit.spaceTypeStorage")}</SelectItem>
+                              <SelectItem value="parking">{t("propertyEdit.spaceTypeParking")}</SelectItem>
+                              <SelectItem value="other">{t("propertyTypes.muu")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -758,33 +759,33 @@ export default function NewPropertyPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-amber-400" />
-                    RT-standardien mukainen kuntoarvio (esikatselu)
+                    {t("propertyNew.previewInspectionTitle")}
                   </CardTitle>
                   <CardDescription>
-                    Automaattisesti generoitu arvio perustuen rakennusvuoteen ({formData.buildYear}) ja rakennetyyppeihin
+                    {t("propertyNew.previewInspectionDescPrefix")} ({formData.buildYear}) {t("propertyNew.previewInspectionDescSuffix")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Summary */}
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-lg border bg-card p-4 text-center">
-                      <div className="text-sm text-muted-foreground mb-1">Kokonaiskunto</div>
+                      <div className="text-sm text-muted-foreground mb-1">{t("propertyNew.overallConditionLabel")}</div>
                       <div className="text-3xl font-bold text-amber-400">
                         {calculateOverallCondition(previewAssessment).toFixed(1)}
                       </div>
                       <div className="text-xs text-muted-foreground">/ 5.0</div>
                     </div>
                     <div className="rounded-lg border bg-card p-4 text-center">
-                      <div className="text-sm text-muted-foreground mb-1">Arvioitu korjausvelka</div>
+                      <div className="text-sm text-muted-foreground mb-1">{t("propertyEdit.estimatedRepairDebtLabel")}</div>
                       <div className="text-2xl font-bold text-red-400">
                         {(calculateTotalRepairDebt(previewAssessment) / 1000).toFixed(0)} k
                       </div>
-                      <div className="text-xs text-muted-foreground">euroa</div>
+                      <div className="text-xs text-muted-foreground">{t("propertyNew.eurosLabel")}</div>
                     </div>
                     <div className="rounded-lg border bg-card p-4 text-center">
-                      <div className="text-sm text-muted-foreground mb-1">Arvioidut kohteet</div>
+                      <div className="text-sm text-muted-foreground mb-1">{t("propertyNew.estimatedItemsLabel")}</div>
                       <div className="text-2xl font-bold">{previewAssessment.length}</div>
-                      <div className="text-xs text-muted-foreground">rakennusosaa</div>
+                      <div className="text-xs text-muted-foreground">{t("propertyNew.componentsLabel")}</div>
                     </div>
                   </div>
 
@@ -801,15 +802,15 @@ export default function NewPropertyPage() {
                             <span className="font-medium">{assessment.categoryName}</span>
                             {assessment.urgencyClass <= 2 && (
                               <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
-                                {assessment.urgencyClass === 1 ? 'Valiton' : 'Kiireellinen'}
+                                {assessment.urgencyClass === 1 ? t('propertyDetail.urgencyImmediate') : t('propertyNew.urgent')}
                               </span>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">{assessment.notes}</p>
                           <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                            <span>Jaljella: {assessment.remainingLifespan > 0 ? `${assessment.remainingLifespan}v` : 'Ylittynyt'}</span>
+                            <span>{t('propertyNew.remainingLabel')} {assessment.remainingLifespan > 0 ? `${assessment.remainingLifespan}v` : t('propertyNew.exceededLabel')}</span>
                             {assessment.estimatedRepairCost > 0 && (
-                              <span>Korjauskustannus: {(assessment.estimatedRepairCost / 1000).toFixed(0)}k EUR</span>
+                              <span>{t("propertyNew.repairCostLabel")} {(assessment.estimatedRepairCost / 1000).toFixed(0)}k EUR</span>
                             )}
                           </div>
                         </div>
@@ -819,8 +820,7 @@ export default function NewPropertyPage() {
 
                   <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
                     <p className="text-sm text-blue-200">
-                      <strong>Huom:</strong> Tama on arvio tyypillisten kayttoikien perusteella. Todelliset kustannukset ja kunto voivat poiketa merkittavasti 
-                      riippuen tehdyista korjauksista, huollosta ja rakennuksen erityispiirteista. Paivita arviot tarkastusten yhteydessa.
+                      <strong>{t("propertyNew.noteLabel")}</strong> {t("propertyNew.disclaimerText")}
                     </p>
                   </div>
                 </CardContent>
@@ -831,10 +831,10 @@ export default function NewPropertyPage() {
           {/* Submit button */}
           <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" asChild>
-              <Link href="/app/properties">Peruuta</Link>
+              <Link href="/app/properties">{t("common.cancel")}</Link>
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Tallennetaan..." : "Tallenna kiinteisto"}
+              {isSubmitting ? t("maintenanceNew.saving") : t("propertyNew.saveButton")}
             </Button>
           </div>
         </Tabs>
