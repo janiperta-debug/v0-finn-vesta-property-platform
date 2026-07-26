@@ -3,8 +3,11 @@
 import Link from "next/link"
 import { Building2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/lib/i18n"
 
 export default function TietosuojaPage() {
+  const { t } = useTranslation()
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -20,7 +23,7 @@ export default function TietosuojaPage() {
             <Button variant="ghost" size="sm" asChild>
               <Link href="/" className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                Takaisin
+                {t("common.back")}
               </Link>
             </Button>
           </div>
@@ -29,86 +32,110 @@ export default function TietosuojaPage() {
 
       {/* Content */}
       <main className="mx-auto max-w-4xl px-4 py-12">
-        <h1 className="font-heading text-3xl font-bold text-foreground mb-2">Tietosuojaseloste</h1>
-        <p className="text-sm text-muted-foreground mb-8">Päivitetty: 25.4.2026</p>
+        <h1 className="font-heading text-3xl font-bold text-foreground mb-2">{t("privacyPolicy.title")}</h1>
+        <p className="text-sm text-muted-foreground mb-8">{t("privacyPolicy.lastUpdated")}</p>
 
         <div className="prose prose-invert max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">1. Rekisterinpitäjä</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section1Title")}</h2>
             <p className="text-muted-foreground leading-relaxed">
               T:mi Janope<br />
-              Sähköposti: info@janope.fi<br />
-              Puhelin: +358 (0)400 982177
+              {t("privacyPolicy.emailLabel")} info@janope.fi<br />
+              {t("privacyPolicy.phoneLabel")} +358 (0)400 982177
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">2. Rekisterin nimi</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section2Title")}</h2>
             <p className="text-muted-foreground leading-relaxed">
-              FinnVesta-palvelun asiakasrekisteri
+              {t("privacyPolicy.section2Body")}
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">3. Henkilötietojen käsittelyn tarkoitus</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Henkilötietoja käsitellään asiakassuhteen hoitamiseen, palvelun tuottamiseen ja kehittämiseen, 
-              sekä lakisääteisten velvoitteiden täyttämiseen. Tietoja ei käytetä automatisoituun päätöksentekoon 
-              tai profilointiin.
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section3Title")}</h2>
+            <p className="text-muted-foreground leading-relaxed mb-3">
+              {t("privacyPolicy.section3Intro")}
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">4. Käsiteltävät henkilötiedot</h2>
             <ul className="list-disc list-inside text-muted-foreground space-y-2">
-              <li>Nimi ja yhteystiedot (sähköposti, puhelinnumero)</li>
-              <li>Organisaation tiedot</li>
-              <li>Käyttäjätunnus ja salasana (salattu)</li>
-              <li>Palvelun käyttöön liittyvät lokitiedot</li>
-              <li>Kiinteistöihin liittyvät tiedot, jotka käyttäjä syöttää palveluun</li>
+              <li>{t("privacyPolicy.section3Item1")}</li>
+              <li>{t("privacyPolicy.section3Item2")}</li>
+              <li>{t("privacyPolicy.section3Item3")}</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-3">
+              {t("privacyPolicy.section3Outro")}
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section4Title")}</h2>
+            <ul className="list-disc list-inside text-muted-foreground space-y-3">
+              <li>
+                <strong className="text-foreground">{t("privacyPolicy.section4ControllerLabel")}</strong>{" "}
+                {t("privacyPolicy.section4ControllerText")}
+              </li>
+              <li>
+                <strong className="text-foreground">{t("privacyPolicy.section4ProcessorLabel")}</strong>{" "}
+                {t("privacyPolicy.section4ProcessorText")}
+              </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">5. Tietojen säilytys ja suojaus</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Tiedot säilytetään EU/ETA-alueella sijaitsevilla palvelimilla. Käytämme asianmukaisia teknisiä 
-              ja organisatorisia suojatoimia, mukaan lukien salaus, pääsynhallinta ja säännölliset 
-              tietoturvatarkastukset. Tietoja säilytetään asiakassuhteen ajan ja lain vaatiman ajan sen päättymisen jälkeen.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">6. Tietojen luovutus</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Tietoja ei luovuteta kolmansille osapuolille ilman lakisääteistä perustetta. 
-              Käytämme alihankkijoita palvelun tekniseen toteuttamiseen (palvelinpalvelut), 
-              joiden kanssa on solmittu asianmukaiset tietojenkäsittelysopimukset.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">7. Rekisteröidyn oikeudet</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Sinulla on oikeus:
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section5Title")}</h2>
+            <p className="text-muted-foreground leading-relaxed mb-3">
+              {t("privacyPolicy.section5Intro")}
             </p>
             <ul className="list-disc list-inside text-muted-foreground space-y-2">
-              <li>Saada pääsy omiin tietoihisi</li>
-              <li>Pyytää tietojen oikaisua tai poistamista</li>
-              <li>Rajoittaa tietojen käsittelyä</li>
-              <li>Siirtää tiedot järjestelmästä toiseen</li>
-              <li>Tehdä valitus valvontaviranomaiselle (Tietosuojavaltuutetun toimisto)</li>
+              <li><strong className="text-foreground">{t("privacyPolicy.section5Item1Label")}</strong> {t("privacyPolicy.section5Item1Text")}</li>
+              <li><strong className="text-foreground">{t("privacyPolicy.section5Item2Label")}</strong> {t("privacyPolicy.section5Item2Text")}</li>
+              <li><strong className="text-foreground">{t("privacyPolicy.section5Item3Label")}</strong> {t("privacyPolicy.section5Item3Text")}</li>
+              <li><strong className="text-foreground">{t("privacyPolicy.section5Item4Label")}</strong> {t("privacyPolicy.section5Item4Text")}</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section6Title")}</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              {t("privacyPolicy.section6Body")}
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section7Title")}</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              {t("privacyPolicy.section7Body")}
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section8Title")}</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              {t("privacyPolicy.section8Intro")}
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2">
+              <li>{t("privacyPolicy.section8Item1")}</li>
+              <li>{t("privacyPolicy.section8Item2")}</li>
+              <li>{t("privacyPolicy.section8Item3")}</li>
+              <li>{t("privacyPolicy.section8Item4")}</li>
+              <li>{t("privacyPolicy.section8Item5")}</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              Pyyntöjen osalta ota yhteyttä: info@janope.fi
+              {t("privacyPolicy.section8ContactText")} info@janope.fi.
             </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              {t("privacyPolicy.section8ComplaintIntro")}
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 mt-2">
+              <li><strong className="text-foreground">{t("privacyPolicy.section8FinlandLabel")}</strong> {t("privacyPolicy.section8FinlandText")}</li>
+              <li><strong className="text-foreground">{t("privacyPolicy.section8EstoniaLabel")}</strong> {t("privacyPolicy.section8EstoniaText")}</li>
+            </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-foreground mb-4">8. Muutokset tietosuojaselosteeseen</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-4">{t("privacyPolicy.section9Title")}</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Pidätämme oikeuden päivittää tätä tietosuojaselostetta. Olennaisista muutoksista ilmoitetaan 
-              palvelun kautta tai sähköpostitse.
+              {t("privacyPolicy.section9Body")}
             </p>
           </section>
         </div>
