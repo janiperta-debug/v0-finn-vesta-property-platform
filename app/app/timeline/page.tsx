@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getTranslation } from "@/lib/i18n/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,13 +29,6 @@ interface InvestmentItem {
   derived: boolean
 }
 
-const priorityConfig = {
-  low: { label: 'Matala', color: 'text-slate-400' },
-  medium: { label: 'Normaali', color: 'text-blue-400' },
-  high: { label: 'Korkea', color: 'text-amber-400' },
-  critical: { label: 'Kriittinen', color: 'text-red-400' },
-}
-
 // Map a derived urgency bucket to a target year offset and priority
 const URGENCY_YEAR_OFFSET: Record<UrgencyCode, number> = {
   valitom: 0,
@@ -51,10 +45,18 @@ const URGENCY_PRIORITY: Record<UrgencyCode, InvestmentItem['priority']> = {
 
 export default async function TimelinePage() {
   const supabase = await createClient()
+  const { t, locale } = await getTranslation()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect("/auth/login")
+  }
+
+  const priorityConfig = {
+    low: { label: t("timeline.priorityLow"), color: 'text-slate-400' },
+    medium: { label: t("timeline.priorityMedium"), color: 'text-blue-400' },
+    high: { label: t("timeline.priorityHigh"), color: 'text-amber-400' },
+    critical: { label: t("timeline.priorityCritical"), color: 'text-red-400' },
   }
 
   const currentYear = new Date().getFullYear()
@@ -127,7 +129,7 @@ export default async function TimelinePage() {
           investments.push({
             id: `${b.id}-${item.categoryStringId}`,
             propertyId: String(b.id),
-            propertyName: b.name || 'Nimetön kiinteistö',
+            propertyName: b.name || t('maintenance.defaultPropertyName'),
             title: item.categoryName,
             year: currentYear + URGENCY_YEAR_OFFSET[item.urgency],
             estimatedCost: item.cost,
@@ -151,7 +153,7 @@ export default async function TimelinePage() {
           investments.push({
             id: `manual-${i.id}`,
             propertyId: String(i.kiinteisto_id),
-            propertyName: buildingMap.get(i.kiinteisto_id) || 'Tuntematon',
+            propertyName: buildingMap.get(i.kiinteisto_id) || t('maintenance.unknownProperty'),
             title: i.otsikko || '-',
             year: i.vuosi || currentYear,
             estimatedCost: i.arvioitu_kustannus || 0,
@@ -179,7 +181,7 @@ export default async function TimelinePage() {
   const criticalCount = investments.filter(i => i.priority === 'critical').length
 
   function formatEur(value: number) {
-    return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
   }
 
   return (
@@ -187,20 +189,20 @@ export default async function TimelinePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Investointiaikajana</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("timeline.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Koko portfolion 15 vuoden pitkän tähtäimen suunnitelma (PTS)
+            {t("timeline.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
             <Download className="mr-2 h-4 w-4" />
-            Vie Excel
+            {t("timeline.exportExcel")}
           </Button>
           <Button size="sm" asChild>
             <Link href="/app/timeline/new">
               <Plus className="mr-2 h-4 w-4" />
-              Lisää investointi
+              {t("timeline.addInvestment")}
             </Link>
           </Button>
         </div>
@@ -210,18 +212,18 @@ export default async function TimelinePage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Investoinnit yhteensä (15v)</CardDescription>
+            <CardDescription>{t("timeline.totalInvestments15y")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatEur(totalInvestment)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {investments.length} suunniteltua toimenpidettä
+              {investments.length} {t("targetPlanning.plannedActionsSuffix")}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Seuraavat 5 vuotta</CardDescription>
+            <CardDescription>{t("targetPlanning.next5Years")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatEur(next5)}</div>
@@ -232,7 +234,7 @@ export default async function TimelinePage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Kriittiset toimenpiteet</CardDescription>
+            <CardDescription>{t("targetPlanning.criticalActions")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -250,14 +252,14 @@ export default async function TimelinePage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <CalendarRange className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei kiinteistöjä</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("timeline.noPropertiesTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Lisää kiinteistö saadaksesi automaattisen pitkän tähtäimen suunnitelman RT-standardien perusteella.
+              {t("timeline.noPropertiesDescription")}
             </p>
             <Button asChild>
               <Link href="/app/properties/new">
                 <Plus className="mr-2 h-4 w-4" />
-                Lisää kiinteistö
+                {t("dashboard.addProperty")}
               </Link>
             </Button>
           </CardContent>
@@ -273,7 +275,7 @@ export default async function TimelinePage() {
                       {year}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      {items.length} toimenpidettä
+                      {items.length} {t("targetPlanning.actionsSuffix")}
                     </span>
                   </div>
                   <span className="font-semibold">{formatEur(total)}</span>
