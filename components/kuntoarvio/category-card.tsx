@@ -3,7 +3,8 @@
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
 import { ConditionBadge } from './condition-badge'
-import { getCategoryById, getConditionInfo } from '@/lib/kuntoarvio-data'
+import { getCategoryById, getConditionInfo, getCategoryName, getConditionLabel } from '@/lib/kuntoarvio-data'
+import { useTranslation } from '@/lib/i18n'
 import type { CategoryEvaluation, ConditionScore } from '@/lib/kuntoarvio-types'
 import {
   Building,
@@ -62,6 +63,7 @@ export function CategoryCard({
   disabled = false,
   className,
 }: CategoryCardProps) {
+  const { t } = useTranslation()
   const category = getCategoryById(categoryId)
   if (!category) return null
 
@@ -94,14 +96,14 @@ export function CategoryCard({
               <Icon className={cn('h-5 w-5', conditionInfo ? conditionInfo.color : 'text-muted-foreground')} />
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="font-medium text-sm leading-tight truncate">{category.name}</h4>
+              <h4 className="font-medium text-sm leading-tight truncate">{getCategoryName(categoryId, t)}</h4>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {hasEvaluation ? (
                   <>
-                    {isThorough ? 'Tarkennettu' : 'Perusarvio'} • {evaluation.date}
+                    {isThorough ? t("evaluationUi.thorough") : t("evaluationUi.basicAssessment")} • {evaluation.date}
                   </>
                 ) : (
-                  'Ei arvioitu'
+                  t("evaluationUi.notEvaluated")
                 )}
               </p>
             </div>
@@ -165,6 +167,7 @@ export function CategorySummaryStats({
   totalCategories,
   className,
 }: CategorySummaryStatsProps) {
+  const { t } = useTranslation()
   const evaluated = evaluations.length
   const thorough = evaluations.filter((e) => e.mode === 'thorough').length
   const avgScore =
@@ -182,20 +185,20 @@ export function CategorySummaryStats({
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center">
           <p className="text-2xl font-bold">{evaluated}/{totalCategories}</p>
-          <p className="text-xs text-muted-foreground">Arvioitu</p>
+          <p className="text-xs text-muted-foreground">{t("evaluationUi.evaluated")}</p>
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold">{thorough}</p>
-          <p className="text-xs text-muted-foreground">Tarkennettu</p>
+          <p className="text-xs text-muted-foreground">{t("evaluationUi.thorough")}</p>
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold">{avgScore.toFixed(1)}</p>
-          <p className="text-xs text-muted-foreground">Keskiarvo</p>
+          <p className="text-xs text-muted-foreground">{t("evaluationUi.average")}</p>
         </div>
       </div>
 
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">Kuntojakauma</p>
+        <p className="text-xs font-medium text-muted-foreground">{t("evaluationUi.conditionDistribution")}</p>
         <div className="flex gap-1">
           {scoreDistribution.map(({ score, count }) => {
             const info = getConditionInfo(score)
@@ -205,14 +208,14 @@ export function CategorySummaryStats({
                 key={score}
                 className={cn('h-2 rounded-sm transition-all', info.bgColor)}
                 style={{ width: `${Math.max(percentage, count > 0 ? 5 : 0)}%` }}
-                title={`${info.label}: ${count}`}
+                title={`${getConditionLabel(score, t)}: ${count}`}
               />
             )
           })}
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Heikko</span>
-          <span>Erinomainen</span>
+          <span>{t("evaluationUi.poorLabel")}</span>
+          <span>{t("evaluationUi.excellentLabel")}</span>
         </div>
       </div>
     </div>

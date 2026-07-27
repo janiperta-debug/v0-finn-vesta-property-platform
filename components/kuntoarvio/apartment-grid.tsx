@@ -18,38 +18,41 @@ import {
   Wrench,
 } from "lucide-react"
 import { formatEur } from "@/lib/mock-data"
+import { useTranslation } from "@/lib/i18n"
+import { getCategoryName } from "@/lib/kuntoarvio-data"
 
 interface ApartmentSummaryCardsProps {
   summary: BuildingApartmentSummary
 }
 
 export function ApartmentSummaryCards({ summary }: ApartmentSummaryCardsProps) {
+  const { t } = useTranslation()
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-xl border border-border/50 bg-card p-5">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           <Home className="h-3.5 w-3.5" />
-          Huoneistot
+          {t("apartmentGrid.unitsLabel")}
         </div>
         <p className="font-heading text-2xl font-bold text-foreground">{summary.totalUnits}</p>
-        <p className="mt-1 text-xs text-muted-foreground">huoneistoa yhteensä</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("apartmentGrid.unitsTotalSuffix")}</p>
       </div>
 
       <div className="rounded-xl border border-border/50 bg-card p-5">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           <Users className="h-3.5 w-3.5" />
-          Vuokrausaste
+          {t("apartmentGrid.occupancyRateLabel")}
         </div>
         <p className="font-heading text-2xl font-bold text-foreground">
           {Math.round((summary.occupiedUnits / summary.totalUnits) * 100)}%
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">{summary.occupiedUnits}/{summary.totalUnits} vuokrattu</p>
+        <p className="mt-1 text-xs text-muted-foreground">{summary.occupiedUnits}/{summary.totalUnits} {t("apartmentGrid.rentedSuffix")}</p>
       </div>
 
       <div className="rounded-xl border border-border/50 bg-card p-5">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           <Building2 className="h-3.5 w-3.5" />
-          Keskikunto
+          {t("apartmentGrid.avgConditionLabel")}
         </div>
         <p className={`font-heading text-2xl font-bold ${
           summary.avgCondition >= 4 ? 'text-emerald-400' : 
@@ -57,18 +60,18 @@ export function ApartmentSummaryCards({ summary }: ApartmentSummaryCardsProps) {
         }`}>
           {summary.avgCondition.toFixed(1)}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">asteikolla 1-5</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("evaluationUi.onScale1to5")}</p>
       </div>
 
       <div className="rounded-xl border border-border/50 bg-card p-5">
         <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           <AlertTriangle className="h-3.5 w-3.5" />
-          Huomioitavat
+          {t("apartmentGrid.needsAttentionLabel")}
         </div>
         <p className={`font-heading text-2xl font-bold ${summary.needsAttention > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
           {summary.needsAttention}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">huoneistoa vaatii toimenpiteitä</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("apartmentGrid.unitsNeedActionSuffix")}</p>
       </div>
     </div>
   )
@@ -81,6 +84,7 @@ interface ApartmentGridProps {
 }
 
 export function ApartmentGrid({ apartments, evaluations = [], onSelect }: ApartmentGridProps) {
+  const { t } = useTranslation()
   const [selectedApartment, setSelectedApartment] = useState<Apartment | null>(null)
   
   // Group by floor
@@ -93,7 +97,7 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
       {floors.map(floor => (
         <div key={floor} className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">
-            {floor}. kerros
+            {floor}{t("propertyDetail.floorSuffix")}
           </h4>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {apartments
@@ -124,18 +128,18 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
                           {apartment.tenant ? (
                             <span className="flex items-center gap-1">
                               <Users className="h-3 w-3" />
-                              Vuokrattu
+                              {t("apartmentGrid.rented")}
                             </span>
                           ) : (
                             <span className="flex items-center gap-1 text-amber-400">
                               <Home className="h-3 w-3" />
-                              Vapaa
+                              {t("apartmentGrid.vacant")}
                             </span>
                           )}
                           {apartment.notes && (
                             <span className="flex items-center gap-1 text-amber-400">
                               <Wrench className="h-3 w-3" />
-                              Huomio
+                              {t("apartmentGrid.attentionFlag")}
                             </span>
                           )}
                         </div>
@@ -144,7 +148,7 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
                     <DialogContent className="max-w-lg">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-3">
-                          Huoneisto {apartment.number}
+                          {t("apartmentGrid.apartmentPrefix")} {apartment.number}
                           <ConditionBadge score={apartment.overallCondition} size="sm" />
                         </DialogTitle>
                       </DialogHeader>
@@ -161,35 +165,35 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span>{apartment.floor}. kerros</span>
+                            <span>{apartment.floor}{t("propertyDetail.floorSuffix")}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span>Tarkastettu {apartment.lastInspection}</span>
+                            <span>{t("apartmentGrid.inspectedPrefix")} {apartment.lastInspection}</span>
                           </div>
                         </div>
 
                         {/* Tenant info */}
                         <div className="rounded-lg bg-muted/50 p-3">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Vuokralainen</p>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">{t("apartmentGrid.tenantLabel")}</p>
                           {apartment.tenant ? (
                             <div>
                               <p className="text-sm">{apartment.tenant}</p>
                               {apartment.rentEndDate && (
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  Sopimus päättyy {apartment.rentEndDate}
+                                  {t("apartmentGrid.leaseEndsPrefix")} {apartment.rentEndDate}
                                 </p>
                               )}
                             </div>
                           ) : (
-                            <p className="text-sm text-amber-400">Vapaa</p>
+                            <p className="text-sm text-amber-400">{t("apartmentGrid.vacant")}</p>
                           )}
                         </div>
 
                         {/* Notes */}
                         {apartment.notes && (
                           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                            <p className="text-xs font-medium text-amber-400 mb-1">Huomiot</p>
+                            <p className="text-xs font-medium text-amber-400 mb-1">{t("evaluationUi.remarksLabel")}</p>
                             <p className="text-sm">{apartment.notes}</p>
                           </div>
                         )}
@@ -197,13 +201,13 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
                         {/* Evaluation details if exists */}
                         {evaluation && (
                           <div className="space-y-3">
-                            <p className="text-xs font-medium text-muted-foreground">Arvioinnin tulokset</p>
+                            <p className="text-xs font-medium text-muted-foreground">{t("apartmentGrid.evaluationResultsLabel")}</p>
                             {evaluation.categoryScores.map(cs => (
                               <div key={cs.categoryId} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                                 <div className="flex items-center gap-2">
                                   <ConditionBadge score={cs.score} size="sm" />
                                   <span className="text-sm capitalize">
-                                    {cs.categoryId.replace('sisatilat-', '').replace('-', ' ')}
+                                    {getCategoryName(cs.categoryId, t)}
                                   </span>
                                 </div>
                                 {cs.estimatedCost && (
@@ -219,11 +223,11 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
 
                         <div className="flex gap-2 pt-2">
                           <Button className="flex-1" size="sm">
-                            Avaa arviointi
+                            {t("propertyDetail.openAssessment")}
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
                           <Button variant="outline" size="sm">
-                            Historia
+                            {t("apartmentGrid.historyButton")}
                           </Button>
                         </div>
                       </div>
@@ -243,18 +247,19 @@ interface ApartmentFloorPlanProps {
 }
 
 export function ApartmentFloorPlan({ apartments }: ApartmentFloorPlanProps) {
+  const { t } = useTranslation()
   // Simple visual grid representation
   const floors = [...new Set(apartments.map(a => a.floor))].sort((a, b) => b - a)
   
   return (
     <div className="rounded-xl border border-border/50 bg-card p-5">
-      <h3 className="font-heading text-base font-semibold text-foreground mb-4">Kerrosnäkymä</h3>
+      <h3 className="font-heading text-base font-semibold text-foreground mb-4">{t("apartmentGrid.floorPlanTitle")}</h3>
       <div className="space-y-4">
         {floors.map(floor => {
           const floorApartments = apartments.filter(a => a.floor === floor)
           return (
             <div key={floor} className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground w-16">{floor}. krs</span>
+              <span className="text-xs text-muted-foreground w-16">{floor}. {t("apartmentGrid.floorAbbrev")}</span>
               <div className="flex gap-1.5 flex-wrap">
                 {floorApartments.map(apt => (
                   <div 
@@ -277,7 +282,7 @@ export function ApartmentFloorPlan({ apartments }: ApartmentFloorPlanProps) {
         })}
       </div>
       <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border/50">
-        <span className="text-xs text-muted-foreground">Kunto:</span>
+        <span className="text-xs text-muted-foreground">{t("apartmentGrid.conditionColonLabel")}</span>
         <div className="flex gap-2">
           {[5, 4, 3, 2, 1].map(score => (
             <div key={score} className="flex items-center gap-1">

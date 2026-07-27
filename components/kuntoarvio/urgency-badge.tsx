@@ -1,7 +1,8 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { getUrgencyInfo } from '@/lib/kuntoarvio-data'
+import { getUrgencyInfo, getUrgencyLabel, getUrgencyTimeframe } from '@/lib/kuntoarvio-data'
+import { useTranslation } from '@/lib/i18n'
 import type { UrgencyClass } from '@/lib/kuntoarvio-types'
 
 interface UrgencyBadgeProps {
@@ -17,6 +18,7 @@ export function UrgencyBadge({
   size = 'md',
   className,
 }: UrgencyBadgeProps) {
+  const { t } = useTranslation()
   const info = getUrgencyInfo(urgency)
 
   const sizeClasses = {
@@ -35,9 +37,9 @@ export function UrgencyBadge({
         className
       )}
     >
-      <span>{info.label}</span>
+      <span>{getUrgencyLabel(urgency, t)}</span>
       {showTimeframe && (
-        <span className="text-muted-foreground font-normal">({info.timeframe})</span>
+        <span className="text-muted-foreground font-normal">({getUrgencyTimeframe(urgency, t)})</span>
       )}
     </div>
   )
@@ -48,17 +50,18 @@ interface UrgencyScaleLegendProps {
 }
 
 export function UrgencyScaleLegend({ className }: UrgencyScaleLegendProps) {
+  const { t } = useTranslation()
   const urgencies: UrgencyClass[] = [1, 2, 3, 4]
 
   return (
     <div className={cn('space-y-1', className)}>
-      <p className="text-xs font-medium text-muted-foreground mb-2">Kiireellisyysluokitus</p>
+      <p className="text-xs font-medium text-muted-foreground mb-2">{t("evaluationUi.urgencyScaleTitle")}</p>
       {urgencies.map((urgency) => {
         const info = getUrgencyInfo(urgency)
         return (
           <div key={urgency} className="flex items-center gap-2">
             <UrgencyBadge urgency={urgency} size="sm" />
-            <span className="text-xs text-muted-foreground">{info.timeframe}</span>
+            <span className="text-xs text-muted-foreground">{getUrgencyTimeframe(urgency, t)}</span>
           </div>
         )
       })}

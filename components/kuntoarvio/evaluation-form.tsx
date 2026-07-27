@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConditionBadge, ConditionScaleLegend } from './condition-badge'
 import { UrgencyBadge, UrgencyScaleLegend } from './urgency-badge'
-import { getCategoryById, getConditionInfo, getUrgencyInfo } from '@/lib/kuntoarvio-data'
+import { getCategoryById, getConditionInfo, getUrgencyInfo, getCategoryName, getSubItemName, getUrgencyLabel } from '@/lib/kuntoarvio-data'
+import { useTranslation } from '@/lib/i18n'
 import type {
   ConditionScore,
   UrgencyClass,
@@ -64,6 +65,7 @@ interface UrgencySelectorProps {
 }
 
 function UrgencySelector({ value, onChange, disabled, className }: UrgencySelectorProps) {
+  const { t } = useTranslation()
   const urgencies: UrgencyClass[] = [1, 2, 3, 4]
 
   return (
@@ -86,7 +88,7 @@ function UrgencySelector({ value, onChange, disabled, className }: UrgencySelect
               disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
-            {info.label}
+            {getUrgencyLabel(urgency, t)}
           </button>
         )
       })}
@@ -101,6 +103,7 @@ interface SubItemFormProps {
 }
 
 function SubItemForm({ subItem, evaluation, onChange }: SubItemFormProps) {
+  const { t } = useTranslation()
   const handleScoreChange = (score: ConditionScore) => {
     onChange({
       subItemId: subItem.id,
@@ -139,34 +142,34 @@ function SubItemForm({ subItem, evaluation, onChange }: SubItemFormProps) {
   return (
     <div className="border rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between gap-4">
-        <h5 className="font-medium text-sm">{subItem.name}</h5>
+        <h5 className="font-medium text-sm">{getSubItemName(subItem.id, t)}</h5>
         <ScoreSelector value={evaluation?.score} onChange={handleScoreChange} />
       </div>
 
       {evaluation?.score && (
         <div className="space-y-4 pt-2 border-t">
           <div className="space-y-2">
-            <Label className="text-xs">Kiireellisyys</Label>
+            <Label className="text-xs">{t("evaluationUi.urgencyLabel")}</Label>
             <UrgencySelector value={evaluation.urgency} onChange={handleUrgencyChange} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor={`notes-${subItem.id}`} className="text-xs">
-                Huomiot
+                {t("evaluationUi.remarksLabel")}
               </Label>
               <Textarea
                 id={`notes-${subItem.id}`}
                 value={evaluation.notes || ''}
                 onChange={(e) => handleNotesChange(e.target.value)}
-                placeholder="Lisähuomiot..."
+                placeholder={t("evaluationUi.additionalRemarksPlaceholder")}
                 className="h-20 text-sm"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor={`cost-${subItem.id}`} className="text-xs">
-                Kustannusarvio (€)
+                {t("evaluationUi.costEstimateLabel")}
               </Label>
               <Input
                 id={`cost-${subItem.id}`}
@@ -177,7 +180,7 @@ function SubItemForm({ subItem, evaluation, onChange }: SubItemFormProps) {
               />
               <Button variant="outline" size="sm" className="w-full gap-2">
                 <Camera className="h-4 w-4" />
-                Lisää kuva
+                {t("evaluationUi.addPhoto")}
               </Button>
             </div>
           </div>
@@ -202,6 +205,7 @@ export function EvaluationForm({
   onCancel,
   className,
 }: EvaluationFormProps) {
+  const { t } = useTranslation()
   const category = getCategoryById(categoryId)
   const [mode, setMode] = useState<'basic' | 'thorough'>(existingEvaluation?.mode || 'basic')
   const [overallScore, setOverallScore] = useState<ConditionScore | undefined>(
@@ -260,10 +264,10 @@ export function EvaluationForm({
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <CardTitle className="text-lg">{category.name}</CardTitle>
+            <CardTitle className="text-lg">{getCategoryName(categoryId, t)}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              {mode === 'basic' ? 'Perusarvio' : 'Tarkennettu arvio'} •{' '}
-              {category.subItems.length} osa-aluetta
+              {mode === 'basic' ? t("evaluationUi.basicAssessment") : t("evaluationUi.thoroughAssessment")} •{' '}
+              {category.subItems.length} {t("evaluationUi.subAreasSuffix")}
             </p>
           </div>
           <Button
@@ -272,7 +276,7 @@ export function EvaluationForm({
             onClick={() => setShowLegend(!showLegend)}
             className="text-xs"
           >
-            Asteikko
+            {t("evaluationUi.scaleButton")}
             {showLegend ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
           </Button>
         </div>
@@ -289,7 +293,7 @@ export function EvaluationForm({
         {/* Basic Mode - Overall Score */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Yleisarvosana</Label>
+            <Label className="text-sm font-medium">{t("inspectionDetail.scoreTitle")}</Label>
             {overallScore && <ConditionBadge score={overallScore} showLabel size="md" />}
           </div>
           <ScoreSelector value={overallScore} onChange={setOverallScore} />
@@ -298,13 +302,13 @@ export function EvaluationForm({
         {/* Notes */}
         <div className="space-y-2">
           <Label htmlFor="overall-notes" className="text-sm font-medium">
-            Yleiset huomiot
+            {t("evaluationUi.overallRemarksLabel")}
           </Label>
           <Textarea
             id="overall-notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Kirjoita yleiset huomiot tästä kategoriasta..."
+            placeholder={t("evaluationUi.overallRemarksPlaceholder")}
             className="min-h-24"
           />
         </div>
@@ -317,7 +321,7 @@ export function EvaluationForm({
             onClick={expandToThorough}
           >
             <ChevronDown className="mr-2 h-4 w-4" />
-            Tarkenna – arvioi {category.subItems.length} osa-aluetta erikseen
+            {t("evaluationUi.expandPrefix")} {category.subItems.length} {t("evaluationUi.expandSuffix")}
           </Button>
         )}
 
@@ -325,14 +329,14 @@ export function EvaluationForm({
         {mode === 'thorough' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium">Osa-alueet</h4>
+              <h4 className="font-medium">{t("evaluationUi.subAreasTitle")}</h4>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setMode('basic')}
                 className="text-xs"
               >
-                Piilota osa-alueet
+                {t("evaluationUi.hideSubAreas")}
                 <ChevronUp className="ml-1 h-3 w-3" />
               </Button>
             </div>
@@ -354,7 +358,7 @@ export function EvaluationForm({
         <div className="flex gap-3 pt-4 border-t">
           {onCancel && (
             <Button variant="outline" className="flex-1" onClick={onCancel}>
-              Peruuta
+              {t("common.cancel")}
             </Button>
           )}
           <Button
@@ -363,7 +367,7 @@ export function EvaluationForm({
             disabled={!overallScore}
           >
             <Save className="h-4 w-4" />
-            Tallenna arvio
+            {t("evaluationUi.saveAssessment")}
           </Button>
         </div>
       </CardContent>
@@ -384,16 +388,17 @@ export function EvaluationProgress({
   thorough,
   className,
 }: EvaluationProgressProps) {
+  const { t } = useTranslation()
   const percentage = total > 0 ? (completed / total) * 100 : 0
 
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between text-sm">
         <span>
-          {completed} / {total} arvioitu
+          {completed} / {total} {t("evaluationUi.evaluated")}
         </span>
         <span className="text-muted-foreground">
-          {thorough} tarkennettu
+          {thorough} {t("evaluationUi.thorough")}
         </span>
       </div>
       <div className="h-2 bg-muted rounded-full overflow-hidden">

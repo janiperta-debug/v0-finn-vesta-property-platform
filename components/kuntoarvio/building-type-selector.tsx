@@ -14,7 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { buildingTypeTemplates, categories } from '@/lib/kuntoarvio-data'
+import { buildingTypeTemplates, categories, getTemplateName, getCategoryName } from '@/lib/kuntoarvio-data'
+import { useTranslation } from '@/lib/i18n'
 import type { BuildingType } from '@/lib/kuntoarvio-types'
 import {
   Building,
@@ -46,7 +47,8 @@ interface BuildingTypeCardProps {
 }
 
 function BuildingTypeCard({ type, selected, onSelect }: BuildingTypeCardProps) {
-  const template = buildingTypeTemplates.find((t) => t.id === type)
+  const { t } = useTranslation()
+  const template = buildingTypeTemplates.find((tmpl) => tmpl.id === type)
   if (!template) return null
 
   const Icon = buildingTypeIcons[type]
@@ -72,11 +74,11 @@ function BuildingTypeCard({ type, selected, onSelect }: BuildingTypeCardProps) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <h4 className="font-medium">{template.name}</h4>
+              <h4 className="font-medium">{getTemplateName(type, t)}</h4>
               {selected && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {categoryCount > 0 ? `${categoryCount} kategoriaa` : 'Valitse itse'}
+              {categoryCount > 0 ? `${categoryCount} ${t("evaluationUi.categoriesSuffix")}` : t("evaluationUi.selectYourself")}
             </p>
           </div>
         </div>
@@ -103,14 +105,15 @@ export function BuildingTypeSelector({
     customCategories || []
   )
 
-  const template = buildingTypeTemplates.find((t) => t.id === value)
+  const { t } = useTranslation()
+  const template = buildingTypeTemplates.find((tmpl) => tmpl.id === value)
   const enabledCategories = value === 'muu' ? selectedCustomCategories : template?.includedCategories || []
 
   const handleTypeSelect = (type: BuildingType) => {
     if (type === 'muu') {
       setShowCustom(true)
     } else {
-      const tmpl = buildingTypeTemplates.find((t) => t.id === type)
+      const tmpl = buildingTypeTemplates.find((x) => x.id === type)
       onChange(type, tmpl?.includedCategories || [])
     }
   }
@@ -144,7 +147,7 @@ export function BuildingTypeSelector({
       {value && (
         <div className="p-4 bg-muted/50 rounded-lg">
           <p className="text-sm font-medium mb-2">
-            {template?.name || 'Mukautettu'}: {enabledCategories.length} kategoriaa käytössä
+            {template ? getTemplateName(template.id, t) : t("evaluationUi.customLabel")}: {enabledCategories.length} {t("evaluationUi.categoriesInUse")}
           </p>
           <div className="flex flex-wrap gap-1">
             {enabledCategories.map((categoryId) => {
@@ -154,7 +157,7 @@ export function BuildingTypeSelector({
                   key={categoryId}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-background border"
                 >
-                  {category?.name}
+                  {category ? getCategoryName(category.id, t) : ''}
                 </span>
               )
             })}
@@ -166,16 +169,16 @@ export function BuildingTypeSelector({
       <Dialog open={showCustom} onOpenChange={setShowCustom}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Valitse kategoriat</DialogTitle>
+            <DialogTitle>{t("evaluationUi.selectCategoriesTitle")}</DialogTitle>
             <DialogDescription>
-              Valitse rakennukselle sopivat arviointikategoriat
+              {t("evaluationUi.selectCategoriesDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {selectedCustomCategories.length} / {categories.length} valittu
+                {selectedCustomCategories.length} / {categories.length} {t("evaluationUi.selected")}
               </span>
               <div className="flex gap-2">
                 <Button
@@ -183,14 +186,14 @@ export function BuildingTypeSelector({
                   size="sm"
                   onClick={() => setSelectedCustomCategories(categories.map((c) => c.id))}
                 >
-                  Valitse kaikki
+                  {t("evaluationUi.selectAll")}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedCustomCategories([])}
                 >
-                  Tyhjennä
+                  {t("evaluationUi.clearAll")}
                 </Button>
               </div>
             </div>
@@ -207,7 +210,7 @@ export function BuildingTypeSelector({
                     htmlFor={category.id}
                     className="text-sm font-normal cursor-pointer flex-1"
                   >
-                    {category.name}
+                    {getCategoryName(category.id, t)}
                     <span className="text-xs text-muted-foreground ml-1">
                       ({category.subItems.length})
                     </span>
@@ -219,10 +222,10 @@ export function BuildingTypeSelector({
 
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowCustom(false)}>
-              Peruuta
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleCustomSave}>
-              Tallenna ({selectedCustomCategories.length} kategoriaa)
+              {t("evaluationUi.saveWithCount")} ({selectedCustomCategories.length} {t("evaluationUi.categoriesSuffix")})
             </Button>
           </div>
         </DialogContent>
@@ -237,7 +240,8 @@ interface BuildingTypeBadgeProps {
 }
 
 export function BuildingTypeBadge({ type, className }: BuildingTypeBadgeProps) {
-  const template = buildingTypeTemplates.find((t) => t.id === type)
+  const { t } = useTranslation()
+  const template = buildingTypeTemplates.find((tmpl) => tmpl.id === type)
   const Icon = buildingTypeIcons[type]
 
   return (
@@ -248,7 +252,7 @@ export function BuildingTypeBadge({ type, className }: BuildingTypeBadgeProps) {
       )}
     >
       <Icon className="h-4 w-4" />
-      <span>{template?.name || 'Tuntematon'}</span>
+      <span>{template ? getTemplateName(template.id, t) : t("propertyDetail.notSet")}</span>
     </div>
   )
 }

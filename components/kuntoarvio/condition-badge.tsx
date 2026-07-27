@@ -1,7 +1,8 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { getConditionInfo } from '@/lib/kuntoarvio-data'
+import { getConditionInfo, getConditionLabel, getConditionDescription } from '@/lib/kuntoarvio-data'
+import { useTranslation } from '@/lib/i18n'
 import type { ConditionScore } from '@/lib/kuntoarvio-types'
 
 interface ConditionBadgeProps {
@@ -17,6 +18,7 @@ export function ConditionBadge({
   size = 'md',
   className,
 }: ConditionBadgeProps) {
+  const { t } = useTranslation()
   const info = getConditionInfo(score)
 
   const sizeClasses = {
@@ -39,7 +41,7 @@ export function ConditionBadge({
       )}
     >
       <span>{score}</span>
-      {showLabel && <span className="font-medium">{info.label}</span>}
+      {showLabel && <span className="font-medium">{getConditionLabel(score, t)}</span>}
     </div>
   )
 }
@@ -50,6 +52,7 @@ interface ConditionScaleLegendProps {
 }
 
 export function ConditionScaleLegend({ className, compact = false }: ConditionScaleLegendProps) {
+  const { t } = useTranslation()
   const scores: ConditionScore[] = [5, 4, 3, 2, 1]
 
   if (compact) {
@@ -70,14 +73,14 @@ export function ConditionScaleLegend({ className, compact = false }: ConditionSc
 
   return (
     <div className={cn('space-y-1', className)}>
-      <p className="text-xs font-medium text-muted-foreground mb-2">Kuntoasteikko</p>
+      <p className="text-xs font-medium text-muted-foreground mb-2">{t("evaluationUi.conditionScaleTitle")}</p>
       {scores.map((score) => {
         const info = getConditionInfo(score)
         return (
           <div key={score} className="flex items-center gap-2">
             <ConditionBadge score={score} size="sm" />
-            <span className="text-sm">{info.label}</span>
-            <span className="text-xs text-muted-foreground">– {info.description}</span>
+            <span className="text-sm">{getConditionLabel(score, t)}</span>
+            <span className="text-xs text-muted-foreground">– {getConditionDescription(score, t)}</span>
           </div>
         )
       })}
