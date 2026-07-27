@@ -21,7 +21,7 @@ import {
   derivePlanItems,
   overallCondition,
   totalRepairCost,
-  URGENCY_LABELS,
+  urgencyLabel,
   type PlanItem,
 } from "@/lib/building-plan"
 
@@ -106,7 +106,8 @@ export default function KomponentitPage() {
             area_m2: prop.area_m2,
             building_type: prop.building_type,
           },
-          evaluations
+          evaluations,
+          t
         )
         setItems(planItems)
       }
@@ -258,7 +259,7 @@ export default function KomponentitPage() {
                           <div className="flex items-center gap-3 mt-1 text-sm flex-wrap">
                             <span className={condition.color}>{condition.label}</span>
                             <span className="text-muted-foreground">|</span>
-                            <span className={urgencyColor[item.urgency]}>{URGENCY_LABELS[item.urgency]}</span>
+                            <span className={urgencyColor[item.urgency]}>{urgencyLabel(item.urgency, t)}</span>
                             {!item.fromInspection && (
                               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t("propertyComponents.rtEstimateShort")}</Badge>
                             )}
