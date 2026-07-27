@@ -12,48 +12,33 @@ import type {
 export const conditionScores: ConditionScoreInfo[] = [
   {
     score: 5,
-    label: 'Erinomainen',
-    labelEn: 'Excellent',
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/20',
     borderColor: 'border-emerald-500/50',
-    description: 'Uudenveroinen, ei toimenpiteitä',
   },
   {
     score: 4,
-    label: 'Hyvä',
-    labelEn: 'Good',
     color: 'text-green-400',
     bgColor: 'bg-green-500/20',
     borderColor: 'border-green-500/50',
-    description: 'Normaali kuluminen, huolto riittää',
   },
   {
     score: 3,
-    label: 'Tyydyttävä',
-    labelEn: 'Satisfactory',
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-500/20',
     borderColor: 'border-yellow-500/50',
-    description: 'Korjaustarve 5-10v sisällä',
   },
   {
     score: 2,
-    label: 'Välttävä',
-    labelEn: 'Fair',
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/20',
     borderColor: 'border-orange-500/50',
-    description: 'Korjaustarve 1-5v sisällä',
   },
   {
     score: 1,
-    label: 'Heikko',
-    labelEn: 'Poor',
     color: 'text-red-400',
     bgColor: 'bg-red-500/20',
     borderColor: 'border-red-500/50',
-    description: 'Välitön korjaustarve',
   },
 ]
 
@@ -61,33 +46,21 @@ export const conditionScores: ConditionScoreInfo[] = [
 export const urgencyClasses: UrgencyClassInfo[] = [
   {
     urgency: 1,
-    label: 'Välitön',
-    labelEn: 'Immediate',
-    timeframe: 'Heti / turvallisuusriski',
     color: 'text-red-400',
     bgColor: 'bg-red-500/20',
   },
   {
     urgency: 2,
-    label: 'Kiireellinen',
-    labelEn: 'Urgent',
-    timeframe: '1-2 vuoden sisällä',
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/20',
   },
   {
     urgency: 3,
-    label: 'Suunniteltava',
-    labelEn: 'Planned',
-    timeframe: '3-5 vuoden sisällä',
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-500/20',
   },
   {
     urgency: 4,
-    label: 'Seurattava',
-    labelEn: 'Monitor',
-    timeframe: 'Ei akuuttia, seurataan',
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/20',
   },
@@ -97,241 +70,207 @@ export const urgencyClasses: UrgencyClassInfo[] = [
 export const categories: Category[] = [
   {
     id: 'perustukset',
-    name: 'Perustukset ja alapohja',
-    nameEn: 'Foundations',
     icon: 'foundation',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'perustukset-anturat', name: 'Anturat', categoryId: 'perustukset' },
-      { id: 'perustukset-perusmuuri', name: 'Perusmuuri', categoryId: 'perustukset' },
-      { id: 'perustukset-alapohja', name: 'Alapohjarakenne', categoryId: 'perustukset' },
-      { id: 'perustukset-salaojat', name: 'Salaojat', categoryId: 'perustukset' },
-      { id: 'perustukset-routasuojaus', name: 'Routasuojaus', categoryId: 'perustukset' },
+      { id: 'perustukset-anturat', categoryId: 'perustukset' },
+      { id: 'perustukset-perusmuuri', categoryId: 'perustukset' },
+      { id: 'perustukset-alapohja', categoryId: 'perustukset' },
+      { id: 'perustukset-salaojat', categoryId: 'perustukset' },
+      { id: 'perustukset-routasuojaus', categoryId: 'perustukset' },
     ],
   },
   {
     id: 'runko',
-    name: 'Runko',
-    nameEn: 'Frame/Structure',
     icon: 'building',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'runko-kantavat', name: 'Kantavat rakenteet', categoryId: 'runko' },
-      { id: 'runko-valipohjat', name: 'Välipohjat', categoryId: 'runko' },
-      { id: 'runko-palkit', name: 'Palkit ja pilarit', categoryId: 'runko' },
-      { id: 'runko-jäykistys', name: 'Jäykistävät rakenteet', categoryId: 'runko' },
+      { id: 'runko-kantavat', categoryId: 'runko' },
+      { id: 'runko-valipohjat', categoryId: 'runko' },
+      { id: 'runko-palkit', categoryId: 'runko' },
+      { id: 'runko-jäykistys', categoryId: 'runko' },
     ],
   },
   {
     id: 'julkisivut',
-    name: 'Julkisivut',
-    nameEn: 'Facades',
     icon: 'building-2',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'julkisivut-rappaus', name: 'Rappaus/pintakäsittely', categoryId: 'julkisivut' },
-      { id: 'julkisivut-tiili', name: 'Tiiliverhoilu', categoryId: 'julkisivut' },
-      { id: 'julkisivut-puu', name: 'Puuverhous', categoryId: 'julkisivut' },
-      { id: 'julkisivut-metalli', name: 'Metalliverhoilu', categoryId: 'julkisivut' },
-      { id: 'julkisivut-saumaukset', name: 'Saumaukset', categoryId: 'julkisivut' },
-      { id: 'julkisivut-sokkeli', name: 'Sokkelipinta', categoryId: 'julkisivut' },
+      { id: 'julkisivut-rappaus', categoryId: 'julkisivut' },
+      { id: 'julkisivut-tiili', categoryId: 'julkisivut' },
+      { id: 'julkisivut-puu', categoryId: 'julkisivut' },
+      { id: 'julkisivut-metalli', categoryId: 'julkisivut' },
+      { id: 'julkisivut-saumaukset', categoryId: 'julkisivut' },
+      { id: 'julkisivut-sokkeli', categoryId: 'julkisivut' },
     ],
   },
   {
     id: 'ikkunat',
-    name: 'Ikkunat',
-    nameEn: 'Windows',
     icon: 'square',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'ikkunat-puitteet', name: 'Ikkunapuitteet', categoryId: 'ikkunat' },
-      { id: 'ikkunat-lasit', name: 'Lasitukset', categoryId: 'ikkunat' },
-      { id: 'ikkunat-tiivisteet', name: 'Tiivisteet', categoryId: 'ikkunat' },
-      { id: 'ikkunat-helat', name: 'Helat ja mekanismit', categoryId: 'ikkunat' },
-      { id: 'ikkunat-pellitys', name: 'Vesipellitys', categoryId: 'ikkunat' },
+      { id: 'ikkunat-puitteet', categoryId: 'ikkunat' },
+      { id: 'ikkunat-lasit', categoryId: 'ikkunat' },
+      { id: 'ikkunat-tiivisteet', categoryId: 'ikkunat' },
+      { id: 'ikkunat-helat', categoryId: 'ikkunat' },
+      { id: 'ikkunat-pellitys', categoryId: 'ikkunat' },
     ],
   },
   {
     id: 'ovet',
-    name: 'Ovet',
-    nameEn: 'Doors',
     icon: 'door-open',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'ovet-ulko', name: 'Ulko-ovet', categoryId: 'ovet' },
-      { id: 'ovet-parveke', name: 'Parvekeovet', categoryId: 'ovet' },
-      { id: 'ovet-porras', name: 'Porrasovet', categoryId: 'ovet' },
-      { id: 'ovet-palo', name: 'Palo-ovet', categoryId: 'ovet' },
-      { id: 'ovet-autohalli', name: 'Autohallin ovet', categoryId: 'ovet' },
+      { id: 'ovet-ulko', categoryId: 'ovet' },
+      { id: 'ovet-parveke', categoryId: 'ovet' },
+      { id: 'ovet-porras', categoryId: 'ovet' },
+      { id: 'ovet-palo', categoryId: 'ovet' },
+      { id: 'ovet-autohalli', categoryId: 'ovet' },
     ],
   },
   {
     id: 'katto',
-    name: 'Katto ja yläpohja',
-    nameEn: 'Roof Structure',
     icon: 'home',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'katto-rakenne', name: 'Kattorakenne', categoryId: 'katto' },
-      { id: 'katto-eristys', name: 'Yläpohjaeristys', categoryId: 'katto' },
-      { id: 'katto-tuuletus', name: 'Tuuletus', categoryId: 'katto' },
-      { id: 'katto-hoitotasot', name: 'Kattohoitotasot', categoryId: 'katto' },
+      { id: 'katto-rakenne', categoryId: 'katto' },
+      { id: 'katto-eristys', categoryId: 'katto' },
+      { id: 'katto-tuuletus', categoryId: 'katto' },
+      { id: 'katto-hoitotasot', categoryId: 'katto' },
     ],
   },
   {
     id: 'vesikate',
-    name: 'Vesikate',
-    nameEn: 'Roof Covering',
     icon: 'cloud-rain',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'vesikate-kate', name: 'Katemateriaali', categoryId: 'vesikate' },
-      { id: 'vesikate-läpiviennit', name: 'Läpiviennit', categoryId: 'vesikate' },
-      { id: 'vesikate-räystäät', name: 'Räystäsrakenteet', categoryId: 'vesikate' },
-      { id: 'vesikate-sadevesi', name: 'Sadevesijärjestelmä', categoryId: 'vesikate' },
-      { id: 'vesikate-turva', name: 'Kattoturvavarusteet', categoryId: 'vesikate' },
+      { id: 'vesikate-kate', categoryId: 'vesikate' },
+      { id: 'vesikate-läpiviennit', categoryId: 'vesikate' },
+      { id: 'vesikate-räystäät', categoryId: 'vesikate' },
+      { id: 'vesikate-sadevesi', categoryId: 'vesikate' },
+      { id: 'vesikate-turva', categoryId: 'vesikate' },
     ],
   },
   {
     id: 'sisatilat-pinnat',
-    name: 'Sisätilat – pinnat',
-    nameEn: 'Interior Surfaces',
     icon: 'paint-bucket',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'muu'],
     subItems: [
-      { id: 'sisatilat-pinnat-seinat', name: 'Seinäpinnat', categoryId: 'sisatilat-pinnat' },
-      { id: 'sisatilat-pinnat-katot', name: 'Kattopinnat', categoryId: 'sisatilat-pinnat' },
-      { id: 'sisatilat-pinnat-lattiat', name: 'Lattiapinnat', categoryId: 'sisatilat-pinnat' },
-      { id: 'sisatilat-pinnat-listat', name: 'Listat ja kynnykset', categoryId: 'sisatilat-pinnat' },
+      { id: 'sisatilat-pinnat-seinat', categoryId: 'sisatilat-pinnat' },
+      { id: 'sisatilat-pinnat-katot', categoryId: 'sisatilat-pinnat' },
+      { id: 'sisatilat-pinnat-lattiat', categoryId: 'sisatilat-pinnat' },
+      { id: 'sisatilat-pinnat-listat', categoryId: 'sisatilat-pinnat' },
     ],
   },
   {
     id: 'sisatilat-kalusteet',
-    name: 'Sisätilat – kalusteet',
-    nameEn: 'Interior Fixtures',
     icon: 'armchair',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'muu'],
     subItems: [
-      { id: 'sisatilat-kalusteet-keittio', name: 'Keittiökalusteet', categoryId: 'sisatilat-kalusteet' },
-      { id: 'sisatilat-kalusteet-kiintokalusteet', name: 'Kiintokalusteet', categoryId: 'sisatilat-kalusteet' },
-      { id: 'sisatilat-kalusteet-tasot', name: 'Tasot ja altaat', categoryId: 'sisatilat-kalusteet' },
-      { id: 'sisatilat-kalusteet-kodinkoneet', name: 'Kodinkoneet', categoryId: 'sisatilat-kalusteet' },
+      { id: 'sisatilat-kalusteet-keittio', categoryId: 'sisatilat-kalusteet' },
+      { id: 'sisatilat-kalusteet-kiintokalusteet', categoryId: 'sisatilat-kalusteet' },
+      { id: 'sisatilat-kalusteet-tasot', categoryId: 'sisatilat-kalusteet' },
+      { id: 'sisatilat-kalusteet-kodinkoneet', categoryId: 'sisatilat-kalusteet' },
     ],
   },
   {
     id: 'markatilat',
-    name: 'Märkätilat',
-    nameEn: 'Wet Rooms',
     icon: 'droplets',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'muu'],
     subItems: [
-      { id: 'markatilat-vedeneristys', name: 'Vedeneristys', categoryId: 'markatilat' },
-      { id: 'markatilat-laatoitus', name: 'Laatoitus', categoryId: 'markatilat' },
-      { id: 'markatilat-kalusteet', name: 'Kalusteet ja varusteet', categoryId: 'markatilat' },
-      { id: 'markatilat-lattiakaivo', name: 'Lattiakaivot', categoryId: 'markatilat' },
-      { id: 'markatilat-silikonit', name: 'Saumaukset ja silikonit', categoryId: 'markatilat' },
+      { id: 'markatilat-vedeneristys', categoryId: 'markatilat' },
+      { id: 'markatilat-laatoitus', categoryId: 'markatilat' },
+      { id: 'markatilat-kalusteet', categoryId: 'markatilat' },
+      { id: 'markatilat-lattiakaivo', categoryId: 'markatilat' },
+      { id: 'markatilat-silikonit', categoryId: 'markatilat' },
     ],
   },
   {
     id: 'lvi-lammitys',
-    name: 'LVI – lämmitys',
-    nameEn: 'HVAC – Heating',
     icon: 'thermometer',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'lvi-lammitys-kattila', name: 'Kattila/lämmönlähde', categoryId: 'lvi-lammitys' },
-      { id: 'lvi-lammitys-patterit', name: 'Patterit/radiaattorit', categoryId: 'lvi-lammitys' },
-      { id: 'lvi-lammitys-lattia', name: 'Lattialämmitys', categoryId: 'lvi-lammitys' },
-      { id: 'lvi-lammitys-putkistot', name: 'Lämmitysputkistot', categoryId: 'lvi-lammitys' },
-      { id: 'lvi-lammitys-saato', name: 'Säätölaitteet', categoryId: 'lvi-lammitys' },
+      { id: 'lvi-lammitys-kattila', categoryId: 'lvi-lammitys' },
+      { id: 'lvi-lammitys-patterit', categoryId: 'lvi-lammitys' },
+      { id: 'lvi-lammitys-lattia', categoryId: 'lvi-lammitys' },
+      { id: 'lvi-lammitys-putkistot', categoryId: 'lvi-lammitys' },
+      { id: 'lvi-lammitys-saato', categoryId: 'lvi-lammitys' },
     ],
   },
   {
     id: 'lvi-vesi',
-    name: 'LVI – vesi ja viemäri',
-    nameEn: 'HVAC – Plumbing',
     icon: 'pipette',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'muu'],
     subItems: [
-      { id: 'lvi-vesi-kayttovesi', name: 'Käyttövesiputkisto', categoryId: 'lvi-vesi' },
-      { id: 'lvi-vesi-viemari', name: 'Viemäriputkisto', categoryId: 'lvi-vesi' },
-      { id: 'lvi-vesi-vesikalusteet', name: 'Vesikalusteet', categoryId: 'lvi-vesi' },
-      { id: 'lvi-vesi-lamminvesi', name: 'Lämminvesivaraaja', categoryId: 'lvi-vesi' },
-      { id: 'lvi-vesi-pumput', name: 'Pumput ja venttiilit', categoryId: 'lvi-vesi' },
+      { id: 'lvi-vesi-kayttovesi', categoryId: 'lvi-vesi' },
+      { id: 'lvi-vesi-viemari', categoryId: 'lvi-vesi' },
+      { id: 'lvi-vesi-vesikalusteet', categoryId: 'lvi-vesi' },
+      { id: 'lvi-vesi-lamminvesi', categoryId: 'lvi-vesi' },
+      { id: 'lvi-vesi-pumput', categoryId: 'lvi-vesi' },
     ],
   },
   {
     id: 'lvi-ilmanvaihto',
-    name: 'LVI – ilmanvaihto',
-    nameEn: 'HVAC – Ventilation',
     icon: 'wind',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'lvi-ilmanvaihto-kone', name: 'IV-kone', categoryId: 'lvi-ilmanvaihto' },
-      { id: 'lvi-ilmanvaihto-kanavat', name: 'Kanavisto', categoryId: 'lvi-ilmanvaihto' },
-      { id: 'lvi-ilmanvaihto-paatteet', name: 'Päätelaitteet', categoryId: 'lvi-ilmanvaihto' },
-      { id: 'lvi-ilmanvaihto-suodattimet', name: 'Suodattimet', categoryId: 'lvi-ilmanvaihto' },
-      { id: 'lvi-ilmanvaihto-lto', name: 'Lämmöntalteenotto', categoryId: 'lvi-ilmanvaihto' },
+      { id: 'lvi-ilmanvaihto-kone', categoryId: 'lvi-ilmanvaihto' },
+      { id: 'lvi-ilmanvaihto-kanavat', categoryId: 'lvi-ilmanvaihto' },
+      { id: 'lvi-ilmanvaihto-paatteet', categoryId: 'lvi-ilmanvaihto' },
+      { id: 'lvi-ilmanvaihto-suodattimet', categoryId: 'lvi-ilmanvaihto' },
+      { id: 'lvi-ilmanvaihto-lto', categoryId: 'lvi-ilmanvaihto' },
     ],
   },
   {
     id: 'sahko',
-    name: 'Sähköjärjestelmät',
-    nameEn: 'Electrical',
     icon: 'zap',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'sahko-keskus', name: 'Sähkökeskukset', categoryId: 'sahko' },
-      { id: 'sahko-johdotus', name: 'Johdotukset', categoryId: 'sahko' },
-      { id: 'sahko-pistorasiat', name: 'Pistorasiat ja kytkimet', categoryId: 'sahko' },
-      { id: 'sahko-valaistus', name: 'Valaistus', categoryId: 'sahko' },
-      { id: 'sahko-turva', name: 'Turvajärjestelmät', categoryId: 'sahko' },
-      { id: 'sahko-tele', name: 'Tele- ja datajärjestelmät', categoryId: 'sahko' },
+      { id: 'sahko-keskus', categoryId: 'sahko' },
+      { id: 'sahko-johdotus', categoryId: 'sahko' },
+      { id: 'sahko-pistorasiat', categoryId: 'sahko' },
+      { id: 'sahko-valaistus', categoryId: 'sahko' },
+      { id: 'sahko-turva', categoryId: 'sahko' },
+      { id: 'sahko-tele', categoryId: 'sahko' },
     ],
   },
   {
     id: 'hissi',
-    name: 'Hissi',
-    nameEn: 'Elevator',
     icon: 'move-vertical',
     applicableToTypes: ['kerrostalo', 'toimisto', 'liiketila', 'teollisuus', 'muu'],
     subItems: [
-      { id: 'hissi-koneisto', name: 'Hissikoneisto', categoryId: 'hissi' },
-      { id: 'hissi-kori', name: 'Hissikori', categoryId: 'hissi' },
-      { id: 'hissi-ovet', name: 'Hissiovet', categoryId: 'hissi' },
-      { id: 'hissi-ohjaus', name: 'Ohjausjärjestelmä', categoryId: 'hissi' },
-      { id: 'hissi-turva', name: 'Turvalaitteet', categoryId: 'hissi' },
+      { id: 'hissi-koneisto', categoryId: 'hissi' },
+      { id: 'hissi-kori', categoryId: 'hissi' },
+      { id: 'hissi-ovet', categoryId: 'hissi' },
+      { id: 'hissi-ohjaus', categoryId: 'hissi' },
+      { id: 'hissi-turva', categoryId: 'hissi' },
     ],
   },
   {
     id: 'piha',
-    name: 'Piha-alueet',
-    nameEn: 'Yard/Outdoor',
     icon: 'trees',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'piha-asfaltti', name: 'Asfalttipinnat', categoryId: 'piha' },
-      { id: 'piha-kiveys', name: 'Kiveykset', categoryId: 'piha' },
-      { id: 'piha-viheralueet', name: 'Viheralueet', categoryId: 'piha' },
-      { id: 'piha-aidat', name: 'Aidat ja portit', categoryId: 'piha' },
-      { id: 'piha-leikki', name: 'Leikkivälineet', categoryId: 'piha' },
-      { id: 'piha-valaistus', name: 'Piha-valaistus', categoryId: 'piha' },
-      { id: 'piha-autopaikat', name: 'Autopaikat', categoryId: 'piha' },
+      { id: 'piha-asfaltti', categoryId: 'piha' },
+      { id: 'piha-kiveys', categoryId: 'piha' },
+      { id: 'piha-viheralueet', categoryId: 'piha' },
+      { id: 'piha-aidat', categoryId: 'piha' },
+      { id: 'piha-leikki', categoryId: 'piha' },
+      { id: 'piha-valaistus', categoryId: 'piha' },
+      { id: 'piha-autopaikat', categoryId: 'piha' },
     ],
   },
   {
     id: 'erityisrakenteet',
-    name: 'Erityisrakenteet',
-    nameEn: 'Special Structures',
     icon: 'construction',
     applicableToTypes: ['kerrostalo', 'rivitalo', 'paritalo', 'omakotitalo', 'toimisto', 'liiketila', 'teollisuus', 'varasto', 'muu'],
     subItems: [
-      { id: 'erityis-parvekkeet', name: 'Parvekkeet', categoryId: 'erityisrakenteet' },
-      { id: 'erityis-terassit', name: 'Terassit', categoryId: 'erityisrakenteet' },
-      { id: 'erityis-varastorakennukset', name: 'Varastorakennukset', categoryId: 'erityisrakenteet' },
-      { id: 'erityis-autokatokset', name: 'Autokatokset', categoryId: 'erityisrakenteet' },
-      { id: 'erityis-saunat', name: 'Saunatilat', categoryId: 'erityisrakenteet' },
-      { id: 'erityis-uima-altaat', name: 'Uima-altaat', categoryId: 'erityisrakenteet' },
+      { id: 'erityis-parvekkeet', categoryId: 'erityisrakenteet' },
+      { id: 'erityis-terassit', categoryId: 'erityisrakenteet' },
+      { id: 'erityis-varastorakennukset', categoryId: 'erityisrakenteet' },
+      { id: 'erityis-autokatokset', categoryId: 'erityisrakenteet' },
+      { id: 'erityis-saunat', categoryId: 'erityisrakenteet' },
+      { id: 'erityis-uima-altaat', categoryId: 'erityisrakenteet' },
     ],
   },
 ]
@@ -340,66 +279,42 @@ export const categories: Category[] = [
 export const buildingTypeTemplates: BuildingTypeTemplate[] = [
   {
     id: 'kerrostalo',
-    name: 'Kerrostalo',
-    nameEn: 'Apartment Building',
-    description: 'Asuinkerrostalo, kaikki 17 kategoriaa',
     includedCategories: categories.map(c => c.id),
   },
   {
     id: 'rivitalo',
-    name: 'Rivitalo',
-    nameEn: 'Row House',
-    description: 'Rivitalo, 16 kategoriaa (ei hissiä)',
     includedCategories: categories.filter(c => c.id !== 'hissi').map(c => c.id),
   },
   {
     id: 'paritalo',
-    name: 'Paritalo',
-    nameEn: 'Semi-detached',
-    description: 'Paritalo, 14 kategoriaa',
     includedCategories: categories.filter(c => 
       !['hissi', 'sisatilat-kalusteet', 'erityisrakenteet'].includes(c.id)
     ).map(c => c.id),
   },
   {
     id: 'omakotitalo',
-    name: 'Omakotitalo',
-    nameEn: 'Detached House',
-    description: 'Omakotitalo, 13 kategoriaa',
     includedCategories: categories.filter(c => 
       !['hissi', 'sisatilat-kalusteet', 'erityisrakenteet', 'lvi-ilmanvaihto'].includes(c.id)
     ).map(c => c.id),
   },
   {
     id: 'toimisto',
-    name: 'Toimisto',
-    nameEn: 'Office',
-    description: 'Toimistorakennus, kaikki 17 kategoriaa',
     includedCategories: categories.map(c => c.id),
   },
   {
     id: 'liiketila',
-    name: 'Liiketila',
-    nameEn: 'Retail',
-    description: 'Liiketila, 15 kategoriaa',
     includedCategories: categories.filter(c => 
       !['sisatilat-kalusteet', 'erityisrakenteet'].includes(c.id)
     ).map(c => c.id),
   },
   {
     id: 'teollisuus',
-    name: 'Teollisuus',
-    nameEn: 'Industrial',
-    description: 'Teollisuusrakennus, 14 kategoriaa',
     includedCategories: categories.filter(c => 
       !['sisatilat-kalusteet', 'markatilat', 'erityisrakenteet'].includes(c.id)
     ).map(c => c.id),
   },
   {
     id: 'varasto',
-    name: 'Varasto',
-    nameEn: 'Warehouse',
-    description: 'Varastorakennus, 10 kategoriaa',
     includedCategories: [
       'perustukset', 'runko', 'julkisivut', 'ovet', 'katto', 'vesikate',
       'lvi-lammitys', 'lvi-ilmanvaihto', 'sahko', 'piha'
@@ -407,9 +322,6 @@ export const buildingTypeTemplates: BuildingTypeTemplate[] = [
   },
   {
     id: 'muu',
-    name: 'Muu',
-    nameEn: 'Other',
-    description: 'Mukautettu valinta',
     includedCategories: [],
   },
 ]
@@ -425,6 +337,43 @@ export function getUrgencyInfo(urgency: number): UrgencyClassInfo {
 
 export function getCategoryById(id: string): Category | undefined {
   return categories.find(c => c.id === id)
+}
+
+// Translator function type. Callers pass their `t` from useTranslation() /
+// getTranslation(); dynamic keys are safe because t() falls back to the raw
+// key if a generated key is ever missing.
+export type Translator = (key: string) => string
+
+export function getCategoryName(id: string, t: Translator): string {
+  return t(`kuntoarvioData.cat_${id}`)
+}
+
+export function getSubItemName(id: string, t: Translator): string {
+  return t(`kuntoarvioData.sub_${id}`)
+}
+
+export function getConditionLabel(score: ConditionScore, t: Translator): string {
+  return t(`kuntoarvioData.cond_${score}`)
+}
+
+export function getConditionDescription(score: ConditionScore, t: Translator): string {
+  return t(`kuntoarvioData.condDesc_${score}`)
+}
+
+export function getUrgencyLabel(urgency: number, t: Translator): string {
+  return t(`kuntoarvioData.urg_${urgency}`)
+}
+
+export function getUrgencyTimeframe(urgency: number, t: Translator): string {
+  return t(`kuntoarvioData.urgTf_${urgency}`)
+}
+
+export function getTemplateName(id: BuildingType, t: Translator): string {
+  return t(`kuntoarvioData.tmplName_${id}`)
+}
+
+export function getTemplateDescription(id: BuildingType, t: Translator): string {
+  return t(`kuntoarvioData.tmplDesc_${id}`)
 }
 
 export function getTemplateById(id: BuildingType): BuildingTypeTemplate | undefined {

@@ -24,8 +24,6 @@ export type EvaluationMode = 'basic' | 'thorough'
 // Category definition
 export interface Category {
   id: string
-  name: string
-  nameEn: string
   icon: string
   subItems: SubItem[]
   applicableToTypes: BuildingType[]
@@ -34,7 +32,6 @@ export interface Category {
 // Sub-item within a category
 export interface SubItem {
   id: string
-  name: string
   categoryId: string
 }
 
@@ -62,9 +59,6 @@ export interface SubItemEvaluation {
 // Building type template
 export interface BuildingTypeTemplate {
   id: BuildingType
-  name: string
-  nameEn: string
-  description: string
   includedCategories: string[]
 }
 
@@ -91,20 +85,14 @@ export interface EvaluationHistoryEntry {
 // Condition score metadata
 export interface ConditionScoreInfo {
   score: ConditionScore
-  label: string
-  labelEn: string
   color: string
   bgColor: string
   borderColor: string
-  description: string
 }
 
 // Urgency class metadata
 export interface UrgencyClassInfo {
   urgency: UrgencyClass
-  label: string
-  labelEn: string
-  timeframe: string
   color: string
   bgColor: string
 }
