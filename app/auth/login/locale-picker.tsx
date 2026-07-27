@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { locales, localeNames, localeFlags, defaultLocale, isLocale } from '@/lib/i18n/config'
+import { locales, localeNames, localeCountryCodes, defaultLocale, isLocale } from '@/lib/i18n/config'
 import type { Locale } from '@/lib/i18n/config'
 
 const STORAGE_KEY = 'finnvesta-locale'
@@ -37,9 +37,10 @@ export function LocalePicker() {
   }
 
   return (
-    <div className="flex items-center justify-center gap-1.5" role="group" aria-label="Valitse kieli">
+    <div className="flex items-center justify-center gap-2.5" role="group" aria-label="Valitse kieli">
       {locales.map((locale) => {
         const isActive = locale === active
+        const code = localeCountryCodes[locale]
         return (
           <button
             key={locale}
@@ -49,13 +50,21 @@ export function LocalePicker() {
             aria-label={localeNames[locale]}
             aria-pressed={isActive}
             className={[
-              'flex h-8 w-8 items-center justify-center rounded-md text-lg transition-all duration-150',
+              'flex items-center justify-center rounded-md p-1 transition-all duration-150',
               isActive
-                ? 'bg-white/20 ring-1 ring-white/50 opacity-100 scale-110'
-                : 'opacity-50 hover:opacity-80 hover:bg-white/10',
+                ? 'bg-white/20 ring-2 ring-white/60 opacity-100 scale-110'
+                : 'opacity-60 hover:opacity-100 hover:bg-white/10',
             ].join(' ')}
           >
-            <span aria-hidden="true">{localeFlags[locale]}</span>
+            <img
+              src={`https://flagcdn.com/w80/${code}.png`}
+              srcSet={`https://flagcdn.com/w160/${code}.png 2x`}
+              alt={localeNames[locale]}
+              width={36}
+              height={27}
+              className="h-[27px] w-9 rounded-sm object-cover shadow-sm"
+              loading="eager"
+            />
           </button>
         )
       })}

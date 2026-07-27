@@ -26,14 +26,16 @@ export const localeNames: Record<Locale, string> = {
   lt: "Lietuvių",
 }
 
-// Unicode flag emoji for each locale.
-export const localeFlags: Record<Locale, string> = {
-  fi: "🇫🇮",
-  sv: "🇸🇪",
-  en: "🇬🇧",
-  et: "🇪🇪",
-  lv: "🇱🇻",
-  lt: "🇱🇹",
+// ISO 3166-1 alpha-2 country codes used to render real flag images
+// (via flagcdn.com). Emoji flags are avoided because Windows/Chrome do not
+// render them as flags.
+export const localeCountryCodes: Record<Locale, string> = {
+  fi: "fi",
+  sv: "se",
+  en: "gb",
+  et: "ee",
+  lv: "lv",
+  lt: "lt",
 }
 
 export function isLocale(value: string | null | undefined): value is Locale {
