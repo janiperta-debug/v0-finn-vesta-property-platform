@@ -32,20 +32,30 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue | null>(null)
 
+function getInitialLocale(): Locale {
+  if (typeof document === "undefined") return defaultLocale
+  // Read the locale cookie directly so the initial client render matches the
+  // server render (both use the cookie value). Avoids hydration mismatch.
+  const match = document.cookie.match(/(?:^|;\s*)finnvesta-locale=([^;]+)/)
+  const value = match?.[1]
+  return isLocale(value) ? value : defaultLocale
+}
+
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [locale, setLocaleState] = useState<Locale>(defaultLocale)
+  const [locale, setLocaleState] = useState<Locale>(getInitialLocale)
 
-  // Load the saved preference on mount (client-only, so no hydration mismatch
-  // for the default render which always uses `defaultLocale`).
+  // Sync localStorage → cookie on first mount (covers users who had only
+  // localStorage set before cookie support was added).
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
-    if (isLocale(stored)) {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    if (isLocale(stored) && stored !== locale) {
       setLocaleState(stored)
-      // Ensure the cookie reflects the stored preference (e.g. first visit after
-      // this feature shipped, when only localStorage was set previously).
       writeLocaleCookie(stored)
+    } else if (locale !== defaultLocale) {
+      writeLocaleCookie(locale)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Keep <html lang> in sync for accessibility and SEO.

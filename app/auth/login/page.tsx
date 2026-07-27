@@ -40,23 +40,14 @@ export default function Page() {
   }
 
   return (
-    <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-[#0a1420] p-6">
-      {/* Blueprint backdrop — single element, breakpoint handled via inline <style> to avoid hydration mismatch */}
-      <style>{`
-        .login-bg {
-          background-image: url('/images/login-blueprint-mobile.jpg');
-          background-size: cover;
-          background-position: center;
-        }
-        @media (min-width: 768px) {
-          .login-bg {
-            background-image: url('/images/login-blueprint-desktop.jpg');
-          }
-        }
-      `}</style>
-      <div className="login-bg absolute inset-0 -z-10" aria-hidden="true" />
-      {/* Vignette to keep the form readable over the drawing */}
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(6,14,24,0.75)_100%)]" aria-hidden="true" />
+    <main
+      className="relative flex min-h-svh w-full items-center justify-center overflow-hidden p-6"
+      style={{
+        backgroundImage: "url('/images/login-blueprint-desktop.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
 
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* Emblem + wordmark */}
