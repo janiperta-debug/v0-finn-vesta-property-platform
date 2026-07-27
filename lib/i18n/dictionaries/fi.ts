@@ -323,6 +323,8 @@ const fi = {
     loginButton: "Kirjaudu",
     credentialsHint: "Käyttäjätunnukset saat pääkäyttäjältäsi",
     genericError: "Tapahtui virhe",
+    showPassword: "Näytä salasana",
+    hidePassword: "Piilota salasana",
     signUpTitle: "Rekisteröidy",
     signUpDescription: "Luo uusi tili",
     passwordMismatchError: "Salasanat eivät täsmää",
