@@ -1,54 +1,19 @@
-'use client'
-
-import { createClient } from '@/lib/supabase/client'
-import { useTranslation } from '@/lib/i18n'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { User, Lock, Eye, EyeOff } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useState } from 'react'
+import { getTranslation } from '@/lib/i18n/server'
+import { LoginForm } from './login-form'
 
-export default function Page() {
-  const { t } = useTranslation()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (error) throw error
-      router.push('/app')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : t('auth.genericError'))
-    } finally {
-      setIsLoading(false)
-    }
-  }
+export default async function Page() {
+  const { t } = await getTranslation()
 
   return (
     <main
-      className="relative flex min-h-svh w-full items-center justify-center overflow-hidden p-6"
+      className="flex min-h-svh w-full items-center justify-center p-6"
       style={{
         backgroundImage: "url('/images/login-blueprint-desktop.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
     >
-
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* Emblem + wordmark */}
         <div className="mb-8 flex flex-col items-center text-center">
@@ -74,84 +39,22 @@ export default function Page() {
           </p>
         </div>
 
-        {/* Glass login card */}
-        <div className="w-full rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-          <h2 className="text-2xl font-semibold text-white">{t('auth.loginTitle')}</h2>
-          <p className="mt-1 text-sm text-white/60">{t('auth.loginDescription')}</p>
-
-          <form onSubmit={handleLogin} className="mt-6 flex flex-col gap-5">
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="text-white/80">
-                {t('auth.emailLabel')}
-              </Label>
-              <div className="relative">
-                <User
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="nimi@yritys.fi"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-12 border-white/10 bg-white/5 pl-10 text-base text-white placeholder:text-white/40 focus-visible:border-primary/50 focus-visible:ring-primary/30"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="password" className="text-white/80">
-                {t('auth.passwordLabel')}
-              </Label>
-              <div className="relative">
-                <Lock
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 border-white/10 bg-white/5 pl-10 pr-11 text-base text-white placeholder:text-white/40 focus-visible:border-primary/50 focus-visible:ring-primary/30"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                  className="absolute right-1 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-md text-white/50 transition-colors hover:text-white/80"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-400" role="alert">
-                {error}
-              </p>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="h-12 w-full bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
-            >
-              {isLoading ? t('auth.loggingIn') : t('auth.loginButton')}
-            </Button>
-
-            <p className="text-center text-sm text-white/50">
-              {t('auth.credentialsHint')}
-            </p>
-          </form>
-        </div>
+        {/* Interactive login form — client component */}
+        <LoginForm
+          labels={{
+            loginTitle: t('auth.loginTitle'),
+            loginDescription: t('auth.loginDescription'),
+            emailLabel: t('auth.emailLabel'),
+            passwordLabel: t('auth.passwordLabel'),
+            loginButton: t('auth.loginButton'),
+            loggingIn: t('auth.loggingIn'),
+            credentialsHint: t('auth.credentialsHint'),
+            genericError: t('auth.genericError'),
+            showPassword: t('auth.showPassword'),
+            hidePassword: t('auth.hidePassword'),
+            tagline: t('auth.tagline'),
+          }}
+        />
       </div>
     </main>
   )
