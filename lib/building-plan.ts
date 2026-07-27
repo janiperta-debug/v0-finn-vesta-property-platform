@@ -19,11 +19,18 @@ export type UrgencyCode = "valitom" | "1_3v" | "3_5v" | "5_10v"
 
 export const URGENCY_ORDER: UrgencyCode[] = ["valitom", "1_3v", "3_5v", "5_10v"]
 
-export const URGENCY_LABELS: Record<UrgencyCode, string> = {
-  valitom: "Välitön (0-1v)",
-  "1_3v": "1-3 vuotta",
-  "3_5v": "3-5 vuotta",
-  "5_10v": "5-10 vuotta",
+// Translator function type accepted by the helpers below. Dynamic i18n keys are
+// built from data-driven ids/codes, so callers pass their `t` from useTranslation()
+// / getTranslation() and we cast internally (t() falls back to the raw key if a
+// generated key is ever missing, so this stays safe at runtime).
+export type Translator = (key: string) => string
+
+export function urgencyLabel(code: UrgencyCode, t: Translator): string {
+  return t(`kuntoarvioData.urgCode_${code}`)
+}
+
+export function categoryName(stringId: string, t: Translator): string {
+  return t(`kuntoarvioData.cat_${stringId}`)
 }
 
 // Representative RT/TALO 2000 lifespans (years) and full-replacement cost (€/m² of
@@ -103,7 +110,8 @@ function applicableCategoryIds(buildingType?: string | null): string[] {
  */
 export function derivePlanItems(
   basics: BuildingBasics,
-  evaluations: StoredEvaluation[] = []
+  evaluations: StoredEvaluation[] = [],
+  t: Translator
 ): PlanItem[] {
   const currentYear = new Date().getFullYear()
   const buildYear = basics.construction_year || currentYear - 25
@@ -125,7 +133,6 @@ export function derivePlanItems(
     const defaults = CATEGORY_RT_DEFAULTS[stringId]
     if (!defaults) continue
 
-    const category = categories.find(c => c.id === stringId)
     const numericId = categoryIdMapping[stringId] || 0
     const stored = evalByStringId.get(stringId)
 
@@ -150,7 +157,7 @@ export function derivePlanItems(
     items.push({
       categoryId: numericId,
       categoryStringId: stringId,
-      categoryName: category?.name || stringId,
+      categoryName: categoryName(stringId, t),
       conditionScore,
       urgency,
       cost,
@@ -195,14 +202,14 @@ export interface TimelineBucket {
 }
 
 // Group plan items into urgency timeline buckets (only buckets with cost)
-export function timelineBuckets(items: PlanItem[]): TimelineBucket[] {
+export function timelineBuckets(items: PlanItem[], t: Translator): TimelineBucket[] {
   return URGENCY_ORDER.map(urgency => {
     const bucketItems = items
       .filter(i => i.urgency === urgency && i.cost > 0)
       .sort((a, b) => a.conditionScore - b.conditionScore)
     return {
       urgency,
-      label: URGENCY_LABELS[urgency],
+      label: urgencyLabel(urgency, t),
       items: bucketItems,
       total: bucketItems.reduce((sum, i) => sum + i.cost, 0),
     }
