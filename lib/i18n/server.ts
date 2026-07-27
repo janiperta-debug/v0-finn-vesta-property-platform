@@ -6,9 +6,14 @@ import { dictionaries, type Dictionary } from "./dictionaries"
 export const LOCALE_COOKIE = "finnvesta-locale"
 
 type Namespace = keyof Dictionary
-type TranslationKey = {
-  [N in Namespace]: `${N & string}.${keyof Dictionary[N] & string}`
-}[Namespace]
+// Known dot-notation keys give autocomplete; `(string & {})` also allows the
+// dynamic keys built at runtime (e.g. in lib/building-plan.ts) so the translator
+// stays assignable to `(key: string) => string`.
+type TranslationKey =
+  | {
+      [N in Namespace]: `${N & string}.${keyof Dictionary[N] & string}`
+    }[Namespace]
+  | (string & {})
 
 // Reads the locale from the request cookie. Server Components can't see
 // localStorage, so the client mirrors the preference into this cookie.
