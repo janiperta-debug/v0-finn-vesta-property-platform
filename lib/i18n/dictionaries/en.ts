@@ -325,6 +325,8 @@ const en: Dictionary = {
     loginButton: "Log in",
     credentialsHint: "Get your credentials from your admin",
     genericError: "An error occurred",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     signUpTitle: "Sign up",
     signUpDescription: "Create a new account",
     passwordMismatchError: "Passwords do not match",
