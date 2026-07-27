@@ -19,6 +19,8 @@ import {
   generateInitialAssessment, 
   calculateOverallCondition,
   calculateTotalRepairDebt,
+  getComponentName,
+  getComponentOptionLabel,
   type BuildingStructureData 
 } from "@/lib/rt-standards"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
@@ -201,7 +203,7 @@ export default function EditPropertyPage() {
       return
     }
 
-    const assessment = generateInitialAssessment(buildYear, squareMeters, structures)
+    const assessment = generateInitialAssessment(buildYear, squareMeters, structures, t)
     setPreviewAssessment(assessment)
     toast.success(t("propertyEdit.previewGenerated"))
   }
@@ -405,7 +407,7 @@ export default function EditPropertyPage() {
                   electrical: structures.electrical || "alkuperainen",
                   elevator: structures.elevator || "ei",
                 }
-                assessmentToSave = generateInitialAssessment(buildYear, area, structuresToUse)
+                assessmentToSave = generateInitialAssessment(buildYear, area, structuresToUse, t)
               }
             }
             
@@ -649,7 +651,7 @@ export default function EditPropertyPage() {
                   {componentLifespans.map((component) => (
                     <div key={component.id} className="space-y-2">
                       <Label className="flex items-center justify-between">
-                        <span>{component.name}</span>
+                        <span>{getComponentName(component.id, t)}</span>
                         {structures[component.id as keyof BuildingStructureData] && 
                          structures[component.id as keyof BuildingStructureData] !== 'ei' && (
                           <span className="text-xs text-muted-foreground">
@@ -667,7 +669,7 @@ export default function EditPropertyPage() {
                         <SelectContent>
                           {component.options.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                              {option.label} ({option.lifespanYears}v)
+                              {getComponentOptionLabel(component.id, option.value, t)} ({option.lifespanYears}v)
                             </SelectItem>
                           ))}
                         </SelectContent>
