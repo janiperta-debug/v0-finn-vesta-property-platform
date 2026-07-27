@@ -123,7 +123,8 @@ export default async function TimelinePage() {
             area_m2: b.area_m2,
             building_type: b.building_type,
           },
-          evalsByBuilding.get(b.id) || []
+          evalsByBuilding.get(b.id) || [],
+          t
         )
         for (const item of repairItems(planItems)) {
           investments.push({
