@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { getTranslation } from '@/lib/i18n/server'
 import { LoginForm } from './login-form'
+import { LocalePicker } from './locale-picker'
 
 export default async function Page() {
   const { t } = await getTranslation()
@@ -34,9 +35,12 @@ export default async function Page() {
           <h1 className="font-heading text-4xl font-bold tracking-tight text-white">
             FinnVesta
           </h1>
-          <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-primary/80">
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
             {t('auth.tagline')}
           </p>
+          <div className="mt-4">
+            <LocalePicker />
+          </div>
         </div>
 
         {/* Interactive login form — client component */}

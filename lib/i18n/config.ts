@@ -10,7 +10,7 @@
 // on top of this later — see the planned countries config. For now every
 // locale here is selectable everywhere, with Finnish as the default.
 
-export const locales = ["fi", "en"] as const
+export const locales = ["fi", "sv", "en", "et", "lv", "lt"] as const
 
 export type Locale = (typeof locales)[number]
 
@@ -19,7 +19,21 @@ export const defaultLocale: Locale = "fi"
 // Display names shown in the language switcher (in each language's own name).
 export const localeNames: Record<Locale, string> = {
   fi: "Suomi",
+  sv: "Svenska",
   en: "English",
+  et: "Eesti",
+  lv: "Latviešu",
+  lt: "Lietuvių",
+}
+
+// Unicode flag emoji for each locale.
+export const localeFlags: Record<Locale, string> = {
+  fi: "🇫🇮",
+  sv: "🇸🇪",
+  en: "🇬🇧",
+  et: "🇪🇪",
+  lv: "🇱🇻",
+  lt: "🇱🇹",
 }
 
 export function isLocale(value: string | null | undefined): value is Locale {
