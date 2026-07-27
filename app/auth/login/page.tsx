@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { User, Lock, Eye, EyeOff } from 'lucide-react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useState } from 'react'
 
 export default function Page() {
@@ -41,27 +41,19 @@ export default function Page() {
 
   return (
     <main className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-[#0a1420] p-6">
-      {/* Blueprint backdrop: portrait on mobile, landscape on larger screens */}
-      <div className="absolute inset-0 -z-10" aria-hidden="true">
-        <Image
-          src="/images/login-blueprint-mobile.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover md:hidden"
-        />
-        <Image
-          src="/images/login-blueprint-desktop.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="hidden object-cover md:block"
-        />
-        {/* Vignette to keep the form readable over the drawing */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(6,14,24,0.75)_100%)]" />
-      </div>
+      {/* Blueprint backdrop */}
+      <div
+        className="absolute inset-0 -z-10 bg-cover bg-center md:hidden"
+        style={{ backgroundImage: "url('/images/login-blueprint-mobile.jpg')" }}
+        aria-hidden="true"
+      />
+      <div
+        className="absolute inset-0 -z-10 hidden bg-cover bg-center md:block"
+        style={{ backgroundImage: "url('/images/login-blueprint-desktop.jpg')" }}
+        aria-hidden="true"
+      />
+      {/* Vignette to keep the form readable over the drawing */}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(6,14,24,0.75)_100%)]" aria-hidden="true" />
 
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* Emblem + wordmark */}
