@@ -93,7 +93,8 @@ export default function TavoitesuunnitteluPage() {
             area_m2: prop.area_m2,
             building_type: prop.building_type,
           },
-          evaluations
+          evaluations,
+          t
         )
         setItems(planItems)
       }
@@ -105,7 +106,7 @@ export default function TavoitesuunnitteluPage() {
     }
   }
 
-  const buckets = timelineBuckets(items)
+  const buckets = timelineBuckets(items, t)
   const totalInvestment = totalRepairCost(items)
   const next5YearsTotal = buckets
     .filter(b => b.urgency !== "5_10v")
