@@ -25,7 +25,7 @@ import {
 import {
   derivePlanItems,
   repairItems,
-  URGENCY_LABELS,
+  urgencyLabel,
   URGENCY_ORDER,
   type UrgencyCode,
   type PlanItem,
@@ -135,7 +135,8 @@ export default async function HuoltohistoriaPage() {
             area_m2: b.area_m2,
             building_type: b.building_type,
           },
-          evalsByBuilding.get(b.id) || []
+          evalsByBuilding.get(b.id) || [],
+          t
         )
         for (const item of repairItems(planItems)) {
           recommended.push({
@@ -208,7 +209,7 @@ export default async function HuoltohistoriaPage() {
   // Group recommended items by urgency for display
   const groupedByUrgency = URGENCY_ORDER.map(urgency => ({
     urgency,
-    label: URGENCY_LABELS[urgency],
+    label: urgencyLabel(urgency, t),
     items: recommended.filter(r => r.urgency === urgency),
   })).filter(g => g.items.length > 0)
 
