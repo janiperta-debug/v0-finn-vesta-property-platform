@@ -26,10 +26,10 @@ export default async function Page() {
             <Image
               src="/finnvesta-logo.png"
               alt="FinnVesta"
-              width={132}
-              height={132}
+              width={1536}
+              height={1024}
               priority
-              className="h-28 w-28 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:h-32 sm:w-32"
+              className="h-auto w-52 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-56"
             />
           </div>
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
