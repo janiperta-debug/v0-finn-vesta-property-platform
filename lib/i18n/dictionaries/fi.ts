@@ -313,7 +313,7 @@ const fi = {
     updatedLabel: "Päivitetty",
   },
   auth: {
-    tagline: "Kiinteistösalkunhallinta",
+    tagline: "Parempia päätöksiä varten.",
     loginTitle: "Kirjaudu sisään",
     loginDescription: "Syötä sähköpostiosoitteesi ja salasanasi",
     emailLabel: "Sähköposti",

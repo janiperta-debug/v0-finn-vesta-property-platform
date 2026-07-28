@@ -315,7 +315,7 @@ const en: Dictionary = {
     updatedLabel: "Updated",
   },
   auth: {
-    tagline: "Property portfolio management",
+    tagline: "Built for Better Decisions.",
     loginTitle: "Log in",
     loginDescription: "Enter your email and password",
     emailLabel: "Email",
