@@ -1,7 +1,6 @@
-import Image from 'next/image'
 import { getTranslation } from '@/lib/i18n/server'
-import { LoginForm } from './login-form'
-import { LocalePicker } from './locale-picker'
+import { LoginForm } from '../login/login-form'
+import { LocalePicker } from '../login/locale-picker'
 
 export default async function Page() {
   const { t } = await getTranslation()
@@ -23,13 +22,11 @@ export default async function Page() {
               className="absolute inset-0 -z-10 rounded-full bg-primary/30 blur-2xl"
               aria-hidden="true"
             />
-            <Image
-              src="/finnvesta-logo.png"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/finnvesta-login-logo.png"
               alt="FinnVesta"
-              width={1536}
-              height={1024}
-              priority
-              className="h-auto w-72 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-80"
+              className="h-auto w-64 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-72"
             />
           </div>
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
