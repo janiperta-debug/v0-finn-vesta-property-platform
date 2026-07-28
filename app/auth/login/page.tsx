@@ -32,9 +32,6 @@ export default async function Page() {
               className="h-28 w-28 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:h-32 sm:w-32"
             />
           </div>
-          <h1 className="font-heading text-4xl font-bold tracking-tight text-white">
-            FinnVesta
-          </h1>
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
             {t('auth.tagline')}
           </p>
