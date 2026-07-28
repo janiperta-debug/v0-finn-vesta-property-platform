@@ -18,7 +18,7 @@ export default async function Page() {
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* Emblem + wordmark */}
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="relative mb-5">
+          <div className="relative mb-1">
             <div
               className="absolute inset-0 -z-10 rounded-full bg-primary/30 blur-2xl"
               aria-hidden="true"
