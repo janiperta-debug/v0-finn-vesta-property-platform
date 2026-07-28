@@ -24,12 +24,12 @@ export default async function Page() {
               aria-hidden="true"
             />
             <Image
-              src="/finnvesta-logo.png"
+              src="/finnvesta-login-logo.png"
               alt="FinnVesta"
               width={1536}
               height={1024}
               priority
-              className="h-auto w-52 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-56"
+              className="h-auto w-72 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-80"
             />
           </div>
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
