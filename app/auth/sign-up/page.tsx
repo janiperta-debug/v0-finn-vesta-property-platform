@@ -1,130 +1,62 @@
-'use client'
+import Image from 'next/image'
+import { getTranslation } from '@/lib/i18n/server'
+import { LoginForm } from './login-form'
+import { LocalePicker } from './locale-picker'
 
-import { createClient } from '@/lib/supabase/client'
-import { useTranslation } from '@/lib/i18n'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-
-export default function Page() {
-  const { t } = useTranslation()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [repeatPassword, setRepeatPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
-    setError(null)
-
-    if (password !== repeatPassword) {
-      setError(t('auth.passwordMismatchError'))
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/auth/callback`
-        : '/auth/callback'
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? redirectUrl,
-        },
-      })
-      if (error) throw error
-      router.push('/auth/sign-up-success')
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : t('auth.genericError'))
-    } finally {
-      setIsLoading(false)
-    }
-  }
+export default async function Page() {
+  const { t } = await getTranslation()
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">{t("auth.signUpTitle")}</CardTitle>
-              <CardDescription>{t("auth.signUpDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSignUp}>
-                <div className="flex flex-col gap-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">{t("auth.emailLabel")}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="password">{t("auth.passwordLabel")}</Label>
-                    </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <div className="flex items-center">
-                      <Label htmlFor="repeat-password">{t("auth.repeatPasswordLabel")}</Label>
-                    </div>
-                    <Input
-                      id="repeat-password"
-                      type="password"
-                      required
-                      value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
-                    />
-                  </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? t("auth.creatingAccount") : t("auth.signUpTitle")}
-                  </Button>
-                </div>
-                <div className="mt-4 text-center text-sm">
-                  {t("auth.alreadyHaveAccount")}{' '}
-                  <Link
-                    href="/auth/login"
-                    className="underline underline-offset-4"
-                  >
-                    {t("auth.loginLinkText")}
-                  </Link>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+    <main
+      className="flex min-h-svh w-full items-center justify-center p-6"
+      style={{
+        backgroundImage: "url('/images/login-blueprint-desktop.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="flex w-full max-w-sm flex-col items-center">
+        {/* Emblem + wordmark */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="relative mb-5">
+            <div
+              className="absolute inset-0 -z-10 rounded-full bg-primary/30 blur-2xl"
+              aria-hidden="true"
+            />
+            <Image
+              src="/finnvesta-logo.png"
+              alt="FinnVesta"
+              width={1536}
+              height={1024}
+              priority
+              className="h-auto w-72 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-80"
+            />
+          </div>
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
+            {t('auth.tagline')}
+          </p>
+          <div className="mt-4">
+            <LocalePicker />
+          </div>
         </div>
+
+        {/* Interactive login form — client component */}
+        <LoginForm
+          labels={{
+            loginTitle: t('auth.loginTitle'),
+            loginDescription: t('auth.loginDescription'),
+            emailLabel: t('auth.emailLabel'),
+            passwordLabel: t('auth.passwordLabel'),
+            loginButton: t('auth.loginButton'),
+            loggingIn: t('auth.loggingIn'),
+            credentialsHint: t('auth.credentialsHint'),
+            genericError: t('auth.genericError'),
+            showPassword: t('auth.showPassword'),
+            hidePassword: t('auth.hidePassword'),
+            tagline: t('auth.tagline'),
+          }}
+        />
       </div>
-    </div>
+    </main>
   )
 }
