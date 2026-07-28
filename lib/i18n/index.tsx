@@ -20,9 +20,14 @@ function writeLocaleCookie(locale: Locale) {
 // A dot-path into the dictionary, e.g. "nav.overview". This gives editor
 // autocomplete and catches typos at build time for the top two levels.
 type Namespace = keyof Dictionary
-type TranslationKey = {
-  [N in Namespace]: `${N & string}.${keyof Dictionary[N] & string}`
-}[Namespace]
+// Known dot-notation keys give autocomplete; `(string & {})` also allows the
+// dynamic keys built at runtime (e.g. in lib/building-plan.ts) so the translator
+// stays assignable to `(key: string) => string`.
+type TranslationKey =
+  | {
+      [N in Namespace]: `${N & string}.${keyof Dictionary[N] & string}`
+    }[Namespace]
+  | (string & {})
 
 interface I18nContextValue {
   locale: Locale

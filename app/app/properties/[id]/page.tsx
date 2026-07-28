@@ -6,7 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/kuntoarvio-data"
 import { categoryIdMapping } from "@/lib/rt-standards"
-import { derivePlanItems, overallCondition, totalRepairCost, repairItems } from "@/lib/building-plan"
+import { derivePlanItems, overallCondition, totalRepairCost, repairItems, categoryName } from "@/lib/building-plan"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -135,7 +135,7 @@ export default function PropertyDetailPage() {
         category = categories.find(c => c.id === strId)
       }
     }
-    return category?.name || `${t("propertyDetail.categoryPrefix")} ${categoryId}`
+    return category ? categoryName(String(category.id), t) : `${t("propertyDetail.categoryPrefix")} ${categoryId}`
   }
 
   // Urgency values stored in the database (matches the inspections/category_evaluations CHECK constraint)
@@ -308,7 +308,8 @@ export default function PropertyDetailPage() {
       urgency: e.urgency,
       cost_estimate: e.cost_estimate,
       comment: e.comment,
-    }))
+    })),
+    t
   )
   const overallCond = overallCondition(planItems) // 1-5
   const kuntoluokka = overallCond > 0 ? Math.round(overallCond * 20) : 0 // percentage
