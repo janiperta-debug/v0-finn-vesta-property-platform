@@ -1,5 +1,6 @@
 import { properties, formatEur, formatEurPerM2, getKlaBgColor, getKlaColor } from "@/lib/mock-data"
-import { samplePropertyKuntoarvio, categories, getCategoriesForBuildingType, sampleApartments, sampleApartmentEvaluations, getApartmentSummary } from "@/lib/kuntoarvio-data"
+import { samplePropertyKuntoarvio, categories, getCategoriesForBuildingType, sampleApartments, sampleApartmentEvaluations, getApartmentSummary, getCategoryName } from "@/lib/kuntoarvio-data"
+import { getTranslation } from "@/lib/i18n/server"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +26,7 @@ import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const { t } = await getTranslation()
   const property = properties.find((p) => p.id === id) || properties[0]
   
   // Use sample kuntoarvio data for demo
@@ -235,7 +237,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                         <div className="flex items-center gap-3">
                           <ConditionBadge score={evaluation.overallScore} size="sm" />
                           <div>
-                            <p className="font-medium text-sm">{category?.name}</p>
+                            <p className="font-medium text-sm">{category ? getCategoryName(String(category.id), t) : null}</p>
                             {evaluation.notes && (
                               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                                 {evaluation.notes}
@@ -426,7 +428,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                     <div key={evaluation.categoryId} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                       <div className="flex items-center gap-3">
                         <ConditionBadge score={evaluation.overallScore} size="sm" />
-                        <span className="text-sm">{category?.name}</span>
+                        <span className="text-sm">{category ? getCategoryName(String(category.id), t) : null}</span>
                       </div>
                       <span className="font-medium">{formatEur(totalCost)}</span>
                     </div>

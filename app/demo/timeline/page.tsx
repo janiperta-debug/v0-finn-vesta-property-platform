@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { ptsTimeline, investmentProjects, properties, formatEur } from "@/lib/mock-data"
-import { categories } from "@/lib/kuntoarvio-data"
+import { categories, getCategoryName } from "@/lib/kuntoarvio-data"
+import { useTranslation } from "@/lib/i18n"
 import type { ConditionScore } from "@/lib/kuntoarvio-types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -168,6 +169,7 @@ const urgencyLabels: Record<string, { label: string; color: string; years: strin
 }
 
 export default function TimelinePage() {
+  const { t } = useTranslation()
   const ptsGrouped = groupByUrgency(MOCK_PTS_ITEMS)
   const immediateCount = ptsGrouped.immediate.length
   const shortTermCount = ptsGrouped.short.length
@@ -199,7 +201,7 @@ export default function TimelinePage() {
                     const category = categories.find(c => c.id === item.categoryId)
                     return (
                       <Badge key={item.id} variant="outline" className="border-red-500/30 text-red-500">
-                        {category?.name || item.categoryId}
+                        {category ? getCategoryName(String(category.id), t) : item.categoryId}
                       </Badge>
                     )
                   })}
@@ -328,7 +330,7 @@ export default function TimelinePage() {
                             <ConditionBadge score={item.currentCondition} size="sm" />
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {category?.name || item.categoryId}
+                            {category ? getCategoryName(String(category.id), t) : item.categoryId}
                             {item.subItemId && ` - ${item.subItemId}`}
                           </p>
                         </div>

@@ -22,7 +22,10 @@ import {
   getCategoryById,
   getConditionInfo,
   buildingTypeTemplates,
+  getCategoryName,
+  getSubItemName,
 } from "@/lib/kuntoarvio-data"
+import { useTranslation } from "@/lib/i18n"
 import type { 
   ConditionScore, 
   UrgencyClass,
@@ -128,6 +131,7 @@ const categoryGroups: Record<string, { label: string; categoryIds: string[] }> =
 
 export default function ArviointiPage() {
   const params = useParams()
+  const { t } = useTranslation()
   const propertyId = params.id as string
   
   const property = properties.find(p => p.id === propertyId)
@@ -291,7 +295,7 @@ export default function ArviointiPage() {
                 <Icon className={`h-5 w-5 ${conditionInfo ? conditionInfo.color : 'text-muted-foreground'}`} />
               </div>
               <div>
-                <CardTitle className="text-base">{category.name}</CardTitle>
+                <CardTitle className="text-base">{getCategoryName(String(category.id), t)}</CardTitle>
                 <CardDescription className="text-xs mt-0.5">
                   {category.subItems.length} alaosaa
                 </CardDescription>
@@ -388,7 +392,7 @@ export default function ArviointiPage() {
                     <div key={subItem.id} className="p-3 rounded-lg bg-muted/50 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium">{subItem.name}</p>
+                          <p className="text-sm font-medium">{getSubItemName(String(subItem.id), t)}</p>
                         </div>
                         {subEval?.score && (
                           <ConditionBadge score={subEval.score} size="sm" />

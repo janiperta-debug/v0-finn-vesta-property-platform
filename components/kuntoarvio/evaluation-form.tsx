@@ -97,7 +97,7 @@ function UrgencySelector({ value, onChange, disabled, className }: UrgencySelect
 }
 
 interface SubItemFormProps {
-  subItem: { id: string; name: string }
+  subItem: { id: string }
   evaluation?: SubItemEvaluation
   onChange: (evaluation: SubItemEvaluation) => void
 }

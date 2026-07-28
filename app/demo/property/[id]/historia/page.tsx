@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ConditionBadge } from "@/components/kuntoarvio/condition-badge"
-import { categories } from "@/lib/kuntoarvio-data"
+import { categories, getCategoryName } from "@/lib/kuntoarvio-data"
+import { useTranslation } from "@/lib/i18n"
 import type { ConditionScore } from "@/lib/kuntoarvio-types"
 import { properties } from "@/lib/mock-data"
 import { 
@@ -108,6 +109,7 @@ const MOCK_EVALUATION_HISTORY = [
 ]
 
 export default function HistoriaPage() {
+  const { t } = useTranslation()
   const params = useParams()
   const propertyId = params.id as string
   
@@ -403,7 +405,7 @@ export default function HistoriaPage() {
                 
                 return (
                   <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell className="font-medium">{getCategoryName(String(category.id), t)}</TableCell>
                     <TableCell className="text-center">
                       {trend?.previous ? (
                         <ConditionBadge score={trend.previous as ConditionScore} size="sm" />
