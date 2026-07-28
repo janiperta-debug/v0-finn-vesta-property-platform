@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import { getTranslation } from '@/lib/i18n/server'
 import { LoginForm } from './login-form'
 import { LocalePicker } from './locale-picker'
@@ -18,21 +17,19 @@ export default async function Page() {
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* Emblem + wordmark */}
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="relative mb-1">
+          <div className="relative mb-0">
             <div
               className="absolute inset-0 -z-10 rounded-full bg-primary/30 blur-2xl"
               aria-hidden="true"
             />
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/finnvesta-login-logo.png"
               alt="FinnVesta"
-              width={1536}
-              height={1024}
-              priority
-              className="h-auto w-72 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-80"
+              className="h-auto w-64 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)] sm:w-72"
             />
           </div>
-          <p className="mt-2 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
+          <p className="mt-1 text-xs font-medium uppercase tracking-[0.35em] text-white/90">
             {t('auth.tagline')}
           </p>
           <div className="mt-4">
