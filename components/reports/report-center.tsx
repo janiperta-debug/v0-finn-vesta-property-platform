@@ -1,22 +1,13 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useTranslation } from "@/lib/i18n"
 import { FileText, Plus, CalendarClock, FileEdit, Mail } from "lucide-react"
 
 export function ReportCenter() {
   const { t } = useTranslation()
-  const [wizardOpen, setWizardOpen] = useState(false)
 
   return (
     <div className="space-y-6">
@@ -42,9 +33,11 @@ export function ReportCenter() {
               </p>
             </div>
           </div>
-          <Button size="lg" className="gap-2 sm:shrink-0" onClick={() => setWizardOpen(true)}>
-            <Plus className="h-5 w-5" />
-            {t("reports.newReport")}
+          <Button asChild size="lg" className="gap-2 sm:shrink-0">
+            <Link href="/app/raportit/uusi">
+              <Plus className="h-5 w-5" />
+              {t("reports.newReport")}
+            </Link>
           </Button>
         </CardContent>
       </Card>
@@ -103,23 +96,6 @@ export function ReportCenter() {
         </Card>
       </section>
 
-      {/* Report Wizard – placeholder dialog */}
-      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("reports.wizardTitle")}</DialogTitle>
-            <DialogDescription>{t("reports.wizardPlaceholder")}</DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <FileText className="h-10 w-10 text-muted-foreground/50" />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setWizardOpen(false)}>
-              {t("reports.wizardClose")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
