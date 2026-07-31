@@ -313,7 +313,7 @@ const et: Dictionary = {
     updatedLabel: "Uuendatud",
   },
   auth: {
-    tagline: "Kinnisvaraportfelli haldus",
+    tagline: "Loodud paremate otsuste jaoks",
     loginTitle: "Logi sisse",
     loginDescription: "Sisesta oma e-posti aadress ja parool",
     emailLabel: "E-post",
