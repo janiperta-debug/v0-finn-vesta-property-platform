@@ -336,6 +336,15 @@ const lt: Dictionary = {
     errorCodePrefix: "Klaidos kodas:",
     errorUnspecified: "Įvyko nenurodyta klaida.",
   },
+  languages: {
+    selectLabel: "Pasirinkite kalbą",
+    fi: "Suomių",
+    sv: "Švedų",
+    en: "Anglų",
+    et: "Estų",
+    lv: "Latvių",
+    lt: "Lietuvių",
+  },
   propertyComponents: {
     loadError: "Nepavyko įkelti duomenų",
     avgCondition: "Vidutinė būklė",

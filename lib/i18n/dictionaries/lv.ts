@@ -336,6 +336,15 @@ const lv: Dictionary = {
     errorCodePrefix: "Kļūdas kods:",
     errorUnspecified: "Radās nenoteikta kļūda.",
   },
+  languages: {
+    selectLabel: "Atlasiet valodu",
+    fi: "Somu",
+    sv: "Zviedru",
+    en: "Angļu",
+    et: "Igauņu",
+    lv: "Latviešu",
+    lt: "Lietuviešu",
+  },
   propertyComponents: {
     loadError: "Neizdevās ielādēt datus",
     avgCondition: "Vidējais stāvoklis",

@@ -336,6 +336,15 @@ const fi = {
     errorCodePrefix: "Virhekoodi:",
     errorUnspecified: "Tapahtui määrittelemätön virhe.",
   },
+  languages: {
+    selectLabel: "Valitse kieli",
+    fi: "Suomi",
+    sv: "Ruotsi",
+    en: "Englanti",
+    et: "Viro",
+    lv: "Latvia",
+    lt: "Liettua",
+  },
   propertyComponents: {
     loadError: "Tietojen lataus epäonnistui",
     avgCondition: "Keskimääräinen kunto",

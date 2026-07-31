@@ -338,6 +338,15 @@ const en: Dictionary = {
     errorCodePrefix: "Code error:",
     errorUnspecified: "An unspecified error occurred.",
   },
+  languages: {
+    selectLabel: "Select language",
+    fi: "Finnish",
+    sv: "Swedish",
+    en: "English",
+    et: "Estonian",
+    lv: "Latvian",
+    lt: "Lithuanian",
+  },
   propertyComponents: {
     loadError: "Failed to load data",
     avgCondition: "Average condition",

@@ -336,6 +336,15 @@ const et: Dictionary = {
     errorCodePrefix: "Veakood:",
     errorUnspecified: "Ilmnes täpsustamata viga.",
   },
+  languages: {
+    selectLabel: "Vali keel",
+    fi: "Soome",
+    sv: "Rootsi",
+    en: "Inglise",
+    et: "Eesti",
+    lv: "Läti",
+    lt: "Leedu",
+  },
   propertyComponents: {
     loadError: "Andmete laadimine ebaõnnestus",
     avgCondition: "Keskmine seisukord",

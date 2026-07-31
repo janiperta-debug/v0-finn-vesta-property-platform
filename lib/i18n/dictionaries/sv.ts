@@ -336,6 +336,15 @@ const sv: Dictionary = {
     errorCodePrefix: "Felkod:",
     errorUnspecified: "Ett ospecificerat fel inträffade.",
   },
+  languages: {
+    selectLabel: "Välj språk",
+    fi: "Finska",
+    sv: "Svenska",
+    en: "Engelska",
+    et: "Estniska",
+    lv: "Lettiska",
+    lt: "Litauiska",
+  },
   propertyComponents: {
     loadError: "Det gick inte att läsa in data",
     avgCondition: "Genomsnittligt skick",
