@@ -313,7 +313,7 @@ const lt: Dictionary = {
     updatedLabel: "Atnaujinta",
   },
   auth: {
-    tagline: "Nekilnojamojo turto portfelio valdymas",
+    tagline: "Sukurta geresniems sprendimams",
     loginTitle: "Prisijungti",
     loginDescription: "Įveskite savo el. pašto adresą ir slaptažodį",
     emailLabel: "El. paštas",
