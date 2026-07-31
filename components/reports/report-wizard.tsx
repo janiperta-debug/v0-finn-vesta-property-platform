@@ -570,7 +570,7 @@ function ModuleRow({
             selected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
           }`}
         >
-          <Icon className="h-4.5 w-4.5" />
+          <Icon className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
