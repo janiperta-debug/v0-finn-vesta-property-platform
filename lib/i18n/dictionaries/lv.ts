@@ -313,7 +313,7 @@ const lv: Dictionary = {
     updatedLabel: "Atjaunināts",
   },
   auth: {
-    tagline: "Īpašumu portfeļa pārvaldība",
+    tagline: "Radīts labākiem lēmumiem",
     loginTitle: "Pieteikties",
     loginDescription: "Ievadiet savu e-pasta adresi un paroli",
     emailLabel: "E-pasts",
