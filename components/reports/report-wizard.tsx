@@ -7,7 +7,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/i18n"
+import {
+  REPORT_MODULES,
+  REPORT_GROUPS,
+  type ReportGroup,
+  type ReportModuleConfig,
+} from "@/lib/report-modules"
 import {
   Building2,
   Building,
@@ -16,12 +23,20 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
   FileText,
   CheckCircle2,
 } from "lucide-react"
 
 type Scope = "single" | "multiple" | "portfolio"
+
+const GROUP_LABEL_KEYS: Record<ReportGroup, string> = {
+  overview: "reports.groupOverview",
+  inspection: "reports.groupInspection",
+  maintenance: "reports.groupMaintenance",
+  financial: "reports.groupFinancial",
+}
 
 interface WizardProperty {
   id: number
@@ -42,6 +57,15 @@ export function ReportWizard() {
   const [search, setSearch] = useState("")
   const [singleId, setSingleId] = useState<number | null>(null)
   const [multiIds, setMultiIds] = useState<number[]>([])
+
+  // Step 2 – report composition. Selected modules + which one is expanded.
+  const [selectedModules, setSelectedModules] = useState<Set<string>>(
+    () =>
+      new Set(
+        REPORT_MODULES.filter((m) => m.defaultSelected || m.required).map((m) => m.id),
+      ),
+  )
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -94,6 +118,32 @@ export function ReportWizard() {
     )
   }
 
+  function toggleModule(id: string) {
+    const mod = REPORT_MODULES.find((m) => m.id === id)
+    if (mod?.required) return // required modules can't be deselected
+    setSelectedModules((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleExpand(id: string) {
+    setExpandedId((prev) => (prev === id ? null : id))
+  }
+
+  // Live report summary for step 2, recomputed on every selection change.
+  const moduleSummary = useMemo(() => {
+    const selected = REPORT_MODULES.filter((m) => selectedModules.has(m.id))
+    return {
+      count: selected.length,
+      pages: selected.reduce((sum, m) => sum + m.estimatedPages, 0),
+      photos: selected.reduce((sum, m) => sum + m.estimatedPhotos, 0),
+      tables: selected.reduce((sum, m) => sum + m.estimatedTables, 0),
+    }
+  }, [selectedModules])
+
   function handleScopeSelect(next: Scope) {
     setScope(next)
     setSearch("")
@@ -102,10 +152,13 @@ export function ReportWizard() {
     if (next !== "multiple") setMultiIds([])
   }
 
+  // Step 1 needs a valid scope selection; step 2 can always continue (required
+  // modules are always selected). Step 3 is a placeholder, so stop advancing.
+  const canProceed = step === 1 ? step1Complete : step < 3
+
   function handleNext() {
-    if (step === 1 && step1Complete) {
-      setStep(2)
-    }
+    if (!canProceed) return
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS))
   }
 
   function handleBack() {
@@ -154,7 +207,7 @@ export function ReportWizard() {
             size="sm"
             className="gap-1.5"
             onClick={handleNext}
-            disabled={!step1Complete}
+            disabled={!canProceed}
           >
             {t("reports.wizardNext")}
             <ChevronRight className="h-4 w-4" />
@@ -174,7 +227,7 @@ export function ReportWizard() {
         ))}
       </div>
 
-      {step === 1 ? (
+      {step === 1 && (
         <div className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start">
           {/* Main column */}
           <div className="space-y-6">
@@ -388,24 +441,190 @@ export function ReportWizard() {
             </CardContent>
           </Card>
         </div>
-      ) : (
-        // Step 2 placeholder
+      )}
+
+      {step === 2 && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start">
+          {/* Main column – grouped report modules */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                {t("reports.composeTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("reports.composeSubtitle")}
+              </p>
+            </div>
+
+            {REPORT_GROUPS.map((group) => {
+              const mods = REPORT_MODULES.filter((m) => m.group === group)
+              if (mods.length === 0) return null
+              return (
+                <section key={group} className="space-y-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t(GROUP_LABEL_KEYS[group])}
+                  </h3>
+                  <div className="space-y-2">
+                    {mods.map((mod) => (
+                      <ModuleRow
+                        key={mod.id}
+                        mod={mod}
+                        selected={selectedModules.has(mod.id)}
+                        expanded={expandedId === mod.id}
+                        onToggle={() => toggleModule(mod.id)}
+                        onExpand={() => toggleExpand(mod.id)}
+                        t={t}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+
+          {/* Live report summary */}
+          <Card className="lg:sticky lg:top-6">
+            <CardContent className="space-y-4 py-5">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <h3 className="font-heading text-sm font-semibold text-foreground">
+                  {t("reports.summaryTitle")}
+                </h3>
+              </div>
+              <dl className="space-y-3 text-sm">
+                <SummaryRow
+                  label={t("reports.summaryModulesSelected")}
+                  value={String(moduleSummary.count)}
+                />
+                <SummaryRow
+                  label={t("reports.summaryEstPages")}
+                  value={String(moduleSummary.pages)}
+                />
+                <SummaryRow
+                  label={t("reports.summaryEstPhotos")}
+                  value={String(moduleSummary.photos)}
+                />
+                <SummaryRow
+                  label={t("reports.summaryEstTables")}
+                  value={String(moduleSummary.tables)}
+                />
+              </dl>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {step === 3 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <div className="mb-4 rounded-full bg-muted p-4">
               <FileText className="h-8 w-8 text-muted-foreground" />
             </div>
             <h2 className="mb-2 font-heading text-lg font-semibold text-foreground">
-              {t("reports.step2Title")}
+              {t("reports.step3Title")}
             </h2>
             <p className="mb-6 max-w-md text-sm text-muted-foreground">
-              {t("reports.step2Description")}
+              {t("reports.step3Description")}
             </p>
             <Button variant="outline" onClick={() => router.push("/app/raportit")}>
               {t("reports.backToReports")}
             </Button>
           </CardContent>
         </Card>
+      )}
+    </div>
+  )
+}
+
+function ModuleRow({
+  mod,
+  selected,
+  expanded,
+  onToggle,
+  onExpand,
+  t,
+}: {
+  mod: ReportModuleConfig
+  selected: boolean
+  expanded: boolean
+  onToggle: () => void
+  onExpand: () => void
+  t: (key: string) => string
+}) {
+  const Icon = mod.icon
+  return (
+    <div
+      className={`rounded-lg border transition-colors ${
+        selected ? "border-primary/50 bg-primary/5" : "border-border bg-card"
+      }`}
+    >
+      <div className="flex items-center gap-3 p-3">
+        <Checkbox
+          checked={selected}
+          disabled={mod.required}
+          onCheckedChange={onToggle}
+          aria-label={t(mod.titleKey)}
+        />
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+            selected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-sm font-medium text-foreground">{t(mod.titleKey)}</span>
+            {mod.badgeKey && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-medium">
+                {t(mod.badgeKey)}
+              </Badge>
+            )}
+            {mod.metaKey && (
+              <span className="text-xs text-muted-foreground">{t(mod.metaKey)}</span>
+            )}
+          </div>
+          <p className="truncate text-xs text-muted-foreground">{t(mod.descriptionKey)}</p>
+        </div>
+        {mod.expandable && (
+          <button
+            type="button"
+            onClick={onExpand}
+            aria-expanded={expanded}
+            aria-label={t(mod.titleKey)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+            />
+          </button>
+        )}
+      </div>
+
+      {mod.expandable && expanded && (
+        <div className="space-y-4 border-t border-border px-3 py-3">
+          {mod.optionGroups && mod.optionGroups.length > 0 ? (
+            mod.optionGroups.map((group) => (
+              <div key={group.labelKey} className="space-y-1.5">
+                <p className="text-xs font-medium text-foreground">{t(group.labelKey)}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.choiceKeys.map((choice) => (
+                    <span
+                      key={choice}
+                      className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground"
+                    >
+                      {t(choice)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {t("reports.expandOptionsPlaceholder")}
+            </p>
+          )}
+        </div>
       )}
     </div>
   )
