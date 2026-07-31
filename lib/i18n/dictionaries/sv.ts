@@ -313,7 +313,7 @@ const sv: Dictionary = {
     updatedLabel: "Uppdaterad",
   },
   auth: {
-    tagline: "Fastighetsportföljförvaltning",
+    tagline: "Byggd för bättre beslut",
     loginTitle: "Logga in",
     loginDescription: "Ange din e-postadress och ditt lösenord",
     emailLabel: "E-post",
