@@ -27,6 +27,7 @@ import {
   DEFAULT_BRANDING,
   defaultVisualSettings,
 } from "@/lib/report-options"
+import { encodeReportConfig, REPORT_CONFIG_PARAM } from "@/lib/report-engine"
 import {
   Select,
   SelectContent,
@@ -855,7 +856,30 @@ export function ReportWizard() {
             <Button
               size="lg"
               className="w-full"
-              onClick={() => setGenerated(true)}
+              onClick={() => {
+                // Build the scope-appropriate property list.
+                const selectedProps =
+                  scope === "single"
+                    ? properties.filter((p) => p.id === singleId)
+                    : scope === "multiple"
+                    ? properties.filter((p) => multiIds.includes(p.id))
+                    : properties
+
+                const encoded = encodeReportConfig({
+                  scope: scope ?? "single",
+                  properties: selectedProps,
+                  selectedModuleIds: Array.from(selectedModules),
+                  title: reportTitle,
+                  language: reportLanguage,
+                  date: reportDate,
+                  purpose,
+                  timeHorizon,
+                  detailLevel: detailLevel as "executive" | "standard" | "detailed",
+                  visualSettings,
+                  branding: branding as "finnvesta" | "organization" | "cobranded",
+                })
+                router.push(`/app/raportit/esikatselu?${REPORT_CONFIG_PARAM}=${encoded}`)
+              }}
             >
               {t("reports.generateButton")}
             </Button>
