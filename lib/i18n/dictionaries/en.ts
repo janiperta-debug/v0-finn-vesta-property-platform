@@ -733,6 +733,7 @@ const en: Dictionary = {
     successMessage: "Your report has been successfully generated.",
     successOpen: "Open report",
     successBackToCenter: "Back to Report Center",
+    generating: "Generating report...",
   },
   timeline: {
     title: "Investment timeline",

@@ -27,6 +27,8 @@ import {
   DEFAULT_BRANDING,
   defaultVisualSettings,
 } from "@/lib/report-options"
+import { encodeReportConfig, REPORT_CONFIG_PARAM } from "@/lib/report-engine"
+import { saveReport } from "@/lib/saved-reports"
 import {
   Select,
   SelectContent,
@@ -74,6 +76,7 @@ export function ReportWizard() {
   const [scope, setScope] = useState<Scope | null>(null)
   const [properties, setProperties] = useState<WizardProperty[]>([])
   const [loading, setLoading] = useState(true)
+  const [orgId, setOrgId] = useState<number | null>(null)
   const [search, setSearch] = useState("")
   const [singleId, setSingleId] = useState<number | null>(null)
   const [multiIds, setMultiIds] = useState<number[]>([])
@@ -90,6 +93,10 @@ export function ReportWizard() {
 
   // Step 4 – success screen shown after Generate is pressed.
   const [generated, setGenerated] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState<string | null>(null)
+  const [savedReportId, setSavedReportId] = useState<string | null>(null)
+  const [savedDisplayId, setSavedDisplayId] = useState<string | null>(null)
 
   // Step 2 – report composition. Selected modules + which one is expanded.
   const [selectedModules, setSelectedModules] = useState<Set<string>>(
@@ -115,6 +122,8 @@ export function ReportWizard() {
 
       const orgUser = orgUsers?.[0]
       if (!orgUser) { setLoading(false); return }
+
+      setOrgId(orgUser.org_id)
 
       const { data } = await supabase
         .from("buildings")
@@ -852,12 +861,88 @@ export function ReportWizard() {
               </CardContent>
             </Card>
 
+            {generateError && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
+                <p className="text-sm text-destructive">{generateError}</p>
+                <button
+                  className="mt-1 text-xs underline text-destructive/80"
+                  onClick={() => setGenerateError(null)}
+                >
+                  {t("reports.validationBack")}
+                </button>
+              </div>
+            )}
+
             <Button
               size="lg"
               className="w-full"
-              onClick={() => setGenerated(true)}
+              disabled={generating}
+              onClick={async () => {
+                setGenerateError(null)
+                setGenerating(true)
+
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+
+                const selectedProps =
+                  scope === "single"
+                    ? properties.filter((p) => p.id === singleId)
+                    : scope === "multiple"
+                    ? properties.filter((p) => multiIds.includes(p.id))
+                    : properties
+
+                const config = {
+                  scope: scope ?? "single",
+                  properties: selectedProps,
+                  selectedModuleIds: Array.from(selectedModules),
+                  title: reportTitle,
+                  language: reportLanguage,
+                  date: reportDate,
+                  purpose,
+                  timeHorizon,
+                  detailLevel: detailLevel as "executive" | "standard" | "detailed",
+                  visualSettings,
+                  branding: branding as "finnvesta" | "organization" | "cobranded",
+                } as const
+
+                // Try to save to DB; if it fails (table not yet created), still allow
+                // the user to view the report via URL-encoded config.
+                let savedId: string | null = null
+                let displayId: string | null = null
+                if (user && orgId) {
+                  try {
+                    const saved = await saveReport({ config, orgId, userId: user.id })
+                    savedId = saved.id
+                    displayId = saved.report_id
+                    setSavedReportId(savedId)
+                    setSavedDisplayId(displayId)
+                  } catch (err) {
+                    // Non-fatal: table may not exist yet. Fall back to URL config.
+                    console.warn("[v0] Could not save report to DB:", err)
+                  }
+                }
+
+                setGenerating(false)
+
+                // Navigate to viewer: use UUID if saved, otherwise encoded config.
+                if (savedId) {
+                  router.push(`/app/raportit/katselu/${savedId}`)
+                } else {
+                  const configWithIds = { ...config, savedReportId: savedId ?? undefined, reportDisplayId: displayId ?? undefined }
+                  const encoded = encodeReportConfig(configWithIds)
+                  router.push(`/app/raportit/esikatselu?${REPORT_CONFIG_PARAM}=${encoded}`)
+                }
+              }}
             >
-              {t("reports.generateButton")}
+              {generating ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  {t("reports.generating")}
+                </span>
+              ) : t("reports.generateButton")}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
               {t("reports.generateSaveNote")}

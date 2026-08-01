@@ -731,6 +731,7 @@ const lt: Dictionary = {
     successMessage: "Jūsų ataskaita sėkmingai sugeneruota.",
     successOpen: "Atidaryti ataskaitą",
     successBackToCenter: "Grįžti į ataskaitų centrą",
+    generating: "Generuojama ataskaita...",
   },
   timeline: {
     title: "Investicijų laiko juosta",

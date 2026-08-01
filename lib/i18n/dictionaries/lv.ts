@@ -731,6 +731,7 @@ const lv: Dictionary = {
     successMessage: "Jūsu pārskats ir veiksmīgi ģenerēts.",
     successOpen: "Atvērt pārskatu",
     successBackToCenter: "Atpakaļ uz pārskatu centru",
+    generating: "Ģenerē pārskatu...",
   },
   timeline: {
     title: "Investīciju laika grafiks",
@@ -946,7 +947,7 @@ const lv: Dictionary = {
     section3Body: "Pakalpojuma izmantošanai nepieciešams spēkā esošs līgums ar Pakalpojuma sniedzēju. Administrators saņem piekļuves tiesības līguma noslēgšanas brīdī un var piešķirt piekļuves tiesības citiem savas organizācijas lietotājiem. Piekļuves tiesības ir personiskas un nav nododamas trešajām personām.",
     section4Title: "4. Lietotāja pienākumi",
     section4Item1: "Lietotājs ir atbildīgs par sava lietotājvārda un paroles konfidencialitāti",
-    section4Item2: "Lietotājs ir atbildīgs par ievadīto datu pareizību",
+    section4Item2: "Lietotājs ir atbildīgs par ievad��to datu pareizību",
     section4Item3: "Pakalpojumu drīkst izmantot tikai likumīgiem mērķiem",
     section4Item4: "Lietotājs nedrīkst mēģināt apiet pakalpojuma tehniskos drošības pasākumus",
     section4Item5: "Lietotājam nekavējoties jāziņo par konstatētajām drošības problēmām",
