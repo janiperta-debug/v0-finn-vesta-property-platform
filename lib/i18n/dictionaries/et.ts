@@ -731,6 +731,7 @@ const et: Dictionary = {
     successMessage: "Teie aruanne on edukalt loodud.",
     successOpen: "Ava aruanne",
     successBackToCenter: "Tagasi aruandekeskusesse",
+    generating: "Aruannet luuakse...",
   },
   timeline: {
     title: "Investeeringute ajajoon",

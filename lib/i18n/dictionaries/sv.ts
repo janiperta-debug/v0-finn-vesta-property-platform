@@ -376,7 +376,7 @@ const sv: Dictionary = {
     priorityHigh: "Hög",
     timeframeMedium: "Medellång sikt",
     priorityNormal: "Normal",
-    timeframeLong: "L����ng sikt",
+    timeframeLong: "L������ng sikt",
     priorityLow: "Låg",
     tenYearPts: "10-årig underhållsplan",
     autoTitle: "Automatisk långsiktig plan",
@@ -731,6 +731,7 @@ const sv: Dictionary = {
     successMessage: "Din rapport har genererats.",
     successOpen: "Öppna rapport",
     successBackToCenter: "Tillbaka till rapportcentret",
+    generating: "Genererar rapport...",
   },
   timeline: {
     title: "Investeringstidslinje",

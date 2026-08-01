@@ -31,6 +31,10 @@ export interface ReportConfig {
   detailLevel: ReportDetailLevel
   visualSettings: Record<string, boolean>
   branding: ReportBranding
+
+  // Set after saving to DB — used by the viewer to identify the saved record.
+  savedReportId?: string
+  reportDisplayId?: string   // e.g. FVR-2026-000001
 }
 
 // Serialise a ReportConfig to a URL-safe base64 string.
@@ -50,3 +54,6 @@ export function decodeReportConfig(encoded: string): ReportConfig | null {
 
 // URL search-param key used to carry the config to the report page.
 export const REPORT_CONFIG_PARAM = "config"
+
+// URL param for the saved report UUID (viewer route).
+export const SAVED_REPORT_ID_PARAM = "id"

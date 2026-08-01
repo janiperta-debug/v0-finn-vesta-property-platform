@@ -731,6 +731,7 @@ const fi = {
     successMessage: "Raporttisi on onnistuneesti luotu.",
     successOpen: "Avaa raportti",
     successBackToCenter: "Takaisin raporttikeskukseen",
+    generating: "Luodaan raporttia...",
   },
   timeline: {
     title: "Investointiaikajana",
