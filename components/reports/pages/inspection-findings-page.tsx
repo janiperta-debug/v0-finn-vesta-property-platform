@@ -1,31 +1,40 @@
-import type { ReportConfig } from "@/lib/report-engine"
-import { ReportPage, PageSection, PlaceholderBlock, PlaceholderTable } from "./report-page"
+import type { PageProps } from "@/components/reports/report-engine"
+import { ReportPage, PageSection } from "./report-page"
 
-interface InspectionFindingsPageProps {
-  config: ReportConfig
-  pageNumber: number
-  totalPages: number
+const URGENCY_FI: Record<string, string> = {
+  valitom: "Välitön",
+  "1_3v": "1–3 v",
+  "3_5v": "3–5 v",
+  "5_10v": "5–10 v",
+  immediate: "Välitön",
+  short: "Lyhyt",
+  medium: "Keskipitkä",
+  long: "Pitkä",
 }
 
-function SeverityPill({ level }: { level: "critical" | "moderate" | "minor" }) {
-  const styles = {
-    critical: "bg-red-100 text-red-700",
-    moderate: "bg-amber-100 text-amber-700",
-    minor: "bg-blue-100 text-blue-700",
-  }
-  const labels = {
-    critical: "Kriittinen",
-    moderate: "Kohtalainen",
-    minor: "Vähäinen",
-  }
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${styles[level]}`}>
-      {labels[level]}
-    </span>
-  )
+const STATUS_FI: Record<string, string> = {
+  draft: "Luonnos",
+  complete: "Valmis",
+  completed: "Valmis",
+  approved: "Hyväksytty",
+  archived: "Arkistoitu",
 }
 
-export function InspectionFindingsPage({ config, pageNumber, totalPages }: InspectionFindingsPageProps) {
+export function InspectionFindingsPage({ config, data, pageNumber, totalPages }: PageProps) {
+  if (data.inspections.length === 0) {
+    return (
+      <ReportPage
+        config={config}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+        sectionTitle="Tarkastushavainnot"
+      >
+        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">Tarkastushavainnot</h2>
+        <p className="text-sm text-[#999]">Tarkastustietoja ei saatavilla.</p>
+      </ReportPage>
+    )
+  }
+
   return (
     <ReportPage
       config={config}
@@ -33,43 +42,95 @@ export function InspectionFindingsPage({ config, pageNumber, totalPages }: Inspe
       totalPages={totalPages}
       sectionTitle="Tarkastushavainnot"
     >
-      <h1 className="mb-8 text-2xl font-bold text-[#1a1a1a]">Tarkastushavainnot</h1>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Tarkastushavainnot</h2>
 
-      {/* Summary strip */}
-      <div className="mb-8 grid grid-cols-3 gap-4">
-        {(["critical", "moderate", "minor"] as const).map((level) => (
-          <div
-            key={level}
-            className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] px-4 py-3 text-center"
+      {data.inspections.map((insp) => {
+        const catEvals = data.categoryEvaluations.filter(
+          (e) => e.inspection_id === insp.id && (e.comment || e.score),
+        )
+        return (
+          <PageSection
+            key={insp.id}
+            title={`Tarkastus ${insp.inspection_date?.slice(0, 10) ?? "—"}`}
           >
-            <SeverityPill level={level} />
-            <p className="mt-2 text-2xl font-bold text-[#1a1a1a]">–</p>
-            <p className="text-[10px] text-[#999]">havaintoa</p>
-          </div>
-        ))}
-      </div>
+            {/* Meta row */}
+            <dl className="mb-4 grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm sm:grid-cols-4">
+              {[
+                ["Tarkastaja", insp.inspector_name ?? "—"],
+                ["Tyyppi", insp.inspector_type ?? "—"],
+                [
+                  "Kokonaisarvio",
+                  insp.overall_score != null
+                    ? `${insp.overall_score.toFixed(1)} / 5`
+                    : "—",
+                ],
+                [
+                  "Tila",
+                  STATUS_FI[insp.status ?? ""] ?? insp.status ?? "—",
+                ],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-[10px] uppercase tracking-wider text-[#aaa]">
+                    {label}
+                  </dt>
+                  <dd className="font-medium text-[#1a1a1a]">{value}</dd>
+                </div>
+              ))}
+            </dl>
 
-      <PageSection title="Havaintojen yhteenveto">
-        <PlaceholderTable cols={4} rows={6} />
-      </PageSection>
+            {insp.notes && (
+              <p className="mb-4 rounded bg-[#fafafa] p-3 text-sm text-[#555]">
+                {insp.notes}
+              </p>
+            )}
 
-      <PageSection title="Kriittiset havainnot">
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4">
-              <div className="mb-2 flex items-center gap-3">
-                <SeverityPill level="critical" />
-                <div className="h-2.5 w-40 rounded-full bg-[#e5e5e5]" />
+            {catEvals.length > 0 ? (
+              <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[#fafafa]">
+                    <tr>
+                      {["Pisteet", "Kiireellisyys", "Huomio"].map((h) => (
+                        <th
+                          key={h}
+                          className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catEvals.map((e, idx) => (
+                      <tr
+                        key={e.id}
+                        className={
+                          idx % 2 === 0
+                            ? "border-t border-[#f0f0f0] bg-white"
+                            : "border-t border-[#f0f0f0] bg-[#fafafa]"
+                        }
+                      >
+                        <td className="px-3 py-2 text-[#666]">
+                          {e.score?.toFixed(1) ?? "—"}
+                        </td>
+                        <td className="px-3 py-2 text-[#666]">
+                          {e.urgency
+                            ? (URGENCY_FI[e.urgency] ?? e.urgency)
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-[#555]">
+                          {e.comment ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <PlaceholderBlock rows={2} />
-            </div>
-          ))}
-        </div>
-      </PageSection>
-
-      <PageSection title="Muut havainnot">
-        <PlaceholderBlock rows={4} />
-      </PageSection>
+            ) : (
+              <p className="text-xs text-[#bbb]">Ei havaintoja tässä tarkastuksessa.</p>
+            )}
+          </PageSection>
+        )
+      })}
     </ReportPage>
   )
 }

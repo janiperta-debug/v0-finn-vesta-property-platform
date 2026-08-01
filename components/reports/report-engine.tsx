@@ -2,12 +2,15 @@
 
 // ReportEngine – assembles report pages dynamically from the ReportConfig.
 //
-// Pages are rendered in a fixed canonical order; only the modules the user
-// selected in the wizard are included. The cover page and closing page are
-// always rendered regardless of module selection.
+// Fetches all property data in parallel via useReportData, then renders each
+// selected module page in canonical order. Cover and Closing pages are always
+// included regardless of module selection.
 
 import { useMemo } from "react"
+import { Loader2, AlertTriangle } from "lucide-react"
 import type { ReportConfig } from "@/lib/report-engine"
+import type { ReportData } from "@/hooks/use-report-data"
+import { useReportData } from "@/hooks/use-report-data"
 import { REPORT_MODULES } from "@/lib/report-modules"
 
 // Page components
@@ -24,13 +27,15 @@ import { InvestmentForecastPage } from "./pages/investment-forecast-page"
 import { RecommendationsPage } from "./pages/recommendations-page"
 import { ClosingPage } from "./pages/closing-page"
 
-// Map each module id to its page component constructor.
-// The component receives (config, pageNumber, totalPages).
-type PageComponent = (props: {
+// Each page component receives config + real data + pagination info.
+export type PageProps = {
   config: ReportConfig
+  data: ReportData
   pageNumber: number
   totalPages: number
-}) => React.ReactElement
+}
+
+type PageComponent = (props: PageProps) => React.ReactElement
 
 const MODULE_PAGE_MAP: Record<string, PageComponent> = {
   "executive-summary": ExecutiveSummaryPage,
@@ -45,7 +50,6 @@ const MODULE_PAGE_MAP: Record<string, PageComponent> = {
   recommendations: RecommendationsPage,
 }
 
-// Canonical page order (mirrors REPORT_MODULES order).
 const CANONICAL_ORDER = REPORT_MODULES.map((m) => m.id)
 
 interface ReportEngineProps {
@@ -53,23 +57,34 @@ interface ReportEngineProps {
 }
 
 export function ReportEngine({ config }: ReportEngineProps) {
-  // Build the ordered list of page components to render.
-  const pages = useMemo(() => {
-    const selected = new Set(config.selectedModuleIds)
+  const { data, loading, error } = useReportData(config)
 
-    // Sort module ids by canonical order so page sequence is stable regardless
-    // of the order they were stored in the config.
+  const pages = useMemo((): PageComponent[] => {
+    const selected = new Set(config.selectedModuleIds)
     const modulePages = CANONICAL_ORDER.filter(
       (id) => selected.has(id) && MODULE_PAGE_MAP[id],
     ).map((id) => MODULE_PAGE_MAP[id])
-
-    // Cover is always first; Closing always last.
-    return [
-      CoverPage,
-      ...modulePages,
-      ClosingPage,
-    ] as PageComponent[]
+    return [CoverPage, ...modulePages, ClosingPage] as PageComponent[]
   }, [config.selectedModuleIds])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#C8A84B]" />
+        <p className="text-sm text-[#666]">Ladataan kiinteistötietoja...</p>
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
+        <AlertTriangle className="h-8 w-8 text-amber-500" />
+        <p className="text-sm font-medium text-[#333]">Tietojen lataus epäonnistui</p>
+        <p className="max-w-sm text-xs text-[#999]">{error ?? "Tuntematon virhe"}</p>
+      </div>
+    )
+  }
 
   const totalPages = pages.length
 
@@ -79,6 +94,7 @@ export function ReportEngine({ config }: ReportEngineProps) {
         <Page
           key={index}
           config={config}
+          data={data}
           pageNumber={index + 1}
           totalPages={totalPages}
         />

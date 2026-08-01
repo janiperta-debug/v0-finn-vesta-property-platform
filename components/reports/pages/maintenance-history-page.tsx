@@ -1,15 +1,52 @@
-import type { ReportConfig } from "@/lib/report-engine"
-import { ReportPage, PageSection, PlaceholderBlock, PlaceholderTable } from "./report-page"
+import type { PageProps } from "@/components/reports/report-engine"
+import { ReportPage, PageSection } from "./report-page"
+import { formatEur } from "@/lib/database.types"
 
-interface MaintenanceHistoryPageProps {
-  config: ReportConfig
-  pageNumber: number
-  totalPages: number
+const PRIORITY_FI: Record<string, string> = {
+  low: "Matala",
+  medium: "Kohtalainen",
+  high: "Korkea",
+  urgent: "Kiireellinen",
 }
 
-export function MaintenanceHistoryPage({ config, pageNumber, totalPages }: MaintenanceHistoryPageProps) {
-  // Placeholder timeline years.
-  const years = [2020, 2021, 2022, 2023, 2024, 2025]
+const STATUS_FI: Record<string, string> = {
+  planned: "Suunniteltu",
+  in_progress: "Käynnissä",
+  completed: "Valmis",
+  cancelled: "Peruutettu",
+}
+
+export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }: PageProps) {
+  // Completed tasks sorted newest first; upcoming tasks sorted oldest first.
+  const completed = data.maintenanceTasks
+    .filter((t) => t.status === "completed")
+    .sort((a, b) =>
+      (b.completed_date ?? b.created_at).localeCompare(
+        a.completed_date ?? a.created_at,
+      ),
+    )
+
+  const upcoming = data.maintenanceTasks
+    .filter((t) => t.status === "planned" || t.status === "in_progress")
+    .sort((a, b) =>
+      (a.scheduled_date ?? a.created_at).localeCompare(
+        b.scheduled_date ?? b.created_at,
+      ),
+    )
+
+  if (data.maintenanceTasks.length === 0) {
+    return (
+      <ReportPage
+        config={config}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+        sectionTitle="Huoltohistoria"
+      >
+        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">Huoltohistoria</h2>
+        <p className="text-sm text-[#999]">Huoltotietoja ei saatavilla.</p>
+      </ReportPage>
+    )
+  }
 
   return (
     <ReportPage
@@ -18,33 +55,105 @@ export function MaintenanceHistoryPage({ config, pageNumber, totalPages }: Maint
       totalPages={totalPages}
       sectionTitle="Huoltohistoria"
     >
-      <h1 className="mb-8 text-2xl font-bold text-[#1a1a1a]">Huoltohistoria</h1>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Huoltohistoria</h2>
 
-      <PageSection title="Huoltotoimenpiteet vuosittain">
-        {/* Simplified timeline */}
-        <div className="relative pl-6">
-          <div className="absolute left-2 top-0 bottom-0 w-px bg-[#e5e5e5]" />
-          <div className="space-y-5">
-            {years.map((year) => (
-              <div key={year} className="relative">
-                <div className="absolute -left-[18px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-[#C8A84B] bg-white" />
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#C8A84B]">
-                  {year}
-                </div>
-                <PlaceholderBlock rows={1} />
-              </div>
-            ))}
+      {completed.length > 0 && (
+        <PageSection title={`Suoritetut huoltotoimet (${completed.length})`}>
+          <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
+            <table className="w-full text-sm">
+              <thead className="bg-[#fafafa]">
+                <tr>
+                  {["Päivämäärä", "Toimenpide", "Komponentti", "Prioriteetti", "Kustannus"].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {completed.map((t, idx) => (
+                  <tr
+                    key={t.id}
+                    className={
+                      idx % 2 === 0
+                        ? "border-t border-[#f0f0f0] bg-white"
+                        : "border-t border-[#f0f0f0] bg-[#fafafa]"
+                    }
+                  >
+                    <td className="px-4 py-2 text-[#666]">
+                      {(t.completed_date ?? t.scheduled_date ?? t.created_at).slice(0, 10)}
+                    </td>
+                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{t.title}</td>
+                    <td className="px-4 py-2 text-[#666]">{t.component_type ?? "—"}</td>
+                    <td className="px-4 py-2 text-[#666]">
+                      {t.priority ? (PRIORITY_FI[t.priority] ?? t.priority) : "—"}
+                    </td>
+                    <td className="px-4 py-2 text-right text-[#666]">
+                      {t.actual_cost != null
+                        ? formatEur(t.actual_cost)
+                        : t.estimated_cost != null
+                        ? `${formatEur(t.estimated_cost)} (arvio)`
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </PageSection>
+        </PageSection>
+      )}
 
-      <PageSection title="Huoltotiedot">
-        <PlaceholderTable cols={4} rows={6} />
-      </PageSection>
-
-      <PageSection title="Huomiot">
-        <PlaceholderBlock rows={3} />
-      </PageSection>
+      {upcoming.length > 0 && (
+        <PageSection title={`Suunnitellut toimet (${upcoming.length})`}>
+          <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
+            <table className="w-full text-sm">
+              <thead className="bg-[#fafafa]">
+                <tr>
+                  {["Päivämäärä", "Toimenpide", "Komponentti", "Prioriteetti", "Arvio"].map(
+                    (h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {upcoming.map((t, idx) => (
+                  <tr
+                    key={t.id}
+                    className={
+                      idx % 2 === 0
+                        ? "border-t border-[#f0f0f0] bg-white"
+                        : "border-t border-[#f0f0f0] bg-[#fafafa]"
+                    }
+                  >
+                    <td className="px-4 py-2 text-[#666]">
+                      {(t.scheduled_date ?? t.created_at).slice(0, 10)}
+                    </td>
+                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{t.title}</td>
+                    <td className="px-4 py-2 text-[#666]">{t.component_type ?? "—"}</td>
+                    <td className="px-4 py-2 text-[#666]">
+                      {t.priority ? (PRIORITY_FI[t.priority] ?? t.priority) : "—"}
+                    </td>
+                    <td className="px-4 py-2 text-right text-[#666]">
+                      {t.estimated_cost != null ? formatEur(t.estimated_cost) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </PageSection>
+      )}
     </ReportPage>
   )
 }

@@ -1,53 +1,55 @@
-import type { ReportConfig } from "@/lib/report-engine"
-import { ReportPage, PageSection, InfoGrid, PlaceholderBlock, PlaceholderTable } from "./report-page"
+import type { PageProps } from "@/components/reports/report-engine"
+import { ReportPage, PageSection, InfoGrid } from "./report-page"
 
-interface PropertyInformationPageProps {
-  config: ReportConfig
-  pageNumber: number
-  totalPages: number
+function val(v: string | number | null | undefined): string {
+  if (v === null || v === undefined || v === "") return "—"
+  return String(v)
 }
 
-export function PropertyInformationPage({ config, pageNumber, totalPages }: PropertyInformationPageProps) {
-  // Show first property's details; for multi-property reports list all.
-  const primary = config.properties[0]
-
+export function PropertyInformationPage({ config, data, pageNumber, totalPages }: PageProps) {
   return (
-    <ReportPage
-      config={config}
-      pageNumber={pageNumber}
-      totalPages={totalPages}
-      sectionTitle="Kiinteistötiedot"
-    >
-      <h1 className="mb-8 text-2xl font-bold text-[#1a1a1a]">Kiinteistötiedot</h1>
+    <ReportPage config={config} pageNumber={pageNumber} totalPages={totalPages} sectionTitle="Kiinteistötiedot">
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Kiinteistötiedot</h2>
 
-      {config.properties.map((prop, i) => (
-        <div key={prop.id} className={i > 0 ? "mt-10" : ""}>
-          {config.properties.length > 1 && (
-            <h2 className="mb-4 text-base font-semibold text-[#1a1a1a]">{prop.name}</h2>
-          )}
-
-          <PageSection title="Perustiedot">
+      {data.buildings.length === 0 ? (
+        <p className="text-sm text-[#999]">Kiinteistötietoja ei löydy.</p>
+      ) : (
+        data.buildings.map((b) => (
+          <PageSection key={b.id} title={data.buildings.length > 1 ? b.name : "Perustiedot"}>
             <InfoGrid
               rows={[
-                { label: "Nimi", value: prop.name },
-                { label: "Osoite", value: prop.address ?? "–" },
-                { label: "Rakennusvuosi", value: "–" },
-                { label: "Pinta-ala", value: "–" },
-                { label: "Kerrokset", value: "–" },
-                { label: "Käyttötarkoitus", value: "–" },
-              ]}
+                { label: "Nimi", value: val(b.name) },
+                { label: "Osoite", value: val(b.address) },
+                { label: "Kunta", value: val(b.municipality) },
+                { label: "Rakennustyyppi", value: val(b.building_type) },
+                { label: "Käyttötarkoitus", value: val(b.usage_category) },
+                { label: "Rakennusvuosi", value: val(b.construction_year) },
+                {
+                  label: "Pinta-ala",
+                  value: b.area_m2
+                    ? `${b.area_m2.toLocaleString("fi-FI")} m²`
+                    : "—",
+                },
+                {
+                  label: "Kustannus/m²",
+                  value: b.cost_per_m2
+                    ? `${b.cost_per_m2.toLocaleString("fi-FI")} €/m²`
+                    : "—",
+                },
+                { label: "Tila", value: val(b.status) },
+              ].filter((r) => r.value !== "—")}
             />
+            {b.notes && (
+              <div className="mt-4 rounded-lg bg-[#fafafa] p-4">
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-[#aaa]">
+                  Lisätiedot
+                </p>
+                <p className="text-sm text-[#555]">{b.notes}</p>
+              </div>
+            )}
           </PageSection>
-
-          <PageSection title="Tekniset järjestelmät">
-            <PlaceholderTable cols={3} rows={5} />
-          </PageSection>
-
-          <PageSection title="Lisätiedot">
-            <PlaceholderBlock rows={3} />
-          </PageSection>
-        </div>
-      ))}
+        ))
+      )}
     </ReportPage>
   )
 }
