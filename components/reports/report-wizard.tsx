@@ -88,6 +88,9 @@ export function ReportWizard() {
   const [visualSettings, setVisualSettings] = useState<Record<string, boolean>>(defaultVisualSettings)
   const [branding, setBranding] = useState(DEFAULT_BRANDING)
 
+  // Step 4 – success screen shown after Generate is pressed.
+  const [generated, setGenerated] = useState(false)
+
   // Step 2 – report composition. Selected modules + which one is expanded.
   const [selectedModules, setSelectedModules] = useState<Set<string>>(
     () =>
@@ -194,7 +197,7 @@ export function ReportWizard() {
     if (next !== "multiple") setMultiIds([])
   }
 
-  // Step 1: needs scope + selection. Steps 2 & 3: always ok. Step 4: placeholder, stop.
+  // Step 1: needs scope + selection. Steps 2–3: always ok. Step 4: no Next button.
   const canProceed = step === 1 ? step1Complete : step < 4
 
   function handleNext() {
@@ -763,21 +766,126 @@ export function ReportWizard() {
         </div>
       )}
 
-      {step === 4 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 rounded-full bg-muted p-4">
-              <FileText className="h-8 w-8 text-muted-foreground" />
+      {step === 4 && !generated && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
+          {/* Left – scrollable page previews */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                {t("reports.step4Title")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("reports.step4Subtitle")}
+              </p>
             </div>
-            <h2 className="mb-2 font-heading text-lg font-semibold text-foreground">
-              {t("reports.step4Title")}
-            </h2>
-            <p className="mb-6 max-w-md text-sm text-muted-foreground">
-              {t("reports.step4Description")}
-            </p>
-            <Button variant="outline" onClick={() => router.push("/app/raportit")}>
-              {t("reports.backToReports")}
+
+            {/* Placeholder validation banner */}
+            {!reportTitle && (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  {t("reports.validationWarning")}
+                </p>
+                <Button size="sm" variant="outline" onClick={() => setStep(3)}>
+                  {t("reports.validationBack")}
+                </Button>
+              </div>
+            )}
+
+            {/* Preview pages – built dynamically from selected modules */}
+            <ReportPreview
+              selectedModules={selectedModules}
+              modules={REPORT_MODULES}
+              coverTitle={reportTitle || (singleProperty?.name ?? "")}
+              reportDate={reportDate}
+              t={t}
+            />
+          </div>
+
+          {/* Right – sticky summary + generate */}
+          <div className="space-y-4 lg:sticky lg:top-6">
+            <Card>
+              <CardContent className="space-y-3 py-5">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <h3 className="font-heading text-sm font-semibold text-foreground">
+                    {t("reports.summaryTitle")}
+                  </h3>
+                </div>
+                <dl className="space-y-2.5 text-sm">
+                  {scope === "single" && singleProperty && (
+                    <SummaryRow label={t("reports.summaryProperty")} value={singleProperty.name} />
+                  )}
+                  {scope === "multiple" && (
+                    <SummaryRow label={t("reports.summaryPropertiesLabel")} value={String(multiIds.length)} />
+                  )}
+                  {scope === "portfolio" && (
+                    <SummaryRow label={t("reports.summaryPropertiesLabel")} value={String(properties.length)} />
+                  )}
+                  {reportTitle && (
+                    <SummaryRow label={t("reports.fieldReportTitle")} value={reportTitle} />
+                  )}
+                  <SummaryRow label={t("reports.summaryLanguage")} value={reportLanguage.toUpperCase()} />
+                  <SummaryRow
+                    label={t("reports.summaryPurpose")}
+                    value={t(REPORT_PURPOSES.find((p) => p.id === purpose)?.labelKey ?? "")}
+                  />
+                  <SummaryRow
+                    label={t("reports.summaryDetailLevel")}
+                    value={t(DETAIL_LEVELS.find((d) => d.id === detailLevel)?.labelKey ?? "")}
+                  />
+                  <SummaryRow
+                    label={t("reports.summaryTimeHorizon")}
+                    value={t(TIME_HORIZONS.find((h) => h.id === timeHorizon)?.labelKey ?? "")}
+                  />
+                  <SummaryRow label={t("reports.summaryModulesSelected")} value={String(moduleSummary.count)} />
+                  <SummaryRow label={t("reports.summaryEstPages")} value={String(moduleSummary.pages)} />
+                  <div className="flex items-center justify-between gap-4 border-t border-border pt-2.5">
+                    <dt className="flex items-center gap-1.5 text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" />
+                      {t("reports.summaryGenTime")}
+                    </dt>
+                    <dd className="font-medium text-foreground">
+                      ~{estimatedGenMinutes} {t("reports.genTimeMinutes")}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => setGenerated(true)}
+            >
+              {t("reports.generateButton")}
             </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              {t("reports.generateSaveNote")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {step === 4 && generated && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
+            </div>
+            <h2 className="mb-2 font-heading text-xl font-bold text-foreground">
+              {t("reports.successTitle")}
+            </h2>
+            <p className="mb-8 max-w-sm text-sm text-muted-foreground">
+              {t("reports.successMessage")}
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button onClick={() => router.push("/app/raportit")}>
+                {t("reports.successOpen")}
+              </Button>
+              <Button variant="outline" onClick={() => router.push("/app/raportit")}>
+                {t("reports.successBackToCenter")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -965,6 +1073,129 @@ function OptionsSection({
       </h3>
       {children}
     </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// ReportPreview – builds preview cards dynamically from the selected modules.
+// Cover page is always first; closing summary always last.
+// ---------------------------------------------------------------------------
+
+interface ReportPreviewProps {
+  selectedModules: Set<string>
+  modules: ReportModuleConfig[]
+  coverTitle: string
+  reportDate: string
+  t: (key: string) => string
+}
+
+function ReportPreview({ selectedModules, modules, coverTitle, reportDate, t }: ReportPreviewProps) {
+  const selected = modules.filter((m) => selectedModules.has(m.id))
+  // Total pages: cover (1) + module pages + closing (1)
+  const totalPages = 1 + selected.reduce((sum, m) => sum + m.estimatedPages, 0) + 1
+  let pageCounter = 0
+
+  function PageCard({
+    pageNum,
+    title,
+    children,
+  }: {
+    pageNum: number
+    title: string
+    children: React.ReactNode
+  }) {
+    return (
+      <div className="rounded-xl border border-border bg-card shadow-sm">
+        {/* Page header */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {title}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {pageNum} {t("reports.previewPageOf")} {totalPages}
+          </span>
+        </div>
+        <div className="px-5 py-4">{children}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Cover page */}
+      <PageCard pageNum={++pageCounter} title={t("reports.previewPageCover")}>
+        <div className="flex flex-col gap-3 py-2">
+          <div className="h-2 w-16 rounded-full bg-primary/60" />
+          <div className="h-5 w-3/4 rounded bg-foreground/10" />
+          <div className="h-3.5 w-1/2 rounded bg-foreground/8" />
+          <div className="mt-2 flex gap-3">
+            <div className="h-3 w-24 rounded bg-muted" />
+            <div className="h-3 w-20 rounded bg-muted" />
+          </div>
+          {coverTitle && (
+            <p className="mt-1 text-sm font-medium text-foreground">{coverTitle}</p>
+          )}
+          {reportDate && (
+            <p className="text-xs text-muted-foreground">{reportDate}</p>
+          )}
+        </div>
+      </PageCard>
+
+      {/* One card per selected module */}
+      {selected.map((mod) => {
+        const Icon = mod.icon
+        const startPage = pageCounter + 1
+        pageCounter += mod.estimatedPages
+        return (
+          <PageCard key={mod.id} pageNum={startPage} title={t(mod.titleKey)}>
+            <div className="flex items-start gap-4">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="h-4 w-4" />
+              </span>
+              <div className="flex-1 space-y-2">
+                <div className="h-3.5 w-2/3 rounded bg-foreground/10" />
+                <div className="h-2.5 w-full rounded bg-foreground/7" />
+                <div className="h-2.5 w-4/5 rounded bg-foreground/7" />
+                {mod.estimatedTables > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-1.5">
+                    {Array.from({ length: Math.min(mod.estimatedTables * 3, 9) }).map((_, i) => (
+                      <div key={i} className="h-2 rounded bg-muted" />
+                    ))}
+                  </div>
+                )}
+                {mod.estimatedPhotos > 0 && (
+                  <div className="mt-3 grid grid-cols-4 gap-1.5">
+                    {Array.from({ length: Math.min(mod.estimatedPhotos, 4) }).map((_, i) => (
+                      <div key={i} className="aspect-square rounded bg-muted" />
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-end pt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {mod.estimatedPages}s
+                    {mod.estimatedTables > 0 && ` · ${mod.estimatedTables} taulukkoa`}
+                    {mod.estimatedPhotos > 0 && ` · ${mod.estimatedPhotos} kuvaa`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </PageCard>
+        )
+      })}
+
+      {/* Closing summary page */}
+      <PageCard pageNum={++pageCounter} title={t("reports.previewPageClosing")}>
+        <div className="flex flex-col gap-2 py-1">
+          <div className="h-3.5 w-1/2 rounded bg-foreground/10" />
+          <div className="h-2.5 w-full rounded bg-foreground/7" />
+          <div className="h-2.5 w-3/4 rounded bg-foreground/7" />
+          <div className="mt-2 flex gap-2">
+            <div className="h-3 w-16 rounded bg-primary/20" />
+            <div className="h-3 w-20 rounded bg-primary/20" />
+          </div>
+        </div>
+      </PageCard>
+    </div>
   )
 }
 
