@@ -3,8 +3,6 @@ import { ReportPage, PageSection } from "./report-page"
 import { derivePlanItems, repairItems, type UrgencyCode } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const tStub = (k: string) => k
-
 const URGENCY_FI: Record<UrgencyCode, string> = {
   valitom: "Välitön",
   "1_3v": "1–3 v",
@@ -19,9 +17,9 @@ const URGENCY_COLOR: Record<UrgencyCode, string> = {
   "5_10v": "bg-green-50 text-green-700 border-green-200",
 }
 
-export function RecommendationsPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function RecommendationsPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
-  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, tStub) : []
+  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const repairs = repairItems(planItems)
 
   // Also pull planned maintenance tasks as additional recommendations

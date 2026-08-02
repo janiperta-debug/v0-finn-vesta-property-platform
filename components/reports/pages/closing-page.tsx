@@ -3,11 +3,9 @@ import { ReportPage, PageSection } from "./report-page"
 import { derivePlanItems, overallCondition, totalRepairCost } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const tStub = (k: string) => k
-
-export function ClosingPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function ClosingPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
-  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, tStub) : []
+  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const condition = overallCondition(planItems)
   const debt = totalRepairCost(planItems)
 
@@ -78,17 +76,11 @@ export function ClosingPage({ config, data, pageNumber, totalPages }: PageProps)
         </dl>
       </PageSection>
 
-      {/* Bottom gold bar */}
-      <div className="mt-12 border-t-2 border-[#C8A84B] pt-6">
+      {/* Bottom bar */}
+      <div className="mt-12 border-t-2 border-[#1e6fbf] pt-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded bg-[#C8A84B]">
-              <span className="text-[10px] font-bold text-white">FV</span>
-            </div>
-            <span className="text-xs font-semibold tracking-widest text-[#888] uppercase">
-              FinnVesta
-            </span>
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/finnvesta-login-logo.png" alt="FinnVesta" className="h-6 w-auto" />
           <span className="text-xs text-[#bbb]">Raportti luotu {config.date}</span>
         </div>
       </div>
