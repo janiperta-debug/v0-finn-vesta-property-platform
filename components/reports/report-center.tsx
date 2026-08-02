@@ -186,8 +186,13 @@ export function ReportCenter() {
       setReports(data)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Latausvirhe"
-      // If the table doesn't exist yet, show a gentle hint instead of an error.
-      if (msg.includes("does not exist") || msg.includes("relation")) {
+      // If the table doesn't exist yet (schema cache miss or relation error),
+      // show empty state instead of a scary red error banner.
+      if (
+        msg.includes("does not exist") ||
+        msg.includes("relation") ||
+        msg.includes("schema cache")
+      ) {
         setReports([])
       } else {
         setLoadError(msg)

@@ -118,21 +118,27 @@ export function useReportData(config: ReportConfig): UseReportDataResult {
       let subItemEvals: SubItemEvaluation[] = []
 
       if (inspectionIds.length > 0) {
-        const [catRes, subRes] = await Promise.all([
-          supabase
-            .from("category_evaluations")
-            .select("*")
-            .in("inspection_id", inspectionIds),
-          supabase
-            .from("sub_item_evaluations")
-            .select("*")
-            .in("inspection_id", inspectionIds),
-        ])
+        // Step 1: fetch category evaluations by inspection_id
+        const catRes = await supabase
+          .from("category_evaluations")
+          .select("*")
+          .in("inspection_id", inspectionIds)
         if (cancelled) return
         if (catRes.error) { setError(catRes.error.message); setLoading(false); return }
-        if (subRes.error) { setError(subRes.error.message); setLoading(false); return }
         categoryEvals = catRes.data ?? []
-        subItemEvals = subRes.data ?? []
+
+        // Step 2: fetch sub-item evaluations by category_evaluation_id
+        // (sub_item_evaluations has no inspection_id column — join via category_evaluations)
+        const categoryEvalIds = categoryEvals.map((c) => c.id)
+        if (categoryEvalIds.length > 0) {
+          const subRes = await supabase
+            .from("sub_item_evaluations")
+            .select("*")
+            .in("category_evaluation_id", categoryEvalIds)
+          if (cancelled) return
+          if (subRes.error) { setError(subRes.error.message); setLoading(false); return }
+          subItemEvals = subRes.data ?? []
+        }
       }
 
       setData({

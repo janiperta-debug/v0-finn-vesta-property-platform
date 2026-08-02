@@ -7,7 +7,9 @@
 // included regardless of module selection.
 
 import { useMemo } from "react"
-import { Loader2, AlertTriangle } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { ReportConfig } from "@/lib/report-engine"
 import type { ReportData } from "@/hooks/use-report-data"
 import { useReportData } from "@/hooks/use-report-data"
@@ -58,6 +60,7 @@ interface ReportEngineProps {
 
 export function ReportEngine({ config }: ReportEngineProps) {
   const { data, loading, error } = useReportData(config)
+  const router = useRouter()
 
   const pages = useMemo((): PageComponent[] => {
     const selected = new Set(config.selectedModuleIds)
@@ -78,10 +81,19 @@ export function ReportEngine({ config }: ReportEngineProps) {
 
   if (error || !data) {
     return (
-      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
         <AlertTriangle className="h-8 w-8 text-amber-500" />
-        <p className="text-sm font-medium text-[#333]">Tietojen lataus epäonnistui</p>
+        <p className="text-sm font-medium text-[#333] dark:text-[#ccc]">Tietojen lataus epäonnistui</p>
         <p className="max-w-sm text-xs text-[#999]">{error ?? "Tuntematon virhe"}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => router.push("/app/raportit")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Takaisin raporttikeskukseen
+        </Button>
       </div>
     )
   }
