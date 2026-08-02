@@ -12,9 +12,9 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
     <ReportPage config={config} pageNumber={pageNumber} totalPages={totalPages} hideHeader>
       <div className="-mx-14 -mt-16 mb-16 h-2 bg-[#1e6fbf]" />
 
-      <div className="mb-20 flex items-center gap-3">
+      <div className="mb-16">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/finnvesta-login-logo.png" alt="FinnVesta" className="h-8 w-auto" />
+        <img src="/finnvesta-login-logo.png" alt="FinnVesta" className="w-1/3 max-w-[220px] h-auto" />
       </div>
 
       <div className="mb-10">

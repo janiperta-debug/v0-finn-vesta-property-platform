@@ -61,11 +61,11 @@ export default function ReportViewerPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-sm"
+            className="gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             onClick={() => router.push("/app/raportit")}
           >
             <ArrowLeft className="h-4 w-4" />
-            Raporttikeskus
+            <span className="hidden sm:inline">Raporttikeskus</span>
           </Button>
 
           {/* Center: title + report ID */}
@@ -113,14 +113,14 @@ export default function ReportViewerPage() {
               <span className="hidden sm:inline">Tulosta</span>
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="gap-1.5 text-sm"
+              className="gap-1.5 text-sm border-destructive/40 text-destructive hover:bg-destructive/10"
               onClick={() => router.push("/app/raportit")}
               title="Sulje raportti"
             >
               <X className="h-4 w-4" />
-              <span className="hidden sm:inline">Sulje</span>
+              Sulje
             </Button>
           </div>
         </div>

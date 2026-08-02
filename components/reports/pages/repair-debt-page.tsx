@@ -9,8 +9,6 @@ import {
 } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const tStub = (k: string) => k
-
 const URGENCY_FI: Record<UrgencyCode, string> = {
   valitom: "Välitön",
   "1_3v": "1–3 v",
@@ -18,9 +16,9 @@ const URGENCY_FI: Record<UrgencyCode, string> = {
   "5_10v": "5–10 v",
 }
 
-export function RepairDebtPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
-  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, tStub) : []
+  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const repairs = repairItems(planItems)
   const totalDebt = totalRepairCost(planItems)
   const urgentDebt = planItems
