@@ -27,14 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Plus,
@@ -164,35 +157,12 @@ export default function PropertiesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Upload className="h-4 w-4" />
-                {t("properties.importFromFile")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t("properties.importTitle")}</DialogTitle>
-                <DialogDescription>
-                  {t("properties.importDescription")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border p-8">
-                  <div className="text-center">
-                    <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {t("properties.dropFileHint")}
-                    </p>
-                    <Button variant="outline" size="sm" className="mt-4">
-                      {t("properties.selectFile")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Link href="/app/properties/import">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Upload className="h-4 w-4" />
+              {t("properties.importFromFile")}
+            </Button>
+          </Link>
           <Link href="/app/properties/new">
             <Button size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" />
@@ -302,10 +272,12 @@ export default function PropertiesPage() {
             </p>
             {!searchQuery && typeFilter === "all" && conditionFilter === "all" && (
               <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Upload className="h-4 w-4" />
-                  {t("properties.importFromFile")}
-                </Button>
+                <Link href="/app/properties/import">
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Upload className="h-4 w-4" />
+                    {t("properties.importFromFile")}
+                  </Button>
+                </Link>
                 <Link href="/app/properties/new">
                   <Button size="sm" className="gap-1.5">
                     <Plus className="h-4 w-4" />
