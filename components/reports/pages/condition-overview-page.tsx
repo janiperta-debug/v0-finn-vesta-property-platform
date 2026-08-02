@@ -10,8 +10,6 @@ import {
 } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const tStub = (k: string) => k
-
 const URGENCY_FI: Record<UrgencyCode, string> = {
   valitom: "Välitön",
   "1_3v": "1–3 v",
@@ -37,10 +35,10 @@ function ScoreBar({ score }: { score: number }) {
   )
 }
 
-export function ConditionOverviewPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
   const planItems = building
-    ? derivePlanItems(building, data.categoryEvaluations, tStub)
+    ? derivePlanItems(building, data.categoryEvaluations, t)
     : []
   const condition = overallCondition(planItems)
   const repairs = repairItems(planItems)

@@ -10,6 +10,7 @@ import { useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/lib/i18n"
 import type { ReportConfig } from "@/lib/report-engine"
 import type { ReportData } from "@/hooks/use-report-data"
 import { useReportData } from "@/hooks/use-report-data"
@@ -29,12 +30,13 @@ import { InvestmentForecastPage } from "./pages/investment-forecast-page"
 import { RecommendationsPage } from "./pages/recommendations-page"
 import { ClosingPage } from "./pages/closing-page"
 
-// Each page component receives config + real data + pagination info.
+// Each page component receives config + real data + pagination info + translator.
 export type PageProps = {
   config: ReportConfig
   data: ReportData
   pageNumber: number
   totalPages: number
+  t: (key: string) => string
 }
 
 type PageComponent = (props: PageProps) => React.ReactElement
@@ -61,6 +63,7 @@ interface ReportEngineProps {
 export function ReportEngine({ config }: ReportEngineProps) {
   const { data, loading, error } = useReportData(config)
   const router = useRouter()
+  const { t } = useTranslation()
 
   const pages = useMemo((): PageComponent[] => {
     const selected = new Set(config.selectedModuleIds)
@@ -73,7 +76,7 @@ export function ReportEngine({ config }: ReportEngineProps) {
   if (loading) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#C8A84B]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#1e6fbf]" />
         <p className="text-sm text-[#666]">Ladataan kiinteistötietoja...</p>
       </div>
     )
@@ -107,6 +110,7 @@ export function ReportEngine({ config }: ReportEngineProps) {
           key={index}
           config={config}
           data={data}
+          t={t}
           pageNumber={index + 1}
           totalPages={totalPages}
         />

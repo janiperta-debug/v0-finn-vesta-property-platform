@@ -3,8 +3,6 @@ import { ReportPage, PageSection } from "./report-page"
 import { derivePlanItems, overallCondition, repairItems, totalRepairCost } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const tStub = (k: string) => k
-
 function conditionLabel(s: number) {
   if (s >= 4.5) return "Erinomainen"
   if (s >= 3.5) return "Hyvä"
@@ -18,9 +16,9 @@ function conditionColor(s: number) {
   return "#ef4444"
 }
 
-export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
-  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, tStub) : []
+  const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const condition = overallCondition(planItems)
   const repairs = repairItems(planItems)
   const debt = totalRepairCost(planItems)

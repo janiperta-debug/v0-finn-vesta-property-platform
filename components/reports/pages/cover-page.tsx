@@ -10,17 +10,15 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
 
   return (
     <ReportPage config={config} pageNumber={pageNumber} totalPages={totalPages} hideHeader>
-      <div className="-mx-14 -mt-16 mb-16 h-2 bg-[#C8A84B]" />
+      <div className="-mx-14 -mt-16 mb-16 h-2 bg-[#1e6fbf]" />
 
-      <div className="mb-20 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded bg-[#C8A84B]">
-          <span className="text-xs font-bold text-white">FV</span>
-        </div>
-        <span className="text-sm font-semibold tracking-widest text-[#888] uppercase">FinnVesta</span>
+      <div className="mb-20 flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/finnvesta-login-logo.png" alt="FinnVesta" className="h-8 w-auto" />
       </div>
 
       <div className="mb-10">
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#C8A84B]">
+        <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#1e6fbf]">
           Kiinteistöraportti
         </p>
         <h1 className="text-4xl font-bold leading-tight text-[#1a1a1a]">
@@ -58,7 +56,7 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
               const b = data.buildings.find((b) => b.id === p.id)
               return (
                 <li key={p.id} className="flex items-baseline gap-3 text-sm">
-                  <span className="h-1.5 w-1.5 shrink-0 translate-y-px rounded-full bg-[#C8A84B]" />
+                  <span className="h-1.5 w-1.5 shrink-0 translate-y-px rounded-full bg-[#1e6fbf]" />
                   <span className="font-medium text-[#1a1a1a]">{p.name}</span>
                   {p.address && <span className="text-[#999]">{p.address}</span>}
                   {b?.area_m2 && (

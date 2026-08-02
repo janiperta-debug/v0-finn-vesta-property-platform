@@ -6,6 +6,24 @@ function val(v: string | number | null | undefined): string {
   return String(v)
 }
 
+const STATUS_FI: Record<string, string> = {
+  active: "Aktiivinen",
+  inactive: "Ei aktiivinen",
+  archived: "Arkistoitu",
+  draft: "Luonnos",
+}
+
+function translateStatus(s: string | null | undefined): string {
+  if (!s) return "—"
+  return STATUS_FI[s] ?? s
+}
+
+/** Returns true if the string looks like raw JSON. */
+function isJsonString(s: string): boolean {
+  const trimmed = s.trim()
+  return (trimmed.startsWith("{") || trimmed.startsWith("[")) && trimmed.length > 2
+}
+
 export function PropertyInformationPage({ config, data, pageNumber, totalPages }: PageProps) {
   return (
     <ReportPage config={config} pageNumber={pageNumber} totalPages={totalPages} sectionTitle="Kiinteistötiedot">
@@ -36,10 +54,10 @@ export function PropertyInformationPage({ config, data, pageNumber, totalPages }
                     ? `${b.cost_per_m2.toLocaleString("fi-FI")} €/m²`
                     : "—",
                 },
-                { label: "Tila", value: val(b.status) },
+                { label: "Tila", value: translateStatus(b.status) },
               ].filter((r) => r.value !== "—")}
             />
-            {b.notes && (
+            {b.notes && !isJsonString(b.notes) && (
               <div className="mt-4 rounded-lg bg-[#fafafa] p-4">
                 <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-[#aaa]">
                   Lisätiedot
