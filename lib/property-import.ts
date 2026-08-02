@@ -336,6 +336,121 @@ export async function analyseWorkbook(file: File): Promise<ImportAnalysis> {
   }
 }
 
+// ── Property group resolution ─────────────────────────────────────────────────
+// Takes the mapped + validated rows and clusters them into a property tree.
+// Spaces (multiple rows sharing the same property/address) are grouped under
+// one PropertyGroup. The tree is UI-only — buildings are still written as flat
+// rows to `buildings` (spaces = separate rows) until the schema evolves.
+
+export type GroupStatus = "resolved" | "needs-review" | "conflict"
+
+export interface PropertySpace {
+  rowIndex: number
+  name: string
+  address: string
+  city?: string
+  buildingType?: string
+  squareMeters?: number
+  raw: Record<string, string>
+}
+
+export interface PropertyGroup {
+  key: string
+  propertyName: string
+  address: string
+  spaces: PropertySpace[]
+  status: GroupStatus
+  issues: string[]
+}
+
+// Shared mapping / parsed-row shapes used by both the page and this function.
+export interface ImportColumnMapping {
+  name?: string
+  address?: string
+  city?: string
+  building_type?: string
+  build_year?: string
+  square_meters?: string
+  property_id?: string
+}
+
+export interface ImportParsedRow {
+  id: number
+  name: string
+  address: string
+  city?: string
+  buildingType?: string
+  squareMeters?: number
+  valid: boolean
+  errors: string[]
+  raw: Record<string, string>
+}
+
+function normaliseAddr(s: string): string {
+  return s.toLowerCase().trim().replace(/\s+/g, " ")
+}
+
+export function resolvePropertyGroups(
+  rows: ImportParsedRow[],
+  mapping: ImportColumnMapping,
+): PropertyGroup[] {
+  const groups = new Map<string, PropertyGroup>()
+
+  rows.forEach((row) => {
+    const space: PropertySpace = {
+      rowIndex: row.id,
+      name: row.name,
+      address: row.address,
+      city: row.city,
+      buildingType: row.buildingType,
+      squareMeters: row.squareMeters,
+      raw: row.raw,
+    }
+
+    // Priority 1 — explicit property_id column
+    const propId = mapping.property_id ? row.raw[mapping.property_id]?.trim() : undefined
+    if (propId) {
+      const key = `pid:${propId}`
+      const g = groups.get(key)
+      if (g) {
+        g.spaces.push(space)
+      } else {
+        groups.set(key, { key, propertyName: propId, address: row.address, spaces: [space], status: "resolved", issues: [] })
+      }
+      return
+    }
+
+    // Priority 2 — shared normalised address (soft grouping)
+    if (row.address) {
+      const key = `addr:${normaliseAddr(row.address)}`
+      const g = groups.get(key)
+      if (g) {
+        g.spaces.push(space)
+        if (g.status === "resolved") {
+          g.status = "needs-review"
+          g.issues.push("duplicate-address")
+        }
+      } else {
+        groups.set(key, { key, propertyName: row.name || row.address, address: row.address, spaces: [space], status: "resolved", issues: [] })
+      }
+      return
+    }
+
+    // Priority 3 — ungrouped singleton
+    const key = `singleton:${row.id}`
+    groups.set(key, {
+      key,
+      propertyName: row.name || `Rivi ${row.id + 1}`,
+      address: "",
+      spaces: [space],
+      status: row.valid ? "resolved" : "conflict",
+      issues: row.valid ? [] : row.errors,
+    })
+  })
+
+  return Array.from(groups.values())
+}
+
 /** Accepted file extensions for the uploader. */
 export const ACCEPTED_EXTENSIONS = [".xlsx", ".xls", ".csv"]
 

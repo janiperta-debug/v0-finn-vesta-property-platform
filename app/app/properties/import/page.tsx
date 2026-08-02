@@ -15,11 +15,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import {
   ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle, X,
-  CheckCircle2, AlertTriangle, Eye, Loader2,
+  CheckCircle2, AlertTriangle, Eye, Loader2, Building2, ChevronDown, ChevronRight,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "@/lib/i18n"
-import { analyseWorkbook, isAcceptedFile, type ImportAnalysis } from "@/lib/property-import"
+import {
+  analyseWorkbook, isAcceptedFile, resolvePropertyGroups,
+  type ImportAnalysis, type PropertyGroup,
+} from "@/lib/property-import"
 
 interface ParsedProperty {
   id: string
@@ -32,12 +35,13 @@ interface ParsedProperty {
   valid: boolean
   errors: string[]
   selected: boolean
+  raw?: Record<string, string>
 }
 
-// Upload → analyse (auto) → mapping → preview → importing → complete
-type ImportStep = "upload" | "analyse" | "mapping" | "preview" | "importing" | "complete"
+// Upload → analyse (auto) → mapping → structure → importing → complete
+type ImportStep = "upload" | "analyse" | "mapping" | "structure" | "importing" | "complete"
 
-const STEP_ORDER: ImportStep[] = ["upload", "analyse", "mapping", "preview", "importing", "complete"]
+const STEP_ORDER: ImportStep[] = ["upload", "analyse", "mapping", "structure", "importing", "complete"]
 
 export default function ImportPropertiesPage() {
   const router = useRouter()
@@ -55,6 +59,8 @@ export default function ImportPropertiesPage() {
   const [rows, setRows] = useState<string[][]>([])
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [parsedData, setParsedData] = useState<ParsedProperty[]>([])
+  const [groups, setGroups] = useState<PropertyGroup[]>([])
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [importProgress, setImportProgress] = useState(0)
   const [importResults, setImportResults] = useState({ success: 0, failed: 0 })
 
@@ -149,6 +155,10 @@ export default function ImportPropertiesPage() {
       if (!name) errors.push(t("propertyImport.nameMissing"))
       if (!address) errors.push(t("propertyImport.addressMissing"))
 
+      // Build raw record for group resolution
+      const raw: Record<string, string> = {}
+      headers.forEach((h, i) => { raw[h] = row[i] ?? "" })
+
       return {
         id: `row-${index}`,
         name,
@@ -160,11 +170,33 @@ export default function ImportPropertiesPage() {
         valid: errors.length === 0,
         errors,
         selected: errors.length === 0,
+        raw,
       }
     })
 
     setParsedData(parsed)
-    setStep("preview")
+
+    // Build property groups for the structure step
+    const resolved = resolvePropertyGroups(
+      parsed.map((p, i) => ({
+        id: i,
+        name: p.name,
+        address: p.address,
+        city: p.city,
+        buildingType: p.buildingType,
+        squareMeters: p.squareMeters,
+        valid: p.valid,
+        errors: p.errors,
+        raw: p.raw ?? {},
+      })),
+      { name: mapping.name, address: mapping.address, city: mapping.city,
+        building_type: mapping.building_type, build_year: mapping.build_year,
+        square_meters: mapping.square_meters, property_id: mapping.tunnus },
+    )
+    setGroups(resolved)
+    // Pre-expand needs-review groups
+    setExpandedGroups(new Set(resolved.filter(g => g.status !== "resolved").map(g => g.key)))
+    setStep("structure")
   }
 
   const toggleSelection = (id: string) => {
@@ -237,7 +269,7 @@ export default function ImportPropertiesPage() {
     } catch (error: any) {
       console.error("Import error:", error)
       toast.error(error.message || t("propertyImport.importFailedError"))
-      setStep("preview")
+      setStep("structure")
     }
   }
 
@@ -249,11 +281,25 @@ export default function ImportPropertiesPage() {
     setRows([])
     setMapping({})
     setParsedData([])
+    setGroups([])
+    setExpandedGroups(new Set())
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
+  const toggleGroup = (key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
   const selectedCount = parsedData.filter(p => p.selected).length
-  const validCount = parsedData.filter(p => p.valid).length
+
+  const resolvedCount = groups.filter(g => g.status === "resolved").length
+  const needsReviewCount = groups.filter(g => g.status === "needs-review").length
+  const conflictCount = groups.filter(g => g.status === "conflict").length
+  const allResolved = needsReviewCount === 0 && conflictCount === 0
 
   // -------------------------------------------------------------------------
   // Stepper helpers
@@ -263,7 +309,7 @@ export default function ImportPropertiesPage() {
     upload: t("propertyImport.stepUpload"),
     analyse: t("propertyImport.stepAnalyse"),
     mapping: t("propertyImport.stepMapping"),
-    preview: t("propertyImport.stepPreview"),
+    structure: t("propertyImport.stepStructure"),
     importing: t("propertyImport.stepImporting"),
     complete: t("propertyImport.stepComplete"),
   }
@@ -527,79 +573,135 @@ export default function ImportPropertiesPage() {
       )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* Step: Preview (unchanged)                                            */}
+      {/* Step: Structure — property tree, auto-grouping, resolve conflicts   */}
       {/* ------------------------------------------------------------------ */}
-      {step === "preview" && (
+      {step === "structure" && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t("propertyImport.previewTitle")}</CardTitle>
-                <CardDescription>
-                  {selectedCount} / {validCount} {t("propertyImport.selectedForImport")}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => toggleAll(true)}>
-                  {t("propertyImport.selectAll")}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => toggleAll(false)}>
-                  {t("propertyImport.deselectAll")}
-                </Button>
-              </div>
-            </div>
+            <CardTitle>{t("propertyImport.structureTitle")}</CardTitle>
+            <CardDescription>{t("propertyImport.structureDescription")}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead>{t("propertyImport.nameField")}</TableHead>
-                    <TableHead>{t("propertyImport.addressField")}</TableHead>
-                    <TableHead>{t("propertyImport.cityField")}</TableHead>
-                    <TableHead>{t("propertyEdit.typeLabel")}</TableHead>
-                    <TableHead className="text-right">{t("propertyDetail.areaLabel")}</TableHead>
-                    <TableHead>{t("inspectionDetail.statusLabel")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parsedData.map((item) => (
-                    <TableRow key={item.id} className={!item.valid ? "opacity-50" : ""}>
-                      <TableCell>
-                        <Checkbox
-                          checked={item.selected}
-                          onCheckedChange={() => toggleSelection(item.id)}
-                          disabled={!item.valid}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name || "-"}</TableCell>
-                      <TableCell>{item.address || "-"}</TableCell>
-                      <TableCell>{item.city || "-"}</TableCell>
-                      <TableCell>{item.buildingType || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        {item.squareMeters ? `${item.squareMeters} m²` : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {item.valid ? (
-                          <Badge variant="outline" className="text-green-500 border-green-500/30">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            OK
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-destructive border-destructive/30">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            {item.errors.join(", ")}
-                          </Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          <CardContent className="space-y-4">
+
+            {/* Summary bar */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border bg-card p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{groups.length}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("propertyImport.structureStatProperties")}</p>
+              </div>
+              <div className={`rounded-lg border p-3 text-center ${needsReviewCount > 0 ? "border-amber-500/30 bg-amber-500/5" : "bg-card"}`}>
+                <p className={`text-2xl font-bold ${needsReviewCount > 0 ? "text-amber-500" : "text-foreground"}`}>{needsReviewCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("propertyImport.structureStatReview")}</p>
+              </div>
+              <div className={`rounded-lg border p-3 text-center ${conflictCount > 0 ? "border-destructive/30 bg-destructive/5" : "bg-card"}`}>
+                <p className={`text-2xl font-bold ${conflictCount > 0 ? "text-destructive" : "text-foreground"}`}>{conflictCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("propertyImport.structureStatConflicts")}</p>
+              </div>
             </div>
 
-            <div className="flex justify-between pt-4">
+            {/* Property tree */}
+            <div className="rounded-lg border divide-y overflow-hidden">
+              {groups.map((group) => {
+                const isExpanded = expandedGroups.has(group.key)
+                const hasMultipleSpaces = group.spaces.length > 1
+
+                return (
+                  <div key={group.key}>
+                    {/* Group header row */}
+                    <button
+                      type="button"
+                      onClick={() => hasMultipleSpaces && toggleGroup(group.key)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${hasMultipleSpaces ? "cursor-pointer" : "cursor-default"}`}
+                    >
+                      {/* Expand chevron */}
+                      <span className="w-4 flex-shrink-0 text-muted-foreground">
+                        {hasMultipleSpaces
+                          ? (isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)
+                          : null}
+                      </span>
+
+                      {/* Building icon */}
+                      <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+
+                      {/* Name + address */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{group.propertyName}</p>
+                        {group.address && (
+                          <p className="text-xs text-muted-foreground truncate">{group.address}</p>
+                        )}
+                      </div>
+
+                      {/* Space count badge */}
+                      {hasMultipleSpaces && (
+                        <Badge variant="secondary" className="text-xs flex-shrink-0">
+                          {group.spaces.length} {t("propertyImport.structureSpaces")}
+                        </Badge>
+                      )}
+
+                      {/* Status badge */}
+                      {group.status === "resolved" && (
+                        <Badge variant="outline" className="text-green-500 border-green-500/30 flex-shrink-0 gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          {t("propertyImport.structureResolved")}
+                        </Badge>
+                      )}
+                      {group.status === "needs-review" && (
+                        <Badge variant="outline" className="text-amber-500 border-amber-500/30 flex-shrink-0 gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {t("propertyImport.structureNeedsReview")}
+                        </Badge>
+                      )}
+                      {group.status === "conflict" && (
+                        <Badge variant="outline" className="text-destructive border-destructive/30 flex-shrink-0 gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {t("propertyImport.structureConflict")}
+                        </Badge>
+                      )}
+                    </button>
+
+                    {/* Expanded spaces */}
+                    {isExpanded && hasMultipleSpaces && (
+                      <div className="border-t bg-muted/30">
+                        {group.spaces.map((space, si) => (
+                          <div key={si} className="flex items-center gap-3 px-4 py-2.5 pl-11 border-b last:border-0">
+                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm truncate">{space.name || "-"}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {[space.buildingType, space.squareMeters ? `${space.squareMeters} m²` : null].filter(Boolean).join(" · ")}
+                              </p>
+                            </div>
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
+                              {t("propertyImport.structureRow")} {space.rowIndex + 1}
+                            </span>
+                          </div>
+                        ))}
+                        {group.status === "needs-review" && (
+                          <div className="flex items-start gap-2 px-4 py-2 pl-11 bg-amber-500/5 border-t">
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-amber-600 dark:text-amber-400">
+                              {t("propertyImport.structureDuplicateAddressNote")}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Unresolved warning */}
+            {!allResolved && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  {t("propertyImport.structureUnresolvedWarning")}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={() => setStep("mapping")}>
                 {t("common.back")}
               </Button>
