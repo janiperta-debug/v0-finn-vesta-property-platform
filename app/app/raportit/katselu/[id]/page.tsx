@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ReportEngine } from "@/components/reports/report-engine"
 import { fetchReportById, type SavedReport } from "@/lib/saved-reports"
-import { ArrowLeft, Download, Printer, Loader2, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Download, Printer, Loader2, AlertTriangle, X } from "lucide-react"
 
 export default function ReportViewerPage() {
   const { id } = useParams<{ id: string }>()
@@ -111,6 +111,16 @@ export default function ReportViewerPage() {
             >
               <Printer className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Tulosta</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-sm"
+              onClick={() => router.push("/app/raportit")}
+              title="Sulje raportti"
+            >
+              <X className="h-4 w-4" />
+              <span className="hidden sm:inline">Sulje</span>
             </Button>
           </div>
         </div>

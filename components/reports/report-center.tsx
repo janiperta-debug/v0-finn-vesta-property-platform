@@ -175,6 +175,7 @@ export function ReportCenter() {
   const [reports, setReports] = useState<SavedReport[]>([])
   const [loadingReports, setLoadingReports] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [tableSetupNeeded, setTableSetupNeeded] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -186,13 +187,14 @@ export function ReportCenter() {
       setReports(data)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Latausvirhe"
-      // If the table doesn't exist yet (schema cache miss or relation error),
-      // show empty state instead of a scary red error banner.
+      // If the table doesn't exist yet, show setup instructions instead of a raw error.
       if (
         msg.includes("does not exist") ||
         msg.includes("relation") ||
-        msg.includes("schema cache")
+        msg.includes("schema cache") ||
+        msg.includes("saved_reports")
       ) {
+        setTableSetupNeeded(true)
         setReports([])
       } else {
         setLoadError(msg)
@@ -272,6 +274,22 @@ export function ReportCenter() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Setup needed — saved_reports table missing */}
+      {tableSetupNeeded && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-4 text-sm">
+          <p className="font-medium text-amber-700 dark:text-amber-400 mb-1">
+            Raporttitaulua ei ole vielä luotu
+          </p>
+          <p className="text-muted-foreground text-xs mb-3">
+            Aja seuraava SQL Supabase SQL Editor -näkymässä luodaksesi <code className="font-mono bg-muted px-1 rounded">saved_reports</code>-taulun. Katso tarkemmat ohjeet tiedostosta <code className="font-mono bg-muted px-1 rounded">scripts/setup-saved-reports.mjs</code>.
+          </p>
+          <Button size="sm" variant="outline" onClick={load} className="gap-1.5">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Yritä uudelleen
+          </Button>
+        </div>
+      )}
 
       {/* Load error */}
       {loadError && (
