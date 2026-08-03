@@ -15,13 +15,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import {
   ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle, X,
-  CheckCircle2, AlertTriangle, Eye, Loader2, Building2, ChevronDown, ChevronRight,
+  CheckCircle2, AlertTriangle, Loader2, Building2, ChevronDown, ChevronRight,
+  Search, Plus, Home, Layers, EyeOff, CornerDownRight, RotateCcw,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "@/lib/i18n"
 import {
-  analyseWorkbook, isAcceptedFile, resolvePropertyGroups,
-  type ImportAnalysis, type PropertyGroup,
+  analyseWorkbook, isAcceptedFile, buildInitialStructure,
+  type ImportAnalysis, type StructureProperty,
 } from "@/lib/property-import"
 
 interface ParsedProperty {
@@ -41,6 +42,8 @@ interface ParsedProperty {
 // Upload → analyse (auto) → mapping → structure → importing → complete
 type ImportStep = "upload" | "analyse" | "mapping" | "structure" | "importing" | "complete"
 
+type StructFilter = "all" | "ready" | "review" | "standalone" | "spaces" | "ignored"
+
 const STEP_ORDER: ImportStep[] = ["upload", "analyse", "mapping", "structure", "importing", "complete"]
 
 export default function ImportPropertiesPage() {
@@ -59,10 +62,17 @@ export default function ImportPropertiesPage() {
   const [rows, setRows] = useState<string[][]>([])
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [parsedData, setParsedData] = useState<ParsedProperty[]>([])
-  const [groups, setGroups] = useState<PropertyGroup[]>([])
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [importProgress, setImportProgress] = useState(0)
   const [importResults, setImportResults] = useState({ success: 0, failed: 0 })
+
+  // Structure-review state (Phase 2)
+  const [properties, setProperties] = useState<StructureProperty[]>([])
+  const [assignments, setAssignments] = useState<Record<string, string | null>>({})
+  const [ignoredRows, setIgnoredRows] = useState<Set<string>>(new Set())
+  const [expandedProps, setExpandedProps] = useState<Set<string>>(new Set())
+  const [structFilter, setStructFilter] = useState<StructFilter>("all")
+  const [structSearch, setStructSearch] = useState("")
+  const [newPropCounter, setNewPropCounter] = useState(0)
 
   // -------------------------------------------------------------------------
   // File handling
@@ -176,8 +186,8 @@ export default function ImportPropertiesPage() {
 
     setParsedData(parsed)
 
-    // Build property groups for the structure step
-    const resolved = resolvePropertyGroups(
+    // Build the initial property structure (auto-group only on reliable ids).
+    const { properties: initialProps, assignments: initialAssign } = buildInitialStructure(
       parsed.map((p, i) => ({
         id: i,
         name: p.name,
@@ -193,9 +203,18 @@ export default function ImportPropertiesPage() {
         building_type: mapping.building_type, build_year: mapping.build_year,
         square_meters: mapping.square_meters, property_id: mapping.tunnus },
     )
-    setGroups(resolved)
-    // Pre-expand needs-review groups
-    setExpandedGroups(new Set(resolved.filter(g => g.status !== "resolved").map(g => g.key)))
+    setProperties(initialProps)
+    setAssignments(initialAssign)
+    setIgnoredRows(new Set())
+    setNewPropCounter(0)
+    // Expand multi-space properties by default so grouping is visible.
+    const multi = new Set<string>()
+    const counts: Record<string, number> = {}
+    Object.values(initialAssign).forEach((k) => { if (k) counts[k] = (counts[k] ?? 0) + 1 })
+    initialProps.forEach((p) => { if ((counts[p.key] ?? 0) > 1) multi.add(p.key) })
+    setExpandedProps(multi)
+    setStructFilter("all")
+    setStructSearch("")
     setStep("structure")
   }
 
