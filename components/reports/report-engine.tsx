@@ -6,11 +6,12 @@
 // selected module page in canonical order. Cover and Closing pages are always
 // included regardless of module selection.
 
-import { useMemo } from "react"
+import { useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useTranslation } from "@/lib/i18n"
+import { defaultLocale, isLocale } from "@/lib/i18n/config"
+import { dictionaries } from "@/lib/i18n/dictionaries"
 import type { ReportConfig } from "@/lib/report-engine"
 import type { ReportData } from "@/hooks/use-report-data"
 import { useReportData } from "@/hooks/use-report-data"
@@ -63,7 +64,21 @@ interface ReportEngineProps {
 export function ReportEngine({ config }: ReportEngineProps) {
   const { data, loading, error } = useReportData(config)
   const router = useRouter()
-  const { t } = useTranslation()
+
+  // Build a translator pinned to the report's own language, not the UI locale.
+  // This ensures a Finnish-speaking user can generate an English report and vice versa.
+  const t = useCallback(
+    (key: string): string => {
+      const locale = isLocale(config.language) ? config.language : defaultLocale
+      const [ns, k] = key.split(".") as [string, string]
+      const dict = dictionaries[locale] ?? dictionaries[defaultLocale]
+      const section = (dict as Record<string, Record<string, string>>)[ns]
+      return section?.[k]
+        ?? (dictionaries[defaultLocale] as Record<string, Record<string, string>>)[ns]?.[k]
+        ?? key
+    },
+    [config.language],
+  )
 
   const pages = useMemo((): PageComponent[] => {
     const selected = new Set(config.selectedModuleIds)

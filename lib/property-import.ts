@@ -451,6 +451,86 @@ export function resolvePropertyGroups(
   return Array.from(groups.values())
 }
 
+// ── Phase 2: Property structure review ──────────────────────────────────────
+// buildInitialStructure clusters rows into properties ONLY when a reliable
+// identifier exists (property_id or address). Rows with neither are left
+// UNRESOLVED (assignment = null) so the user must decide — FinnVesta never
+// guesses relationships from names alone.
+
+export interface StructureProperty {
+  key: string
+  name: string
+  address: string
+  identifier?: string
+  /** true when created by automatic grouping (reliable identifier) */
+  auto: boolean
+}
+
+export interface InitialStructure {
+  properties: StructureProperty[]
+  /** rowId ("row-N") -> propertyKey, or null when unresolved */
+  assignments: Record<string, string | null>
+}
+
+export function buildInitialStructure(
+  rows: ImportParsedRow[],
+  mapping: ImportColumnMapping,
+): InitialStructure {
+  const properties = new Map<string, StructureProperty>()
+  const assignments: Record<string, string | null> = {}
+  const groupNames = new Map<string, Map<string, number>>()
+
+  const ensureProp = (key: string, base: Omit<StructureProperty, "key">) => {
+    if (!properties.has(key)) properties.set(key, { key, ...base })
+  }
+  const recordName = (key: string, name: string) => {
+    if (!name) return
+    if (!groupNames.has(key)) groupNames.set(key, new Map())
+    const m = groupNames.get(key)!
+    m.set(name, (m.get(name) ?? 0) + 1)
+  }
+
+  for (const r of rows) {
+    const id = `row-${r.id}`
+    const identifier = mapping.property_id ? r.raw[mapping.property_id]?.trim() : ""
+
+    // Priority 1 — reliable identifier
+    if (identifier) {
+      const key = `pid:${identifier}`
+      ensureProp(key, { name: identifier, address: r.address, identifier, auto: true })
+      assignments[id] = key
+      recordName(key, r.name)
+      continue
+    }
+
+    // Priority 2 — address (a single address = standalone property, shared = grouped)
+    if (r.address) {
+      const key = `addr:${normaliseAddr(r.address)}`
+      ensureProp(key, { name: r.name || r.address, address: r.address, auto: true })
+      assignments[id] = key
+      recordName(key, r.name)
+      continue
+    }
+
+    // Priority 3 — no reliable identifier → unresolved
+    assignments[id] = null
+  }
+
+  // Choose the most common non-empty name for each auto group.
+  for (const [key, names] of groupNames) {
+    const prop = properties.get(key)
+    if (!prop) continue
+    let best = ""
+    let bestCount = 0
+    for (const [nm, count] of names) {
+      if (count > bestCount) { best = nm; bestCount = count }
+    }
+    if (best) prop.name = best
+  }
+
+  return { properties: Array.from(properties.values()), assignments }
+}
+
 /** Accepted file extensions for the uploader. */
 export const ACCEPTED_EXTENSIONS = [".xlsx", ".xls", ".csv"]
 
