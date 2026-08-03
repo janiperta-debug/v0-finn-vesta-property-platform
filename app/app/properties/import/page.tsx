@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
@@ -300,25 +300,99 @@ export default function ImportPropertiesPage() {
     setRows([])
     setMapping({})
     setParsedData([])
-    setGroups([])
-    setExpandedGroups(new Set())
+    setProperties([])
+    setAssignments({})
+    setIgnoredRows(new Set())
+    setExpandedProps(new Set())
+    setStructFilter("all")
+    setStructSearch("")
+    setNewPropCounter(0)
     if (fileInputRef.current) fileInputRef.current.value = ""
-  }
-
-  const toggleGroup = (key: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev)
-      next.has(key) ? next.delete(key) : next.add(key)
-      return next
-    })
   }
 
   const selectedCount = parsedData.filter(p => p.selected).length
 
-  const resolvedCount = groups.filter(g => g.status === "resolved").length
-  const needsReviewCount = groups.filter(g => g.status === "needs-review").length
-  const conflictCount = groups.filter(g => g.status === "conflict").length
-  const allResolved = needsReviewCount === 0 && conflictCount === 0
+  // Structure-step derived values
+  const rowsById = useMemo(() => {
+    const m: Record<string, ParsedProperty> = {}
+    parsedData.forEach((r) => { m[r.id] = r })
+    return m
+  }, [parsedData])
+
+  const rowsForProp = useMemo(() => {
+    const m: Record<string, string[]> = {}
+    Object.entries(assignments).forEach(([rowId, propKey]) => {
+      if (propKey && !ignoredRows.has(rowId)) {
+        if (!m[propKey]) m[propKey] = []
+        m[propKey].push(rowId)
+      }
+    })
+    return m
+  }, [assignments, ignoredRows])
+
+  const unresolvedRows = useMemo(
+    () => parsedData.filter((r) => assignments[r.id] === null && !ignoredRows.has(r.id)),
+    [parsedData, assignments, ignoredRows],
+  )
+
+  const allResolved = unresolvedRows.length === 0
+
+  const structSummary = useMemo(() => {
+    const propCount = properties.length
+    const spaceCount = parsedData.filter((r) => !ignoredRows.has(r.id)).length
+    const ignored = ignoredRows.size
+    return { propCount, spaceCount, ignored, unresolved: unresolvedRows.length }
+  }, [properties, parsedData, ignoredRows, unresolvedRows])
+
+  // Filter + search for display
+  const visibleProps = useMemo(() => {
+    const q = structSearch.trim().toLowerCase()
+    return properties.filter((p) => {
+      if (q && !p.name.toLowerCase().includes(q) && !p.address.toLowerCase().includes(q)) return false
+      const spaces = rowsForProp[p.key] ?? []
+      if (structFilter === "ready") return spaces.length > 0
+      if (structFilter === "standalone") return spaces.length === 1
+      if (structFilter === "spaces") return spaces.length > 1
+      return true
+    })
+  }, [properties, structFilter, structSearch, rowsForProp])
+
+  const assignRow = (rowId: string, propKey: string) => {
+    setAssignments((prev) => ({ ...prev, [rowId]: propKey }))
+    setIgnoredRows((prev) => { const s = new Set(prev); s.delete(rowId); return s })
+  }
+
+  const ignoreRow = (rowId: string) => {
+    setIgnoredRows((prev) => new Set([...prev, rowId]))
+    setAssignments((prev) => ({ ...prev, [rowId]: null }))
+  }
+
+  const unignoreRow = (rowId: string) => {
+    setIgnoredRows((prev) => { const s = new Set(prev); s.delete(rowId); return s })
+  }
+
+  const createNewPropForRow = (rowId: string) => {
+    const row = rowsById[rowId]
+    const counter = newPropCounter + 1
+    setNewPropCounter(counter)
+    const key = `new:${counter}`
+    const newProp: StructureProperty = {
+      key,
+      name: row?.name || `Kiinteistö ${counter}`,
+      address: row?.address || "",
+      auto: false,
+    }
+    setProperties((prev) => [...prev, newProp])
+    setAssignments((prev) => ({ ...prev, [rowId]: key }))
+    setIgnoredRows((prev) => { const s = new Set(prev); s.delete(rowId); return s })
+    setExpandedProps((prev) => new Set([...prev, key]))
+  }
+
+  const togglePropExpand = (key: string) => {
+    setExpandedProps((prev) => {
+      const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s
+    })
+  }
 
   // -------------------------------------------------------------------------
   // Stepper helpers
@@ -592,144 +666,260 @@ export default function ImportPropertiesPage() {
       )}
 
       {/* ------------------------------------------------------------------ */}
-      {/* Step: Structure — property tree, auto-grouping, resolve conflicts   */}
+      {/* Step: Structure                                                      */}
       {/* ------------------------------------------------------------------ */}
       {step === "structure" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("propertyImport.structureTitle")}</CardTitle>
-            <CardDescription>{t("propertyImport.structureDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-
-            {/* Summary bar */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border bg-card p-3 text-center">
-                <p className="text-2xl font-bold text-foreground">{groups.length}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("propertyImport.structureStatProperties")}</p>
-              </div>
-              <div className={`rounded-lg border p-3 text-center ${needsReviewCount > 0 ? "border-amber-500/30 bg-amber-500/5" : "bg-card"}`}>
-                <p className={`text-2xl font-bold ${needsReviewCount > 0 ? "text-amber-500" : "text-foreground"}`}>{needsReviewCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("propertyImport.structureStatReview")}</p>
-              </div>
-              <div className={`rounded-lg border p-3 text-center ${conflictCount > 0 ? "border-destructive/30 bg-destructive/5" : "bg-card"}`}>
-                <p className={`text-2xl font-bold ${conflictCount > 0 ? "text-destructive" : "text-foreground"}`}>{conflictCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("propertyImport.structureStatConflicts")}</p>
-              </div>
+        <div className="space-y-4">
+          {/* Summary bar */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-2xl font-bold text-foreground">{structSummary.propCount}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Kiinteistöä</p>
             </div>
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-2xl font-bold text-foreground">{structSummary.spaceCount}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Tilaa / rakennusta</p>
+            </div>
+            <div className={`rounded-lg border p-3 text-center ${structSummary.unresolved > 0 ? "border-amber-500/30 bg-amber-500/5" : "bg-card"}`}>
+              <p className={`text-2xl font-bold ${structSummary.unresolved > 0 ? "text-amber-500" : "text-foreground"}`}>
+                {structSummary.unresolved}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ratkaisematta</p>
+            </div>
+            <div className="rounded-lg border bg-card p-3 text-center">
+              <p className="text-2xl font-bold text-muted-foreground">{structSummary.ignored}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Ohitettu</p>
+            </div>
+          </div>
 
-            {/* Property tree */}
-            <div className="rounded-lg border divide-y overflow-hidden">
-              {groups.map((group) => {
-                const isExpanded = expandedGroups.has(group.key)
-                const hasMultipleSpaces = group.spaces.length > 1
+          {/* Two-column layout: tree + unresolved panel */}
+          <div className="flex gap-4 items-start">
 
-                return (
-                  <div key={group.key}>
-                    {/* Group header row */}
-                    <button
-                      type="button"
-                      onClick={() => hasMultipleSpaces && toggleGroup(group.key)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${hasMultipleSpaces ? "cursor-pointer" : "cursor-default"}`}
-                    >
-                      {/* Expand chevron */}
-                      <span className="w-4 flex-shrink-0 text-muted-foreground">
-                        {hasMultipleSpaces
-                          ? (isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)
-                          : null}
-                      </span>
-
-                      {/* Building icon */}
-                      <Building2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-
-                      {/* Name + address */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{group.propertyName}</p>
-                        {group.address && (
-                          <p className="text-xs text-muted-foreground truncate">{group.address}</p>
-                        )}
-                      </div>
-
-                      {/* Space count badge */}
-                      {hasMultipleSpaces && (
-                        <Badge variant="secondary" className="text-xs flex-shrink-0">
-                          {group.spaces.length} {t("propertyImport.structureSpaces")}
-                        </Badge>
-                      )}
-
-                      {/* Status badge */}
-                      {group.status === "resolved" && (
-                        <Badge variant="outline" className="text-green-500 border-green-500/30 flex-shrink-0 gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          {t("propertyImport.structureResolved")}
-                        </Badge>
-                      )}
-                      {group.status === "needs-review" && (
-                        <Badge variant="outline" className="text-amber-500 border-amber-500/30 flex-shrink-0 gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          {t("propertyImport.structureNeedsReview")}
-                        </Badge>
-                      )}
-                      {group.status === "conflict" && (
-                        <Badge variant="outline" className="text-destructive border-destructive/30 flex-shrink-0 gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          {t("propertyImport.structureConflict")}
-                        </Badge>
-                      )}
-                    </button>
-
-                    {/* Expanded spaces */}
-                    {isExpanded && hasMultipleSpaces && (
-                      <div className="border-t bg-muted/30">
-                        {group.spaces.map((space, si) => (
-                          <div key={si} className="flex items-center gap-3 px-4 py-2.5 pl-11 border-b last:border-0">
-                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm truncate">{space.name || "-"}</p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {[space.buildingType, space.squareMeters ? `${space.squareMeters} m²` : null].filter(Boolean).join(" · ")}
-                              </p>
-                            </div>
-                            <span className="text-xs text-muted-foreground flex-shrink-0">
-                              {t("propertyImport.structureRow")} {space.rowIndex + 1}
-                            </span>
-                          </div>
-                        ))}
-                        {group.status === "needs-review" && (
-                          <div className="flex items-start gap-2 px-4 py-2 pl-11 bg-amber-500/5 border-t">
-                            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-                            <p className="text-xs text-amber-600 dark:text-amber-400">
-                              {t("propertyImport.structureDuplicateAddressNote")}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+            {/* Left: property tree */}
+            <Card className="flex-1 min-w-0">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">Kiinteistörakenne</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">
+                      Automaattisesti ryhmitellyt tietueet. Laajenna kiinteistö nähdäksesi sen tilat.
+                    </CardDescription>
                   </div>
-                )
-              })}
-            </div>
+                </div>
+                {/* Search */}
+                <div className="relative mt-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={structSearch}
+                    onChange={(e) => setStructSearch(e.target.value)}
+                    placeholder="Hae kiinteistön nimellä tai osoitteella..."
+                    className="pl-8 h-8 text-sm"
+                  />
+                </div>
+                {/* Filter tabs */}
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {(["all", "ready", "standalone", "spaces"] as StructFilter[]).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setStructFilter(f)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                        structFilter === f
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {f === "all" ? "Kaikki" : f === "ready" ? "Valmiit" : f === "standalone" ? "Yksittäiset" : "Useita tiloja"}
+                    </button>
+                  ))}
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y border-t max-h-[480px] overflow-y-auto">
+                  {visibleProps.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-8">Ei tuloksia</p>
+                  )}
+                  {visibleProps.map((prop) => {
+                    const spaceIds = rowsForProp[prop.key] ?? []
+                    const hasSpaces = spaceIds.length > 0
+                    const isMulti = spaceIds.length > 1
+                    const isExpanded = expandedProps.has(prop.key)
+                    return (
+                      <div key={prop.key}>
+                        <button
+                          type="button"
+                          onClick={() => isMulti && togglePropExpand(prop.key)}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 ${isMulti ? "cursor-pointer" : "cursor-default"}`}
+                        >
+                          <span className="w-4 shrink-0 text-muted-foreground">
+                            {isMulti ? (isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />) : null}
+                          </span>
+                          <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{prop.name}</p>
+                            {prop.address && <p className="text-xs text-muted-foreground truncate">{prop.address}</p>}
+                          </div>
+                          {isMulti && (
+                            <Badge variant="secondary" className="text-xs shrink-0">
+                              {spaceIds.length} tilaa
+                            </Badge>
+                          )}
+                          {!prop.auto && (
+                            <Badge variant="outline" className="text-xs text-blue-500 border-blue-500/30 shrink-0">Uusi</Badge>
+                          )}
+                          {hasSpaces && (
+                            <Badge variant="outline" className="text-xs text-green-500 border-green-500/30 shrink-0 gap-1">
+                              <CheckCircle2 className="h-3 w-3" />Valmis
+                            </Badge>
+                          )}
+                        </button>
+                        {isExpanded && isMulti && (
+                          <div className="bg-muted/30 border-t divide-y">
+                            {spaceIds.map((rowId) => {
+                              const row = rowsById[rowId]
+                              return (
+                                <div key={rowId} className="flex items-center gap-3 px-4 py-2 pl-12">
+                                  <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm truncate">{row?.name || "—"}</p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {[row?.buildingType, row?.squareMeters ? `${row.squareMeters} m²` : null].filter(Boolean).join(" · ")}
+                                    </p>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Unresolved warning */}
-            {!allResolved && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-amber-600 dark:text-amber-400">
-                  {t("propertyImport.structureUnresolvedWarning")}
-                </p>
-              </div>
-            )}
+            {/* Right: unresolved rows panel */}
+            <Card className="w-80 shrink-0">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  {unresolvedRows.length > 0
+                    ? <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    : <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                  Ratkaisemattomat
+                  {unresolvedRows.length > 0 && (
+                    <Badge className="ml-auto bg-amber-500/20 text-amber-600 border-0 text-xs">
+                      {unresolvedRows.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  {unresolvedRows.length === 0
+                    ? "Kaikki tietueet on sijoitettu tai ohitettu."
+                    : "Päätä jokaisen rivin kohtalo ennen kuin voit jatkaa."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {unresolvedRows.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-8 text-center text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+                    <p>Valmis jatkamaan</p>
+                  </div>
+                ) : (
+                  <div className="divide-y border-t max-h-[480px] overflow-y-auto">
+                    {unresolvedRows.map((row) => (
+                      <div key={row.id} className="px-4 py-3 space-y-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{row.name || "—"}</p>
+                          <p className="text-xs text-muted-foreground truncate">{row.address || "Ei osoitetta"}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {/* Assign to existing property */}
+                          {properties.length > 0 && (
+                            <select
+                              className="h-7 rounded-md border bg-background px-2 text-xs text-foreground flex-1 min-w-0"
+                              defaultValue=""
+                              onChange={(e) => { if (e.target.value) assignRow(row.id, e.target.value) }}
+                            >
+                              <option value="" disabled>Lisää kiinteistöön...</option>
+                              {properties.map((p) => (
+                                <option key={p.key} value={p.key}>{p.name}</option>
+                              ))}
+                            </select>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => createNewPropForRow(row.id)}
+                            className="flex items-center gap-1 h-7 px-2 rounded-md border text-xs text-foreground hover:bg-muted transition-colors shrink-0"
+                            title="Luo uusi kiinteistö tästä tietueesta"
+                          >
+                            <Plus className="h-3 w-3" />Uusi
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ignoreRow(row.id)}
+                            className="flex items-center gap-1 h-7 px-2 rounded-md border border-destructive/30 text-xs text-destructive hover:bg-destructive/10 transition-colors shrink-0"
+                            title="Ohita tämä rivi — ei tuoda"
+                          >
+                            <EyeOff className="h-3 w-3" />Ohita
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-            <div className="flex justify-between pt-2">
-              <Button variant="outline" onClick={() => setStep("mapping")}>
-                {t("common.back")}
-              </Button>
-              <Button onClick={handleImport} disabled={selectedCount === 0}>
-                {t("propertyImport.importPrefix")} {selectedCount} {t("propertyImport.propertiesSuffix")}
-              </Button>
+                {/* Ignored rows */}
+                {ignoredRows.size > 0 && (
+                  <div className="border-t px-4 py-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                      <EyeOff className="h-3 w-3" /> Ohitettu ({ignoredRows.size})
+                    </p>
+                    <div className="space-y-1.5">
+                      {Array.from(ignoredRows).map((rowId) => {
+                        const row = rowsById[rowId]
+                        return (
+                          <div key={rowId} className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground flex-1 truncate">{row?.name || rowId}</p>
+                            <button
+                              type="button"
+                              onClick={() => unignoreRow(rowId)}
+                              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                              title="Peru ohitus"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Unresolved blocking warning */}
+          {!allResolved && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                Ratkaise kaikki {unresolvedRows.length} rivi ennen kuin voit jatkaa tuontiin.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          )}
+
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => setStep("mapping")}>
+              {t("common.back")}
+            </Button>
+            <Button onClick={handleImport} disabled={!allResolved || properties.length === 0}>
+              Tuo {structSummary.propCount} kiinteistöä
+              {structSummary.spaceCount > structSummary.propCount
+                ? ` (${structSummary.spaceCount} tilaa)`
+                : ""}
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* ------------------------------------------------------------------ */}
