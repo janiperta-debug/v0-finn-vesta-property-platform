@@ -20,8 +20,7 @@ import {
   Target,
   Info,
   Search,
-  Bell,
-} from "lucide-react"
+  } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
@@ -217,9 +216,6 @@ export function AppNav() {
           />
           <span className="font-heading text-base font-bold text-foreground">FinnVesta</span>
         </div>
-        <button type="button" className="text-muted-foreground">
-          <Bell className="h-5 w-5" />
-        </button>
       </header>
 
       {/* Mobile nav overlay */}

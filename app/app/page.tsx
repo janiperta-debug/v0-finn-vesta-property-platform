@@ -15,8 +15,6 @@ import {
   Euro,
   ClipboardCheck,
   BarChart3,
-  Bell,
-  Search,
 } from "lucide-react"
 
 interface PortfolioStats {
@@ -146,7 +144,7 @@ export default async function AppPage() {
         
         <div className="relative flex h-full min-h-[400px] md:min-h-[450px] flex-col justify-between px-6 py-8 md:px-8">
           {/* Top: Header with greeting */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">
                 {greeting}, {userName}
@@ -154,16 +152,6 @@ export default async function AppPage() {
               <p className="mt-1 text-muted-foreground">
                 {t("dashboard.subtitle")}
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70">
-                <Search className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">{t("dashboard.searchProperties")}</span>
-                <span className="sm:hidden">{t("common.search")}</span>
-              </Button>
-              <Button variant="outline" size="icon" className="border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70">
-                <Bell className="h-4 w-4" />
-              </Button>
             </div>
           </div>
 
