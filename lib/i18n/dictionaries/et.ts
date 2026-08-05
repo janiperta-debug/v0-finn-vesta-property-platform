@@ -550,6 +550,10 @@ const et: Dictionary = {
     urgencyMonitoring: "Jälgimine",
   },
   reports: {
+    engineLoading: "Kinnisvaraandmete laadimine...",
+    engineLoadFailed: "Andmete laadimine ebaõnnestus",
+    engineUnknownError: "Tundmatu viga",
+    engineBackToCenter: "Tagasi aruandekeskusesse",
     title: "Aruanded",
     subtitle: "Loo ja lae alla aruandeid oma kinnisvaraportfellist",
     emptyTitle: "Aruandmiseks andmeid pole",

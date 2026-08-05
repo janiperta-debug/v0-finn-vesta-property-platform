@@ -552,6 +552,10 @@ const en: Dictionary = {
     urgencyMonitoring: "Monitoring",
   },
   reports: {
+    engineLoading: "Loading property data...",
+    engineLoadFailed: "Failed to load data",
+    engineUnknownError: "Unknown error",
+    engineBackToCenter: "Back to report center",
     title: "Reports",
     subtitle: "Create and download reports for your property portfolio",
     emptyTitle: "No data to report on",

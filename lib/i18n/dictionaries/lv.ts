@@ -550,6 +550,10 @@ const lv: Dictionary = {
     urgencyMonitoring: "Uzraudzība",
   },
   reports: {
+    engineLoading: "Ielādē īpašuma datus...",
+    engineLoadFailed: "Neizdevās ielādēt datus",
+    engineUnknownError: "Nezināma kļūda",
+    engineBackToCenter: "Atpakaļ uz pārskatu centru",
     title: "Pārskati",
     subtitle: "Izveidojiet un lejupielādējiet pārskatus par savu īpašumu portfeli",
     emptyTitle: "Nav datu pārskatam",

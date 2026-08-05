@@ -550,6 +550,10 @@ const fi = {
     urgencyMonitoring: "Seuranta",
   },
   reports: {
+    engineLoading: "Ladataan kiinteistötietoja...",
+    engineLoadFailed: "Tietojen lataus epäonnistui",
+    engineUnknownError: "Tuntematon virhe",
+    engineBackToCenter: "Takaisin raporttikeskukseen",
     title: "Raportit",
     subtitle: "Luo ja lataa raportteja kiinteistöportfoliostasi",
     emptyTitle: "Ei raportoitavaa dataa",
