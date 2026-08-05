@@ -1,7 +1,7 @@
 import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage } from "./report-page"
 
-export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function CoverPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
   const propertyNames = config.properties.map((p) => p.name).join(", ")
   const address =
@@ -19,10 +19,10 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
 
       <div className="mb-10">
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.2em] text-[#1e6fbf]">
-          Kiinteistöraportti
+          {t("reportContent.coverLabel")}
         </p>
         <h1 className="text-4xl font-bold leading-tight text-[#1a1a1a]">
-          {config.title || propertyNames || "Raportti"}
+          {config.title || propertyNames || t("reportContent.reportWord")}
         </h1>
         {address && <p className="mt-3 text-base text-[#666]">{address}</p>}
       </div>
@@ -31,15 +31,15 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
 
       <dl className="mb-16 grid grid-cols-2 gap-8 sm:grid-cols-3">
         {[
-          { label: "Päivämäärä", value: config.date },
-          { label: "Kiinteistöjä", value: String(config.properties.length) },
+          { label: t("reportContent.coverDate"), value: config.date },
+          { label: t("reportContent.coverProperties"), value: String(config.properties.length) },
           ...(building?.construction_year
-            ? [{ label: "Rakennusvuosi", value: String(building.construction_year) }]
+            ? [{ label: t("reportContent.coverBuildYear"), value: String(building.construction_year) }]
             : []),
           ...(building?.area_m2
-            ? [{ label: "Pinta-ala", value: `${building.area_m2.toLocaleString("fi-FI")} m²` }]
+            ? [{ label: t("reportContent.coverArea"), value: `${building.area_m2.toLocaleString("fi-FI")} m²` }]
             : []),
-          { label: "Kieli", value: config.language.toUpperCase() },
+          { label: t("reportContent.coverLanguage"), value: config.language.toUpperCase() },
         ].map(({ label, value }) => (
           <div key={label}>
             <dt className="text-[10px] font-medium uppercase tracking-widest text-[#aaa]">{label}</dt>
@@ -50,7 +50,7 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
 
       {config.properties.length > 1 && (
         <div className="mb-16">
-          <p className="mb-3 text-[10px] font-medium uppercase tracking-widest text-[#aaa]">Kiinteistöt</p>
+          <p className="mb-3 text-[10px] font-medium uppercase tracking-widest text-[#aaa]">{t("reportContent.coverPropertiesList")}</p>
           <ul className="space-y-1.5">
             {config.properties.map((p) => {
               const b = data.buildings.find((b) => b.id === p.id)
@@ -70,7 +70,7 @@ export function CoverPage({ config, data, pageNumber, totalPages }: PageProps) {
       )}
 
       <div className="mt-auto flex items-center justify-between border-t border-[#e5e5e5] pt-6">
-        <span className="text-xs text-[#bbb]">Luotu FinnVesta-järjestelmällä</span>
+        <span className="text-xs text-[#bbb]">{t("reportContent.coverGeneratedBy")}</span>
         <span className="text-xs text-[#bbb]">{new Date().getFullYear()}</span>
       </div>
     </ReportPage>
