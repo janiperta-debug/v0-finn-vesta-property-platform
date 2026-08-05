@@ -3,12 +3,12 @@ import { ReportPage, PageSection } from "./report-page"
 import { derivePlanItems, overallCondition, repairItems, totalRepairCost } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-function conditionLabel(s: number) {
-  if (s >= 4.5) return "Erinomainen"
-  if (s >= 3.5) return "Hyvä"
-  if (s >= 2.5) return "Tyydyttävä"
-  if (s >= 1.5) return "Heikko"
-  return "Erittäin heikko"
+function conditionLabel(s: number, t: (k: string) => string) {
+  if (s >= 4.5) return t("reportContent.condExcellent")
+  if (s >= 3.5) return t("reportContent.condGood")
+  if (s >= 2.5) return t("reportContent.condSatisfactory")
+  if (s >= 1.5) return t("reportContent.condPoor")
+  return t("reportContent.condVeryPoor")
 }
 function conditionColor(s: number) {
   if (s >= 4) return "#22c55e"
@@ -29,49 +29,49 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
 
   const kpis = [
     {
-      label: "Kokonaiskunto",
+      label: t("reportContent.execOverallCondition"),
       value: condition > 0 ? `${condition.toFixed(1)} / 5` : "—",
-      sub: condition > 0 ? conditionLabel(condition) : "Ei dataa",
+      sub: condition > 0 ? conditionLabel(condition, t) : t("reportContent.execNoData"),
       color: condition > 0 ? conditionColor(condition) : "#aaa",
     },
     {
-      label: "Korjausvelka (arvio)",
+      label: t("reportContent.execRepairDebt"),
       value: debt > 0 ? formatEur(debt) : "—",
-      sub: "RT-standardien mukainen",
+      sub: t("reportContent.execRtStandard"),
       color: "#1a1a1a",
     },
     {
-      label: "Tarkastuksia",
+      label: t("reportContent.execInspections"),
       value: String(data.inspections.length),
       sub:
         data.inspections.length > 0
-          ? `Viimeisin ${data.inspections[0].inspection_date?.slice(0, 10) ?? "—"}`
-          : "Ei tarkastuksia",
+          ? `${t("reportContent.execLatest")} ${data.inspections[0].inspection_date?.slice(0, 10) ?? "—"}`
+          : t("reportContent.execNoInspections"),
       color: "#1a1a1a",
     },
     {
-      label: "Suoritettuja huoltoja",
+      label: t("reportContent.execCompletedMaintenance"),
       value: String(completed.length),
-      sub: `${upcoming.length} suunnitteilla`,
+      sub: `${upcoming.length} ${t("reportContent.execPlannedSuffix")}`,
       color: "#1a1a1a",
     },
     {
-      label: "Huomiota vaativia",
+      label: t("reportContent.execNeedsAttention"),
       value: String(repairs.length),
-      sub: "komponenttia",
+      sub: t("reportContent.execComponentsUnit"),
       color: repairs.length > 0 ? "#ef4444" : "#22c55e",
     },
     {
-      label: "Investointisuunnitelmat",
+      label: t("reportContent.execInvestmentPlans"),
       value: String(data.investmentPlans.length),
-      sub: "PTS-riviä",
+      sub: t("reportContent.execPtsRowsUnit"),
       color: "#1a1a1a",
     },
   ]
 
   return (
-    <ReportPage config={config} pageNumber={pageNumber} totalPages={totalPages} sectionTitle="Tiivistelmä">
-      <PageSection title="Tiivistelmä">
+    <ReportPage config={config} pageNumber={pageNumber} totalPages={totalPages} sectionTitle={t("reportContent.execTitle")}>
+      <PageSection title={t("reportContent.execTitle")}>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           {kpis.map(({ label, value, sub, color }) => (
             <div key={label} className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4">
@@ -84,15 +84,15 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
       </PageSection>
 
       {building && (
-        <PageSection title="Kiinteistötiedot lyhyesti">
+        <PageSection title={t("reportContent.execBriefTitle")}>
           <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
             {[
-              ["Nimi", building.name],
-              ["Osoite", building.address ?? "—"],
-              ["Rakennusvuosi", building.construction_year ? String(building.construction_year) : "—"],
-              ["Pinta-ala", building.area_m2 ? `${building.area_m2.toLocaleString("fi-FI")} m²` : "—"],
-              ["Rakennustyyppi", building.building_type ?? "—"],
-              ["Kunta", building.municipality ?? "—"],
+              [t("reportContent.fieldName"), building.name],
+              [t("reportContent.fieldAddress"), building.address ?? "—"],
+              [t("reportContent.fieldBuildYear"), building.construction_year ? String(building.construction_year) : "—"],
+              [t("reportContent.fieldArea"), building.area_m2 ? `${building.area_m2.toLocaleString(config.language)} m²` : "—"],
+              [t("reportContent.fieldBuildingType"), building.building_type ?? "—"],
+              [t("reportContent.fieldMunicipality"), building.municipality ?? "—"],
             ].map(([label, value]) => (
               <div key={label}>
                 <dt className="text-[11px] text-[#999]">{label}</dt>
@@ -104,7 +104,7 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
       )}
 
       {repairs.length > 0 && (
-        <PageSection title="Eniten huomiota vaativat komponentit">
+        <PageSection title={t("reportContent.execTopComponents")}>
           <ul className="space-y-1.5">
             {repairs.slice(0, 6).map((item) => (
               <li
@@ -113,7 +113,7 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
               >
                 <span className="font-medium text-[#1a1a1a]">{item.categoryName}</span>
                 <span className="text-[#999]">
-                  Kunto {item.conditionScore.toFixed(1)} · {formatEur(item.cost)}
+                  {t("reportContent.conditionWord")} {item.conditionScore.toFixed(1)} · {formatEur(item.cost)}
                 </span>
               </li>
             ))}

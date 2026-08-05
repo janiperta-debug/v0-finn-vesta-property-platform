@@ -3,16 +3,8 @@ import { ReportPage, PageSection } from "./report-page"
 import {
   derivePlanItems,
   timelineBuckets,
-  type UrgencyCode,
 } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
-
-const URGENCY_FI: Record<UrgencyCode, string> = {
-  valitom: "Välitön",
-  "1_3v": "1–3 v",
-  "3_5v": "3–5 v",
-  "5_10v": "5–10 v",
-}
 
 export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
@@ -30,19 +22,19 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="PTS-suunnitelma"
+      sectionTitle={t("reportContent.ptsTitle")}
     >
       <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">
-        PTS – Pitkän tähtäimen suunnitelma
+        {t("reportContent.ptsTitle")}
       </h2>
 
       {planItems.length === 0 && investmentRows.length === 0 ? (
-        <p className="text-sm text-[#999]">PTS-dataa ei saatavilla.</p>
+        <p className="text-sm text-[#999]">{t("reportContent.ptsNoData")}</p>
       ) : (
         <>
           {/* Urgency bucket bars */}
           {buckets.length > 0 && (
-            <PageSection title="Kustannusjakauma kiireellisyysluokittain">
+            <PageSection title={t("reportContent.ptsCostByUrgency")}>
               <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-6">
                 <div className="flex h-28 items-end gap-4">
                   {buckets.map((b) => {
@@ -57,7 +49,7 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
                           style={{ height: `${pct}%` }}
                         />
                         <span className="text-[9px] text-[#aaa]">
-                          {URGENCY_FI[b.urgency as UrgencyCode] ?? b.urgency}
+                          {b.label}
                         </span>
                       </div>
                     )
@@ -71,13 +63,18 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
           {buckets.map((bucket) => (
             <PageSection
               key={bucket.urgency}
-              title={`${URGENCY_FI[bucket.urgency as UrgencyCode] ?? bucket.urgency} — ${formatEur(bucket.total)}`}
+              title={`${bucket.label} — ${formatEur(bucket.total)}`}
             >
               <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
                 <table className="w-full text-sm">
                   <thead className="bg-[#fafafa]">
                     <tr>
-                      {["Komponentti", "Kunto", "Jäljellä (v)", "Kustannus (arvio)"].map(
+                      {[
+                        t("reportContent.colComponent"),
+                        t("reportContent.colCondition"),
+                        t("reportContent.colRemainingYears"),
+                        t("reportContent.colCostEstimate"),
+                      ].map(
                         (h) => (
                           <th
                             key={h}
@@ -119,12 +116,18 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
 
           {/* DB investment_plans if present */}
           {investmentRows.length > 0 && (
-            <PageSection title={`Investointisuunnitelmat (${investmentRows.length} riviä)`}>
+            <PageSection title={`${t("reportContent.ptsInvestmentPlans")} (${investmentRows.length} ${t("reportContent.ptsRowsUnit")})`}>
               <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
                 <table className="w-full text-sm">
                   <thead className="bg-[#fafafa]">
                     <tr>
-                      {["Vuosi", "Tyyppi", "Investointi", "Prioriteetti", "Tila"].map((h) => (
+                      {[
+                        t("reportContent.colYear"),
+                        t("reportContent.colType"),
+                        t("reportContent.colInvestment"),
+                        t("reportContent.colPriority"),
+                        t("reportContent.colStatus"),
+                      ].map((h) => (
                         <th
                           key={h}
                           className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"

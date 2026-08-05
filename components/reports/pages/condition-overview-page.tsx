@@ -10,11 +10,19 @@ import {
 } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const URGENCY_FI: Record<UrgencyCode, string> = {
-  valitom: "Välitön",
-  "1_3v": "1–3 v",
-  "3_5v": "3–5 v",
-  "5_10v": "5–10 v",
+function urgencyShort(u: UrgencyCode, t: (k: string) => string): string {
+  switch (u) {
+    case "valitom":
+      return t("reportContent.urgImmediate")
+    case "1_3v":
+      return "1–3 v"
+    case "3_5v":
+      return "3–5 v"
+    case "5_10v":
+      return "5–10 v"
+    default:
+      return String(u)
+  }
 }
 
 function ScoreBar({ score }: { score: number }) {
@@ -57,12 +65,12 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Kuntokatsaus"
+      sectionTitle={t("reportContent.conditionTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Kuntokatsaus</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.conditionTitle")}</h2>
 
       {planItems.length === 0 ? (
-        <p className="text-sm text-[#999]">Elinkaaridata ei saatavilla.</p>
+        <p className="text-sm text-[#999]">{t("reportContent.conditionNoData")}</p>
       ) : (
         <>
           {/* Overall score card */}
@@ -74,18 +82,18 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
               <p className="text-[10px] uppercase tracking-wider text-[#999]">/ 5</p>
             </div>
             <div className="flex-1">
-              <p className="mb-1 text-sm font-semibold text-[#1a1a1a]">Kokonaiskunto</p>
+              <p className="mb-1 text-sm font-semibold text-[#1a1a1a]">{t("reportContent.conditionOverallLabel")}</p>
               <ScoreBar score={condition} />
               <p className="mt-2 text-xs text-[#999]">
-                {repairs.length} komponenttia vaatii huomiota ·{" "}
-                {planItems.filter((i) => i.fromInspection).length} tarkastettu ·{" "}
-                Korjausvelka {formatEur(debt)}
+                {repairs.length} {t("reportContent.conditionNeedsAttention")} ·{" "}
+                {planItems.filter((i) => i.fromInspection).length} {t("reportContent.conditionInspected")} ·{" "}
+                {t("reportContent.conditionRepairDebt")} {formatEur(debt)}
               </p>
             </div>
           </div>
 
           {/* Urgency summary */}
-          <PageSection title="Kiireellisyysjakauma">
+          <PageSection title={t("reportContent.urgencyDistribution")}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {URGENCY_ORDER.map((u) => (
                 <div
@@ -96,7 +104,7 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
                     {urgencyCounts[u] ?? 0}
                   </p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-wider text-[#999]">
-                    {URGENCY_FI[u]}
+                    {urgencyShort(u, t)}
                   </p>
                 </div>
               ))}
@@ -104,12 +112,17 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
           </PageSection>
 
           {/* Per-component table */}
-          <PageSection title="Komponenttikohtainen kunto">
+          <PageSection title={t("reportContent.perComponentCondition")}>
             <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
               <table className="w-full text-sm">
                 <thead className="bg-[#fafafa]">
                   <tr>
-                    {["Komponentti", "Kunto", "Kiireellisyys", "Kustannus (arvio)"].map(
+                    {[
+                      t("reportContent.colComponent"),
+                      t("reportContent.colCondition"),
+                      t("reportContent.colUrgency"),
+                      t("reportContent.colCostEstimate"),
+                    ].map(
                       (h) => (
                         <th
                           key={h}
@@ -134,7 +147,7 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
                         <ScoreBar score={item.conditionScore} />
                       </td>
                       <td className="px-4 py-2 text-[#666]">
-                        {URGENCY_FI[item.urgency]}
+                        {urgencyShort(item.urgency, t)}
                       </td>
                       <td className="px-4 py-2 text-right text-[#666]">
                         {formatEur(item.cost)}

@@ -1,36 +1,48 @@
 import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
 
-const URGENCY_FI: Record<string, string> = {
-  valitom: "Välitön",
-  "1_3v": "1–3 v",
-  "3_5v": "3–5 v",
-  "5_10v": "5–10 v",
-  immediate: "Välitön",
-  short: "Lyhyt",
-  medium: "Keskipitkä",
-  long: "Pitkä",
+const URGENCY_KEYS: Record<string, string> = {
+  valitom: "reportContent.urgImmediate",
+  "1_3v": "reportContent.urgShort",
+  "3_5v": "reportContent.urgMedium",
+  "5_10v": "reportContent.urgLong",
+  immediate: "reportContent.urgImmediate",
+  short: "reportContent.urgShort",
+  medium: "reportContent.urgMedium",
+  long: "reportContent.urgLong",
 }
 
-const STATUS_FI: Record<string, string> = {
-  draft: "Luonnos",
-  complete: "Valmis",
-  completed: "Valmis",
-  approved: "Hyväksytty",
-  archived: "Arkistoitu",
+const STATUS_KEYS: Record<string, string> = {
+  draft: "reportContent.statusDraft",
+  complete: "reportContent.statusCompleted",
+  completed: "reportContent.statusCompleted",
+  approved: "reportContent.statusApproved",
+  archived: "reportContent.statusArchived",
 }
 
-export function InspectionFindingsPage({ config, data, pageNumber, totalPages }: PageProps) {
+function translateUrgency(u: string | null | undefined, t: (k: string) => string): string {
+  if (!u) return "—"
+  const key = URGENCY_KEYS[u]
+  return key ? t(key) : u
+}
+
+function translateStatus(s: string | null | undefined, t: (k: string) => string): string {
+  if (!s) return "—"
+  const key = STATUS_KEYS[s]
+  return key ? t(key) : s
+}
+
+export function InspectionFindingsPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   if (data.inspections.length === 0) {
     return (
       <ReportPage
         config={config}
         pageNumber={pageNumber}
         totalPages={totalPages}
-        sectionTitle="Tarkastushavainnot"
+        sectionTitle={t("reportContent.inspectionTitle")}
       >
-        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">Tarkastushavainnot</h2>
-        <p className="text-sm text-[#999]">Tarkastustietoja ei saatavilla.</p>
+        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">{t("reportContent.inspectionTitle")}</h2>
+        <p className="text-sm text-[#999]">{t("reportContent.inspectionNoData")}</p>
       </ReportPage>
     )
   }
@@ -40,9 +52,9 @@ export function InspectionFindingsPage({ config, data, pageNumber, totalPages }:
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Tarkastushavainnot"
+      sectionTitle={t("reportContent.inspectionTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Tarkastushavainnot</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.inspectionTitle")}</h2>
 
       {data.inspections.map((insp) => {
         const catEvals = data.categoryEvaluations.filter(
@@ -51,22 +63,22 @@ export function InspectionFindingsPage({ config, data, pageNumber, totalPages }:
         return (
           <PageSection
             key={insp.id}
-            title={`Tarkastus ${insp.inspection_date?.slice(0, 10) ?? "—"}`}
+            title={`${t("reportContent.inspectionPrefix")} ${insp.inspection_date?.slice(0, 10) ?? "—"}`}
           >
             {/* Meta row */}
             <dl className="mb-4 grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm sm:grid-cols-4">
               {[
-                ["Tarkastaja", insp.inspector_name ?? "—"],
-                ["Tyyppi", insp.inspector_type ?? "—"],
+                [t("reportContent.inspectionInspector"), insp.inspector_name ?? "—"],
+                [t("reportContent.inspectionType"), insp.inspector_type ?? "—"],
                 [
-                  "Kokonaisarvio",
+                  t("reportContent.inspectionOverallScore"),
                   insp.overall_score != null
                     ? `${insp.overall_score.toFixed(1)} / 5`
                     : "—",
                 ],
                 [
-                  "Tila",
-                  STATUS_FI[insp.status ?? ""] ?? insp.status ?? "—",
+                  t("reportContent.fieldStatus"),
+                  translateStatus(insp.status, t),
                 ],
               ].map(([label, value]) => (
                 <div key={label}>
@@ -89,7 +101,11 @@ export function InspectionFindingsPage({ config, data, pageNumber, totalPages }:
                 <table className="w-full text-sm">
                   <thead className="bg-[#fafafa]">
                     <tr>
-                      {["Pisteet", "Kiireellisyys", "Huomio"].map((h) => (
+                      {[
+                        t("reportContent.colScore"),
+                        t("reportContent.colUrgency"),
+                        t("reportContent.colNote"),
+                      ].map((h) => (
                         <th
                           key={h}
                           className="px-3 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"
@@ -113,9 +129,7 @@ export function InspectionFindingsPage({ config, data, pageNumber, totalPages }:
                           {e.score?.toFixed(1) ?? "—"}
                         </td>
                         <td className="px-3 py-2 text-[#666]">
-                          {e.urgency
-                            ? (URGENCY_FI[e.urgency] ?? e.urgency)
-                            : "—"}
+                          {translateUrgency(e.urgency, t)}
                         </td>
                         <td className="px-3 py-2 text-[#555]">
                           {e.comment ?? "—"}
@@ -126,7 +140,7 @@ export function InspectionFindingsPage({ config, data, pageNumber, totalPages }:
                 </table>
               </div>
             ) : (
-              <p className="text-xs text-[#bbb]">Ei havaintoja tässä tarkastuksessa.</p>
+              <p className="text-xs text-[#bbb]">{t("reportContent.inspectionNoFindings")}</p>
             )}
           </PageSection>
         )

@@ -11,17 +11,17 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
 
   // Report metadata
   const meta = [
-    { label: "Luotu", value: new Date().toLocaleDateString("fi-FI") },
-    { label: "Luonut", value: "FinnVesta-järjestelmä" },
-    { label: "Raporttiversio", value: "1.0" },
+    { label: t("reportContent.closingMetaCreated"), value: new Date().toLocaleDateString(config.language) },
+    { label: t("reportContent.closingMetaCreatedBy"), value: t("reportContent.closingMetaCreatedByValue") },
+    { label: t("reportContent.closingMetaVersion"), value: "1.0" },
     {
-      label: "Kiinteistötunniste",
+      label: t("reportContent.closingMetaPropertyId"),
       value:
         config.properties.length === 1
           ? String(config.properties[0].id)
-          : `${config.properties.length} kiinteistöä`,
+          : `${config.properties.length} ${t("reportContent.closingPropertiesCountSuffix")}`,
     },
-    { label: "Raporttitunnus", value: "—" },
+    { label: t("reportContent.closingMetaReportId"), value: "—" },
   ]
 
   return (
@@ -29,17 +29,17 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Yhteenveto"
+      sectionTitle={t("reportContent.closingSectionTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Yhteenveto ja johtopäätökset</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.closingHeading")}</h2>
 
       {/* Key findings */}
       {(condition > 0 || debt > 0) && (
-        <PageSection title="Keskeiset löydökset">
+        <PageSection title={t("reportContent.closingKeyFindings")}>
           <div className="grid grid-cols-2 gap-4">
             {condition > 0 && (
               <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4">
-                <p className="text-[10px] uppercase tracking-wider text-[#aaa]">Kokonaiskunto</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#aaa]">{t("reportContent.execOverallCondition")}</p>
                 <p className="mt-1 text-2xl font-bold text-[#1a1a1a]">
                   {condition.toFixed(1)} <span className="text-sm font-normal text-[#aaa]">/ 5</span>
                 </p>
@@ -47,7 +47,7 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
             )}
             {debt > 0 && (
               <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4">
-                <p className="text-[10px] uppercase tracking-wider text-[#aaa]">Korjausvelka (arvio)</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#aaa]">{t("reportContent.execRepairDebt")}</p>
                 <p className="mt-1 text-2xl font-bold text-[#1a1a1a]">{formatEur(debt)}</p>
               </div>
             )}
@@ -55,17 +55,14 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
         </PageSection>
       )}
 
-      <PageSection title="Vastuuvapauslauseke">
+      <PageSection title={t("reportContent.closingDisclaimer")}>
         <p className="text-[11px] leading-relaxed text-[#aaa]">
-          Tämä raportti on laadittu FinnVesta-järjestelmällä saatavilla olevien tietojen
-          perusteella. Raportti on tarkoitettu ainoastaan informatiiviseen käyttöön eikä
-          muodosta juridista tai taloudellista sitoumusta. Tietojen oikeellisuudesta vastaa
-          tietojen syöttäjä.
+          {t("reportContent.closingDisclaimerText")}
         </p>
       </PageSection>
 
       {/* Report metadata */}
-      <PageSection title="Raportin tiedot">
+      <PageSection title={t("reportContent.closingReportInfo")}>
         <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
           {meta.map(({ label, value }) => (
             <div key={label}>
@@ -81,7 +78,7 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
         <div className="flex items-center justify-between">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/finnvesta-login-logo.png" alt="FinnVesta" className="h-6 w-auto" />
-          <span className="text-xs text-[#bbb]">Raportti luotu {config.date}</span>
+          <span className="text-xs text-[#bbb]">{t("reportContent.closingReportCreatedPrefix")} {config.date}</span>
         </div>
       </div>
     </ReportPage>

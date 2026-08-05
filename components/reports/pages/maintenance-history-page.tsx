@@ -2,24 +2,23 @@ import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
 import { formatEur } from "@/lib/database.types"
 
-const PRIORITY_FI: Record<string, string> = {
-  low: "Matala",
-  medium: "Kohtalainen",
-  high: "Korkea",
-  urgent: "Kiireellinen",
+const PRIORITY_KEYS: Record<string, string> = {
+  low: "reportContent.prioLow",
+  medium: "reportContent.prioMedium",
+  high: "reportContent.prioHigh",
+  urgent: "reportContent.prioUrgent",
 }
 
-const STATUS_FI: Record<string, string> = {
-  planned: "Suunniteltu",
-  in_progress: "Käynnissä",
-  completed: "Valmis",
-  cancelled: "Peruutettu",
+function translatePriority(p: string | null | undefined, t: (k: string) => string): string {
+  if (!p) return "—"
+  const key = PRIORITY_KEYS[p]
+  return key ? t(key) : p
 }
 
-export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }: PageProps) {
+export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   // Completed tasks sorted newest first; upcoming tasks sorted oldest first.
   const completed = data.maintenanceTasks
-    .filter((t) => t.status === "completed")
+    .filter((task) => task.status === "completed")
     .sort((a, b) =>
       (b.completed_date ?? b.created_at).localeCompare(
         a.completed_date ?? a.created_at,
@@ -27,7 +26,7 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
     )
 
   const upcoming = data.maintenanceTasks
-    .filter((t) => t.status === "planned" || t.status === "in_progress")
+    .filter((task) => task.status === "planned" || task.status === "in_progress")
     .sort((a, b) =>
       (a.scheduled_date ?? a.created_at).localeCompare(
         b.scheduled_date ?? b.created_at,
@@ -40,10 +39,10 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
         config={config}
         pageNumber={pageNumber}
         totalPages={totalPages}
-        sectionTitle="Huoltohistoria"
+        sectionTitle={t("reportContent.maintenanceTitle")}
       >
-        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">Huoltohistoria</h2>
-        <p className="text-sm text-[#999]">Huoltotietoja ei saatavilla.</p>
+        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">{t("reportContent.maintenanceTitle")}</h2>
+        <p className="text-sm text-[#999]">{t("reportContent.maintenanceNoData")}</p>
       </ReportPage>
     )
   }
@@ -53,17 +52,23 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Huoltohistoria"
+      sectionTitle={t("reportContent.maintenanceTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Huoltohistoria</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.maintenanceTitle")}</h2>
 
       {completed.length > 0 && (
-        <PageSection title={`Suoritetut huoltotoimet (${completed.length})`}>
+        <PageSection title={`${t("reportContent.maintenanceCompleted")} (${completed.length})`}>
           <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
             <table className="w-full text-sm">
               <thead className="bg-[#fafafa]">
                 <tr>
-                  {["Päivämäärä", "Toimenpide", "Komponentti", "Prioriteetti", "Kustannus"].map(
+                  {[
+                    t("reportContent.colDate"),
+                    t("reportContent.colAction"),
+                    t("reportContent.colComponent"),
+                    t("reportContent.colPriority"),
+                    t("reportContent.colCost"),
+                  ].map(
                     (h) => (
                       <th
                         key={h}
@@ -76,9 +81,9 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
                 </tr>
               </thead>
               <tbody>
-                {completed.map((t, idx) => (
+                {completed.map((task, idx) => (
                   <tr
-                    key={t.id}
+                    key={task.id}
                     className={
                       idx % 2 === 0
                         ? "border-t border-[#f0f0f0] bg-white"
@@ -86,18 +91,18 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
                     }
                   >
                     <td className="px-4 py-2 text-[#666]">
-                      {(t.completed_date ?? t.scheduled_date ?? t.created_at).slice(0, 10)}
+                      {(task.completed_date ?? task.scheduled_date ?? task.created_at).slice(0, 10)}
                     </td>
-                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{t.title}</td>
-                    <td className="px-4 py-2 text-[#666]">{t.component_type ?? "—"}</td>
+                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{task.title}</td>
+                    <td className="px-4 py-2 text-[#666]">{task.component_type ?? "—"}</td>
                     <td className="px-4 py-2 text-[#666]">
-                      {t.priority ? (PRIORITY_FI[t.priority] ?? t.priority) : "—"}
+                      {translatePriority(task.priority, t)}
                     </td>
                     <td className="px-4 py-2 text-right text-[#666]">
-                      {t.actual_cost != null
-                        ? formatEur(t.actual_cost)
-                        : t.estimated_cost != null
-                        ? `${formatEur(t.estimated_cost)} (arvio)`
+                      {task.actual_cost != null
+                        ? formatEur(task.actual_cost)
+                        : task.estimated_cost != null
+                        ? `${formatEur(task.estimated_cost)} ${t("reportContent.estimateParenthetical")}`
                         : "—"}
                     </td>
                   </tr>
@@ -109,12 +114,18 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
       )}
 
       {upcoming.length > 0 && (
-        <PageSection title={`Suunnitellut toimet (${upcoming.length})`}>
+        <PageSection title={`${t("reportContent.maintenancePlanned")} (${upcoming.length})`}>
           <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
             <table className="w-full text-sm">
               <thead className="bg-[#fafafa]">
                 <tr>
-                  {["Päivämäärä", "Toimenpide", "Komponentti", "Prioriteetti", "Arvio"].map(
+                  {[
+                    t("reportContent.colDate"),
+                    t("reportContent.colAction"),
+                    t("reportContent.colComponent"),
+                    t("reportContent.colPriority"),
+                    t("reportContent.colEstimate"),
+                  ].map(
                     (h) => (
                       <th
                         key={h}
@@ -127,9 +138,9 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
                 </tr>
               </thead>
               <tbody>
-                {upcoming.map((t, idx) => (
+                {upcoming.map((task, idx) => (
                   <tr
-                    key={t.id}
+                    key={task.id}
                     className={
                       idx % 2 === 0
                         ? "border-t border-[#f0f0f0] bg-white"
@@ -137,15 +148,15 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages }:
                     }
                   >
                     <td className="px-4 py-2 text-[#666]">
-                      {(t.scheduled_date ?? t.created_at).slice(0, 10)}
+                      {(task.scheduled_date ?? task.created_at).slice(0, 10)}
                     </td>
-                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{t.title}</td>
-                    <td className="px-4 py-2 text-[#666]">{t.component_type ?? "—"}</td>
+                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{task.title}</td>
+                    <td className="px-4 py-2 text-[#666]">{task.component_type ?? "—"}</td>
                     <td className="px-4 py-2 text-[#666]">
-                      {t.priority ? (PRIORITY_FI[t.priority] ?? t.priority) : "—"}
+                      {translatePriority(task.priority, t)}
                     </td>
                     <td className="px-4 py-2 text-right text-[#666]">
-                      {t.estimated_cost != null ? formatEur(t.estimated_cost) : "—"}
+                      {task.estimated_cost != null ? formatEur(task.estimated_cost) : "—"}
                     </td>
                   </tr>
                 ))}

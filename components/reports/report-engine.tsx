@@ -12,6 +12,7 @@ import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { defaultLocale, isLocale } from "@/lib/i18n/config"
 import { dictionaries } from "@/lib/i18n/dictionaries"
+import { useTranslation } from "@/lib/i18n"
 import type { ReportConfig } from "@/lib/report-engine"
 import type { ReportData } from "@/hooks/use-report-data"
 import { useReportData } from "@/hooks/use-report-data"
@@ -64,6 +65,9 @@ interface ReportEngineProps {
 export function ReportEngine({ config }: ReportEngineProps) {
   const { data, loading, error } = useReportData(config)
   const router = useRouter()
+  // UI-locale translator for engine chrome (loading/error states) shown before
+  // report data — and thus config.language's translator — is available.
+  const { t: tUi } = useTranslation()
 
   // Build a translator pinned to the report's own language, not the UI locale.
   // This ensures a Finnish-speaking user can generate an English report and vice versa.
@@ -92,7 +96,7 @@ export function ReportEngine({ config }: ReportEngineProps) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#1e6fbf]" />
-        <p className="text-sm text-[#666]">Ladataan kiinteistötietoja...</p>
+        <p className="text-sm text-[#666]">{tUi("reports.engineLoading")}</p>
       </div>
     )
   }
@@ -101,8 +105,8 @@ export function ReportEngine({ config }: ReportEngineProps) {
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
         <AlertTriangle className="h-8 w-8 text-amber-500" />
-        <p className="text-sm font-medium text-[#333] dark:text-[#ccc]">Tietojen lataus epäonnistui</p>
-        <p className="max-w-sm text-xs text-[#999]">{error ?? "Tuntematon virhe"}</p>
+        <p className="text-sm font-medium text-[#333] dark:text-[#ccc]">{tUi("reports.engineLoadFailed")}</p>
+        <p className="max-w-sm text-xs text-[#999]">{error ?? tUi("reports.engineUnknownError")}</p>
         <Button
           variant="outline"
           size="sm"
@@ -110,7 +114,7 @@ export function ReportEngine({ config }: ReportEngineProps) {
           onClick={() => router.push("/app/raportit")}
         >
           <ArrowLeft className="h-4 w-4" />
-          Takaisin raporttikeskukseen
+          {tUi("reports.engineBackToCenter")}
         </Button>
       </div>
     )
