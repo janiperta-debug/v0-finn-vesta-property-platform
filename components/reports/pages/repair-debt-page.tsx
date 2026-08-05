@@ -9,11 +9,19 @@ import {
 } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const URGENCY_FI: Record<UrgencyCode, string> = {
-  valitom: "Välitön",
-  "1_3v": "1–3 v",
-  "3_5v": "3–5 v",
-  "5_10v": "5–10 v",
+function urgencyShort(u: UrgencyCode, t: (k: string) => string): string {
+  switch (u) {
+    case "valitom":
+      return t("reportContent.urgImmediate")
+    case "1_3v":
+      return "1–3 v"
+    case "3_5v":
+      return "3–5 v"
+    case "5_10v":
+      return "5–10 v"
+    default:
+      return String(u)
+  }
 }
 
 export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: PageProps) {
@@ -32,7 +40,7 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
   // Group by urgency
   const byUrgency = URGENCY_ORDER.map((u) => ({
     urgency: u,
-    label: URGENCY_FI[u],
+    label: urgencyShort(u, t),
     items: planItems.filter((i) => i.urgency === u && i.cost > 0),
     total: planItems.filter((i) => i.urgency === u).reduce((s, i) => s + i.cost, 0),
   })).filter((g) => g.items.length > 0)
@@ -42,20 +50,20 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Korjausvelka"
+      sectionTitle={t("reportContent.repairDebtTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Korjausvelka</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.repairDebtTitle")}</h2>
 
       {planItems.length === 0 ? (
-        <p className="text-sm text-[#999]">Korjausvelkadata ei saatavilla.</p>
+        <p className="text-sm text-[#999]">{t("reportContent.repairDebtNoData")}</p>
       ) : (
         <>
           {/* KPI row */}
           <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {[
-              { label: "Kokonaiskorjausvelka", value: formatEur(totalDebt) },
-              { label: "Per m²", value: perM2 != null ? formatEur(perM2) : "—" },
-              { label: "Kiireelliset (0–3 v)", value: formatEur(urgentDebt) },
+              { label: t("reportContent.repairKpiTotal"), value: formatEur(totalDebt) },
+              { label: t("reportContent.repairKpiPerM2"), value: perM2 != null ? formatEur(perM2) : "—" },
+              { label: t("reportContent.repairKpiUrgent"), value: formatEur(urgentDebt) },
             ].map(({ label, value }) => (
               <div
                 key={label}
@@ -71,12 +79,17 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
 
           {/* Urgency breakdown */}
           {byUrgency.map((group) => (
-            <PageSection key={group.urgency} title={`${group.label} — yhteensä ${formatEur(group.total)}`}>
+            <PageSection key={group.urgency} title={`${group.label} — ${t("reportContent.totalWord")} ${formatEur(group.total)}`}>
               <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
                 <table className="w-full text-sm">
                   <thead className="bg-[#fafafa]">
                     <tr>
-                      {["Komponentti", "Kunto", "Jäljellä (v)", "Kustannus (arvio)"].map((h) => (
+                      {[
+                        t("reportContent.colComponent"),
+                        t("reportContent.colCondition"),
+                        t("reportContent.colRemainingYears"),
+                        t("reportContent.colCostEstimate"),
+                      ].map((h) => (
                         <th
                           key={h}
                           className="px-4 py-2 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"

@@ -3,11 +3,19 @@ import { ReportPage, PageSection } from "./report-page"
 import { derivePlanItems, repairItems, type UrgencyCode } from "@/lib/building-plan"
 import { formatEur } from "@/lib/database.types"
 
-const URGENCY_FI: Record<UrgencyCode, string> = {
-  valitom: "Välitön",
-  "1_3v": "1–3 v",
-  "3_5v": "3–5 v",
-  "5_10v": "5–10 v",
+function urgencyShort(u: UrgencyCode, t: (k: string) => string): string {
+  switch (u) {
+    case "valitom":
+      return t("reportContent.urgImmediate")
+    case "1_3v":
+      return "1–3 v"
+    case "3_5v":
+      return "3–5 v"
+    case "5_10v":
+      return "5–10 v"
+    default:
+      return String(u)
+  }
 }
 
 const URGENCY_COLOR: Record<UrgencyCode, string> = {
@@ -24,7 +32,7 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
 
   // Also pull planned maintenance tasks as additional recommendations
   const plannedTasks = data.maintenanceTasks.filter(
-    (t) => t.status === "planned" || t.status === "in_progress",
+    (task) => task.status === "planned" || task.status === "in_progress",
   )
 
   if (repairs.length === 0 && plannedTasks.length === 0) {
@@ -33,10 +41,10 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
         config={config}
         pageNumber={pageNumber}
         totalPages={totalPages}
-        sectionTitle="Suositukset"
+        sectionTitle={t("reportContent.recommendationsTitle")}
       >
-        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">Suositukset</h2>
-        <p className="text-sm text-[#999]">Suosituksia ei saatavilla.</p>
+        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">{t("reportContent.recommendationsTitle")}</h2>
+        <p className="text-sm text-[#999]">{t("reportContent.recommendationsNoData")}</p>
       </ReportPage>
     )
   }
@@ -46,12 +54,12 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Suositukset"
+      sectionTitle={t("reportContent.recommendationsTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Suositukset</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.recommendationsTitle")}</h2>
 
       {repairs.length > 0 && (
-        <PageSection title="Komponenttikohtaiset toimenpidesuositukset">
+        <PageSection title={t("reportContent.recComponentRecommendations")}>
           <div className="space-y-2">
             {repairs.map((item) => (
               <div
@@ -61,16 +69,16 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
                 <span
                   className={`shrink-0 rounded border px-2 py-0.5 text-[10px] font-medium ${URGENCY_COLOR[item.urgency]}`}
                 >
-                  {URGENCY_FI[item.urgency]}
+                  {urgencyShort(item.urgency, t)}
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[#1a1a1a] text-sm">{item.categoryName}</p>
                   <p className="text-xs text-[#999] mt-0.5">
-                    Kunto {item.conditionScore.toFixed(1)} / 5 ·{" "}
+                    {t("reportContent.conditionWord")} {item.conditionScore.toFixed(1)} / 5 ·{" "}
                     {item.remainingLifespan > 0
-                      ? `Jäljellä n. ${item.remainingLifespan} v`
-                      : "Tekninen käyttöikä täynnä"}{" "}
-                    · Arvio {formatEur(item.cost)}
+                      ? `${t("reportContent.recRemainingApprox")} ${item.remainingLifespan} v`
+                      : t("reportContent.recLifespanFull")}{" "}
+                    · {t("reportContent.estimateWord")} {formatEur(item.cost)}
                   </p>
                 </div>
               </div>
@@ -80,12 +88,17 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
       )}
 
       {plannedTasks.length > 0 && (
-        <PageSection title="Suunnitellut huoltotoimet">
+        <PageSection title={t("reportContent.recPlannedMaintenance")}>
           <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
             <table className="w-full text-sm">
               <thead className="bg-[#fafafa]">
                 <tr>
-                  {["Toimenpide", "Komponentti", "Ajankohta", "Arvio"].map((h) => (
+                  {[
+                    t("reportContent.colAction"),
+                    t("reportContent.colComponent"),
+                    t("reportContent.colSchedule"),
+                    t("reportContent.colEstimate"),
+                  ].map((h) => (
                     <th
                       key={h}
                       className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"
@@ -96,22 +109,22 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
                 </tr>
               </thead>
               <tbody>
-                {plannedTasks.map((t, idx) => (
+                {plannedTasks.map((task, idx) => (
                   <tr
-                    key={t.id}
+                    key={task.id}
                     className={
                       idx % 2 === 0
                         ? "border-t border-[#f0f0f0] bg-white"
                         : "border-t border-[#f0f0f0] bg-[#fafafa]"
                     }
                   >
-                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{t.title}</td>
-                    <td className="px-4 py-2 text-[#666]">{t.component_type ?? "—"}</td>
+                    <td className="px-4 py-2 font-medium text-[#1a1a1a]">{task.title}</td>
+                    <td className="px-4 py-2 text-[#666]">{task.component_type ?? "—"}</td>
                     <td className="px-4 py-2 text-[#666]">
-                      {t.scheduled_date?.slice(0, 10) ?? "—"}
+                      {task.scheduled_date?.slice(0, 10) ?? "—"}
                     </td>
                     <td className="px-4 py-2 text-right text-[#666]">
-                      {t.estimated_cost != null ? formatEur(t.estimated_cost) : "—"}
+                      {task.estimated_cost != null ? formatEur(task.estimated_cost) : "—"}
                     </td>
                   </tr>
                 ))}

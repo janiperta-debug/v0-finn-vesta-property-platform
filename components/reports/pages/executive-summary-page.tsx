@@ -104,7 +104,7 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
       )}
 
       {repairs.length > 0 && (
-        <PageSection title="Eniten huomiota vaativat komponentit">
+        <PageSection title={t("reportContent.execTopComponents")}>
           <ul className="space-y-1.5">
             {repairs.slice(0, 6).map((item) => (
               <li
@@ -113,7 +113,7 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
               >
                 <span className="font-medium text-[#1a1a1a]">{item.categoryName}</span>
                 <span className="text-[#999]">
-                  Kunto {item.conditionScore.toFixed(1)} · {formatEur(item.cost)}
+                  {t("reportContent.conditionWord")} {item.conditionScore.toFixed(1)} · {formatEur(item.cost)}
                 </span>
               </li>
             ))}
