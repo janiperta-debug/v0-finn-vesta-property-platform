@@ -2,21 +2,33 @@ import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
 import { formatEur } from "@/lib/database.types"
 
-const PRIORITY_FI: Record<string, string> = {
-  low: "Matala",
-  medium: "Kohtalainen",
-  high: "Korkea",
-  critical: "Kriittinen",
+const PRIORITY_KEYS: Record<string, string> = {
+  low: "reportContent.prioLow",
+  medium: "reportContent.prioMedium",
+  high: "reportContent.prioHigh",
+  critical: "reportContent.prioCritical",
 }
 
-const STATUS_FI: Record<string, string> = {
-  planned: "Suunniteltu",
-  approved: "Hyväksytty",
-  in_progress: "Käynnissä",
-  completed: "Toteutunut",
+const STATUS_KEYS: Record<string, string> = {
+  planned: "reportContent.statusPlanned",
+  approved: "reportContent.statusApproved",
+  in_progress: "reportContent.statusInProgress",
+  completed: "reportContent.statusRealized",
 }
 
-export function InvestmentForecastPage({ config, data, pageNumber, totalPages }: PageProps) {
+function translatePriority(p: string | null | undefined, t: (k: string) => string): string {
+  if (!p) return "—"
+  const key = PRIORITY_KEYS[p]
+  return key ? t(key) : p
+}
+
+function translateStatus(s: string | null | undefined, t: (k: string) => string): string {
+  if (!s) return "—"
+  const key = STATUS_KEYS[s]
+  return key ? t(key) : s
+}
+
+export function InvestmentForecastPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const rows = data.investmentPlans.sort((a, b) => a.plan_year - b.plan_year)
 
   if (rows.length === 0) {
@@ -25,10 +37,10 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages }:
         config={config}
         pageNumber={pageNumber}
         totalPages={totalPages}
-        sectionTitle="Investointiennuste"
+        sectionTitle={t("reportContent.investmentTitle")}
       >
-        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">Investointiennuste</h2>
-        <p className="text-sm text-[#999]">Investointisuunnitelmia ei saatavilla.</p>
+        <h2 className="mb-6 text-xl font-bold text-[#1a1a1a]">{t("reportContent.investmentTitle")}</h2>
+        <p className="text-sm text-[#999]">{t("reportContent.investmentNoData")}</p>
       </ReportPage>
     )
   }
@@ -47,17 +59,17 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages }:
       config={config}
       pageNumber={pageNumber}
       totalPages={totalPages}
-      sectionTitle="Investointiennuste"
+      sectionTitle={t("reportContent.investmentTitle")}
     >
-      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">Investointiennuste</h2>
+      <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.investmentTitle")}</h2>
 
       {/* Summary */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         {[
-          { label: "Investoinnit yhteensä", value: formatEur(totalInvestment) },
-          { label: "Rivejä", value: String(rows.length) },
+          { label: t("reportContent.investmentKpiTotal"), value: formatEur(totalInvestment) },
+          { label: t("reportContent.investmentKpiRows"), value: String(rows.length) },
           {
-            label: "Aikajänne",
+            label: t("reportContent.investmentKpiTimespan"),
             value:
               years.length > 1
                 ? `${years[0]}–${years[years.length - 1]}`
@@ -76,7 +88,7 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages }:
 
       {/* Bar chart by year */}
       {years.length > 0 && (
-        <PageSection title="Investoinnit vuosittain">
+        <PageSection title={t("reportContent.investmentByYear")}>
           <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-6">
             <div className="flex h-28 items-end gap-2">
               {years.map((yr) => {
@@ -101,12 +113,18 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages }:
       )}
 
       {/* Detail table */}
-      <PageSection title="Investointikohteet">
+      <PageSection title={t("reportContent.investmentTargets")}>
         <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
           <table className="w-full text-sm">
             <thead className="bg-[#fafafa]">
               <tr>
-                {["Vuosi", "Tyyppi", "Investointi", "Prioriteetti", "Tila"].map((h) => (
+                {[
+                  t("reportContent.colYear"),
+                  t("reportContent.colType"),
+                  t("reportContent.colInvestment"),
+                  t("reportContent.colPriority"),
+                  t("reportContent.colStatus"),
+                ].map((h) => (
                   <th
                     key={h}
                     className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-[#999]"
@@ -132,10 +150,10 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages }:
                     {r.planned_investment != null ? formatEur(r.planned_investment) : "—"}
                   </td>
                   <td className="px-4 py-2 text-[#666]">
-                    {r.priority ? (PRIORITY_FI[r.priority] ?? r.priority) : "—"}
+                    {translatePriority(r.priority, t)}
                   </td>
                   <td className="px-4 py-2 text-[#666]">
-                    {r.status ? (STATUS_FI[r.status] ?? r.status) : "—"}
+                    {translateStatus(r.status, t)}
                   </td>
                 </tr>
               ))}
