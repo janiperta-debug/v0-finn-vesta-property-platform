@@ -99,11 +99,7 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages, t
                       {translatePriority(task.priority, t)}
                     </td>
                     <td className="px-4 py-2 text-right text-[#666]">
-                      {task.actual_cost != null
-                        ? formatEur(task.actual_cost)
-                        : task.estimated_cost != null
-                        ? `${formatEur(task.estimated_cost)} ${t("reportContent.estimateParenthetical")}`
-                        : "—"}
+                      {task.actual_cost != null ? formatEur(task.actual_cost) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -124,7 +120,6 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages, t
                     t("reportContent.colAction"),
                     t("reportContent.colComponent"),
                     t("reportContent.colPriority"),
-                    t("reportContent.colEstimate"),
                   ].map(
                     (h) => (
                       <th
@@ -154,9 +149,6 @@ export function MaintenanceHistoryPage({ config, data, pageNumber, totalPages, t
                     <td className="px-4 py-2 text-[#666]">{task.component_type ?? "—"}</td>
                     <td className="px-4 py-2 text-[#666]">
                       {translatePriority(task.priority, t)}
-                    </td>
-                    <td className="px-4 py-2 text-right text-[#666]">
-                      {task.estimated_cost != null ? formatEur(task.estimated_cost) : "—"}
                     </td>
                   </tr>
                 ))}

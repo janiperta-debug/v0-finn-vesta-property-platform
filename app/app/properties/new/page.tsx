@@ -18,7 +18,6 @@ import {
   componentLifespans, 
   generateInitialAssessment, 
   calculateOverallCondition,
-  calculateTotalRepairDebt,
   getComponentName,
   getComponentOptionLabel,
   type BuildingStructureData 
@@ -279,7 +278,6 @@ export default function NewPropertyPage() {
         building_type: formData.buildingType || null,
         construction_year: parseInt(formData.buildYear) || 0,
         area_m2: parseFloat(formData.squareMeters) || 0,
-        cost_per_m2: 2500, // Default replacement cost per m²
         notes: JSON.stringify(buildingMetadata),
         status: 'active',
       }
@@ -354,7 +352,6 @@ export default function NewPropertyPage() {
             score: a.conditionScore,
             urgency: urgencyMap[a.urgencyClass] || 'monitoring',
             comment: a.notes,
-            cost_estimate: a.estimatedRepairCost,
             mode: 'basic',
             is_applicable: true,
             is_migrated: false,
@@ -769,20 +766,13 @@ export default function NewPropertyPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Summary */}
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-lg border bg-card p-4 text-center">
                       <div className="text-sm text-muted-foreground mb-1">{t("propertyNew.overallConditionLabel")}</div>
                       <div className="text-3xl font-bold text-amber-400">
                         {calculateOverallCondition(previewAssessment).toFixed(1)}
                       </div>
                       <div className="text-xs text-muted-foreground">/ 5.0</div>
-                    </div>
-                    <div className="rounded-lg border bg-card p-4 text-center">
-                      <div className="text-sm text-muted-foreground mb-1">{t("propertyEdit.estimatedRepairDebtLabel")}</div>
-                      <div className="text-2xl font-bold text-red-400">
-                        {(calculateTotalRepairDebt(previewAssessment) / 1000).toFixed(0)} k
-                      </div>
-                      <div className="text-xs text-muted-foreground">{t("propertyNew.eurosLabel")}</div>
                     </div>
                     <div className="rounded-lg border bg-card p-4 text-center">
                       <div className="text-sm text-muted-foreground mb-1">{t("propertyNew.estimatedItemsLabel")}</div>
@@ -811,9 +801,6 @@ export default function NewPropertyPage() {
                           <p className="text-sm text-muted-foreground">{assessment.notes}</p>
                           <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                             <span>{t('propertyNew.remainingLabel')} {assessment.remainingLifespan > 0 ? `${assessment.remainingLifespan}v` : t('propertyNew.exceededLabel')}</span>
-                            {assessment.estimatedRepairCost > 0 && (
-                              <span>{t("propertyNew.repairCostLabel")} {(assessment.estimatedRepairCost / 1000).toFixed(0)}k EUR</span>
-                            )}
                           </div>
                         </div>
                       </div>

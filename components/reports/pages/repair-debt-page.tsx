@@ -3,11 +3,9 @@ import { ReportPage, PageSection } from "./report-page"
 import {
   derivePlanItems,
   repairItems,
-  totalRepairCost,
   URGENCY_ORDER,
   type UrgencyCode,
 } from "@/lib/building-plan"
-import { formatEur } from "@/lib/database.types"
 
 function urgencyShort(u: UrgencyCode, t: (k: string) => string): string {
   switch (u) {
@@ -28,21 +26,13 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
   const building = data.buildings[0] ?? null
   const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const repairs = repairItems(planItems)
-  const totalDebt = totalRepairCost(planItems)
-  const urgentDebt = planItems
-    .filter((i) => i.urgency === "valitom" || i.urgency === "1_3v")
-    .reduce((s, i) => s + i.cost, 0)
-  const perM2 =
-    building?.area_m2 && building.area_m2 > 0
-      ? totalDebt / building.area_m2
-      : null
+  const urgentCount = planItems.filter((i) => i.urgency === "valitom" || i.urgency === "1_3v").length
 
   // Group by urgency
   const byUrgency = URGENCY_ORDER.map((u) => ({
     urgency: u,
     label: urgencyShort(u, t),
-    items: planItems.filter((i) => i.urgency === u && i.cost > 0),
-    total: planItems.filter((i) => i.urgency === u).reduce((s, i) => s + i.cost, 0),
+    items: planItems.filter((i) => i.urgency === u),
   })).filter((g) => g.items.length > 0)
 
   return (
@@ -61,9 +51,9 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
           {/* KPI row */}
           <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {[
-              { label: t("reportContent.repairKpiTotal"), value: formatEur(totalDebt) },
-              { label: t("reportContent.repairKpiPerM2"), value: perM2 != null ? formatEur(perM2) : "—" },
-              { label: t("reportContent.repairKpiUrgent"), value: formatEur(urgentDebt) },
+              { label: t("reportContent.execNeedsAttention"), value: String(repairs.length) },
+              { label: t("reportContent.urgImmediate"), value: String(urgentCount) },
+              { label: t("targetPlanning.plannedActionsSuffix"), value: String(planItems.length) },
             ].map(({ label, value }) => (
               <div
                 key={label}
@@ -79,7 +69,7 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
 
           {/* Urgency breakdown */}
           {byUrgency.map((group) => (
-            <PageSection key={group.urgency} title={`${group.label} — ${t("reportContent.totalWord")} ${formatEur(group.total)}`}>
+            <PageSection key={group.urgency} title={`${group.label} — ${group.items.length} ${t("targetPlanning.actionsSuffix")}`}>
               <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
                 <table className="w-full text-sm">
                   <thead className="bg-[#fafafa]">
@@ -88,7 +78,6 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
                         t("reportContent.colComponent"),
                         t("reportContent.colCondition"),
                         t("reportContent.colRemainingYears"),
-                        t("reportContent.colCostEstimate"),
                       ].map((h) => (
                         <th
                           key={h}
@@ -117,9 +106,6 @@ export function RepairDebtPage({ config, data, pageNumber, totalPages, t }: Page
                         </td>
                         <td className="px-4 py-2 text-[#666]">
                           {item.remainingLifespan}
-                        </td>
-                        <td className="px-4 py-2 text-right text-[#666]">
-                          {formatEur(item.cost)}
                         </td>
                       </tr>
                     ))}

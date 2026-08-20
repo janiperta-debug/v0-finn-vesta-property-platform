@@ -20,7 +20,6 @@ import { useTranslation } from "@/lib/i18n"
 import {
   derivePlanItems,
   timelineBuckets,
-  totalRepairCost,
   type PlanItem,
   type UrgencyCode,
 } from "@/lib/building-plan"
@@ -90,7 +89,6 @@ export default function TavoitesuunnitteluPage() {
         const planItems = derivePlanItems(
           {
             construction_year: prop.construction_year,
-            area_m2: prop.area_m2,
             building_type: prop.building_type,
           },
           evaluations,
@@ -107,15 +105,11 @@ export default function TavoitesuunnitteluPage() {
   }
 
   const buckets = timelineBuckets(items, t)
-  const totalInvestment = totalRepairCost(items)
-  const next5YearsTotal = buckets
-    .filter(b => b.urgency !== "5_10v")
-    .reduce((sum, b) => sum + b.total, 0)
-  const criticalCount = items.filter(i => i.urgency === "valitom" && i.cost > 0).length
-
-  function formatEur(value: number) {
-    return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-  }
+  const plannedActionCount = buckets.reduce((sum, bucket) => sum + bucket.items.length, 0)
+  const next5YearsCount = buckets
+    .filter(bucket => bucket.urgency !== "5_10v")
+    .reduce((sum, bucket) => sum + bucket.items.length, 0)
+  const criticalCount = items.filter(i => i.urgency === "valitom").length
 
   if (loading) {
     return (
@@ -190,10 +184,10 @@ export default function TavoitesuunnitteluPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>{t("targetPlanning.totalInvestment")}</CardDescription>
+                <CardDescription>{t("targetPlanning.plannedActionsSuffix")}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatEur(totalInvestment)}</div>
+                <div className="text-2xl font-bold">{plannedActionCount}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {buckets.reduce((n, b) => n + b.items.length, 0)} {t("targetPlanning.plannedActionsSuffix")}
                 </p>
@@ -204,7 +198,7 @@ export default function TavoitesuunnitteluPage() {
                 <CardDescription>{t("targetPlanning.next5Years")}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatEur(next5YearsTotal)}</div>
+                <div className="text-2xl font-bold">{next5YearsCount}</div>
                 <p className="text-xs text-muted-foreground mt-1">{t("targetPlanning.mostUrgentActions")}</p>
               </CardContent>
             </Card>
@@ -238,7 +232,6 @@ export default function TavoitesuunnitteluPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="font-semibold">{formatEur(bucket.total)}</span>
                         <p className="text-xs text-muted-foreground">{bucket.items.length} {t("targetPlanning.actionsSuffix")}</p>
                       </div>
                     </div>
@@ -268,7 +261,6 @@ export default function TavoitesuunnitteluPage() {
                             <Badge variant="outline" className={style.badge}>
                               {style.priorityLabel}
                             </Badge>
-                            <span className="text-sm font-medium">{formatEur(item.cost)}</span>
                           </div>
                         </div>
                       ))}

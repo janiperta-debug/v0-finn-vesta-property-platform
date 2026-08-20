@@ -10,7 +10,6 @@ import {
   BarChart3,
   Building2,
   ArrowUpDown,
-  Euro,
   Ruler,
   TrendingUp,
   TrendingDown,
@@ -33,10 +32,6 @@ interface PropertyComparison {
   yearBuilt: number
   squareMeters: number
   conditionClass: number
-  repairDebt: number
-  repairDebtPerSqm: number
-  technicalValue: number
-  replacementValue: number
 }
 
 export default async function VertailuPage() {
@@ -66,9 +61,6 @@ export default async function VertailuPage() {
 
       if (propsData) {
         properties = propsData.map((p: any) => {
-          const replacementValue = (p.area_m2 || 0) * (p.cost_per_m2 || 2500)
-          const technicalValue = replacementValue * ((p.condition_class || 70) / 100)
-          const repairDebt = replacementValue - technicalValue
           return {
             id: p.id,
             name: p.name || 'Nimetön',
@@ -77,10 +69,6 @@ export default async function VertailuPage() {
             yearBuilt: p.construction_year || 0,
             squareMeters: p.area_m2 || 0,
             conditionClass: p.condition_class || 0,
-            repairDebt: repairDebt,
-            repairDebtPerSqm: p.area_m2 ? repairDebt / p.area_m2 : 0,
-            technicalValue: technicalValue,
-            replacementValue: replacementValue,
           }
         })
       }
@@ -93,13 +81,6 @@ export default async function VertailuPage() {
   const avgCondition = properties.length > 0 
     ? Math.round(properties.reduce((s, p) => s + p.conditionClass, 0) / properties.length)
     : 0
-  const avgRepairDebtPerSqm = properties.length > 0
-    ? properties.reduce((s, p) => s + p.repairDebtPerSqm, 0) / properties.length
-    : 0
-
-  function formatEur(value: number) {
-    return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-  }
 
   function formatNumber(value: number) {
     return new Intl.NumberFormat("fi-FI").format(value)
@@ -175,24 +156,6 @@ export default async function VertailuPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Korjausvelka/m² (keskim.)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatEur(avgRepairDebtPerSqm)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>Korjausvelka yhteensä</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatEur(properties.reduce((s, p) => s + p.repairDebt, 0))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Comparison table */}
@@ -219,8 +182,6 @@ export default async function VertailuPage() {
                       </TableHead>
                       <TableHead>Rakennettu</TableHead>
                       <TableHead>Kuntoluokka</TableHead>
-                      <TableHead className="text-right">Korjausvelka</TableHead>
-                      <TableHead className="text-right">€/m²</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -262,12 +223,6 @@ export default async function VertailuPage() {
                               {property.conditionClass}%
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatEur(property.repairDebt)}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatEur(property.repairDebtPerSqm)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -314,37 +269,6 @@ export default async function VertailuPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Korjausvelka kiinteistöittäin</CardTitle>
-                <CardDescription>Suurimmat korjausvelat</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[...properties]
-                    .sort((a, b) => b.repairDebt - a.repairDebt)
-                    .slice(0, 5)
-                    .map((property) => {
-                      const maxDebt = Math.max(...properties.map(p => p.repairDebt))
-                      const percentage = maxDebt > 0 ? (property.repairDebt / maxDebt) * 100 : 0
-                      return (
-                        <div key={property.id} className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium truncate max-w-[60%]">{property.name}</span>
-                            <span>{formatEur(property.repairDebt)}</span>
-                          </div>
-                          <div className="h-2 rounded-full bg-muted overflow-hidden">
-                            <div 
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </>
       )}

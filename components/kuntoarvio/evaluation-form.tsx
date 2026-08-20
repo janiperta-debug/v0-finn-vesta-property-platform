@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConditionBadge, ConditionScaleLegend } from './condition-badge'
 import { UrgencyBadge, UrgencyScaleLegend } from './urgency-badge'
@@ -111,7 +110,6 @@ function SubItemForm({ subItem, evaluation, onChange }: SubItemFormProps) {
       urgency: evaluation?.urgency,
       notes: evaluation?.notes,
       photos: evaluation?.photos,
-      estimatedCost: evaluation?.estimatedCost,
     })
   }
 
@@ -128,14 +126,6 @@ function SubItemForm({ subItem, evaluation, onChange }: SubItemFormProps) {
     onChange({
       ...evaluation,
       notes,
-    })
-  }
-
-  const handleCostChange = (cost: string) => {
-    if (!evaluation?.score) return
-    onChange({
-      ...evaluation,
-      estimatedCost: cost ? parseInt(cost, 10) : undefined,
     })
   }
 
@@ -167,17 +157,7 @@ function SubItemForm({ subItem, evaluation, onChange }: SubItemFormProps) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor={`cost-${subItem.id}`} className="text-xs">
-                {t("evaluationUi.costEstimateLabel")}
-              </Label>
-              <Input
-                id={`cost-${subItem.id}`}
-                type="number"
-                value={evaluation.estimatedCost || ''}
-                onChange={(e) => handleCostChange(e.target.value)}
-                placeholder="0"
-              />
+            <div className="flex items-end">
               <Button variant="outline" size="sm" className="w-full gap-2">
                 <Camera className="h-4 w-4" />
                 {t("evaluationUi.addPhoto")}

@@ -17,7 +17,7 @@ import {
   ChevronRight,
   Wrench,
 } from "lucide-react"
-import { formatEur } from "@/lib/mock-data"
+import { formatEur } from "@/lib/utils"
 import { useTranslation } from "@/lib/i18n"
 import { getCategoryName } from "@/lib/kuntoarvio-data"
 
@@ -210,9 +210,6 @@ export function ApartmentGrid({ apartments, evaluations = [], onSelect }: Apartm
                                     {getCategoryName(cs.categoryId, t)}
                                   </span>
                                 </div>
-                                {cs.estimatedCost && (
-                                  <span className="text-sm font-medium">{formatEur(cs.estimatedCost)}</span>
-                                )}
                               </div>
                             ))}
                             {evaluation.notes && (

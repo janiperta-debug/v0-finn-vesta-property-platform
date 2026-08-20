@@ -1,7 +1,6 @@
 import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
 import { derivePlanItems, repairItems, type UrgencyCode } from "@/lib/building-plan"
-import { formatEur } from "@/lib/database.types"
 
 function urgencyShort(u: UrgencyCode, t: (k: string) => string): string {
   switch (u) {
@@ -78,7 +77,6 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
                     {item.remainingLifespan > 0
                       ? `${t("reportContent.recRemainingApprox")} ${item.remainingLifespan} v`
                       : t("reportContent.recLifespanFull")}{" "}
-                    · {t("reportContent.estimateWord")} {formatEur(item.cost)}
                   </p>
                 </div>
               </div>
@@ -97,7 +95,6 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
                     t("reportContent.colAction"),
                     t("reportContent.colComponent"),
                     t("reportContent.colSchedule"),
-                    t("reportContent.colEstimate"),
                   ].map((h) => (
                     <th
                       key={h}
@@ -122,9 +119,6 @@ export function RecommendationsPage({ config, data, pageNumber, totalPages, t }:
                     <td className="px-4 py-2 text-[#666]">{task.component_type ?? "—"}</td>
                     <td className="px-4 py-2 text-[#666]">
                       {task.scheduled_date?.slice(0, 10) ?? "—"}
-                    </td>
-                    <td className="px-4 py-2 text-right text-[#666]">
-                      {task.estimated_cost != null ? formatEur(task.estimated_cost) : "—"}
                     </td>
                   </tr>
                 ))}

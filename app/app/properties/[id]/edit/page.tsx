@@ -18,7 +18,6 @@ import {
   componentLifespans, 
   generateInitialAssessment, 
   calculateOverallCondition,
-  calculateTotalRepairDebt,
   getComponentName,
   getComponentOptionLabel,
   type BuildingStructureData 
@@ -361,7 +360,6 @@ export default function EditPropertyPage() {
               usage_category: space.type,
               notes: space.notes || null,
               construction_year: parseInt(formData.buildYear) || 0,
-              cost_per_m2: 0,
               status: "active",
               is_sub_building: true,
             })
@@ -444,7 +442,6 @@ export default function EditPropertyPage() {
                   score: a.conditionScore,
                   urgency: urgencyMap[a.urgencyClass] || 'monitoring',
                   comment: a.notes,
-                  cost_estimate: a.estimatedRepairCost,
                   mode: 'basic',
                   is_applicable: true,
                   is_migrated: false,
@@ -807,18 +804,12 @@ export default function EditPropertyPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4 sm:grid-cols-3 mb-6">
+                  <div className="grid gap-4 sm:grid-cols-2 mb-6">
                     <div className="text-center p-4 bg-muted/50 rounded-lg">
                       <div className="text-2xl font-bold text-foreground">
                         {calculateOverallCondition(previewAssessment).toFixed(1)}
                       </div>
                       <div className="text-sm text-muted-foreground">{t("propertyEdit.overallConditionLabel")}</div>
-                    </div>
-                    <div className="text-center p-4 bg-muted/50 rounded-lg">
-                      <div className="text-2xl font-bold text-amber-400">
-                        {(calculateTotalRepairDebt(previewAssessment) / 1000).toFixed(0)} k€
-                      </div>
-                      <div className="text-sm text-muted-foreground">{t("propertyEdit.estimatedRepairDebtLabel")}</div>
                     </div>
                     <div className="text-center p-4 bg-muted/50 rounded-lg">
                       <div className="text-2xl font-bold text-foreground">
@@ -839,9 +830,6 @@ export default function EditPropertyPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-medium text-amber-400">
-                            {item.estimatedRepairCost > 0 ? `${(item.estimatedRepairCost / 1000).toFixed(0)} k€` : '-'}
-                          </div>
                           <div className="text-xs text-muted-foreground">
                             {item.remainingLifespan > 0 ? `${item.remainingLifespan}${t("propertyComponents.yearsRemainingSuffix")}` : t("propertyEdit.needsReplacement")}
                           </div>

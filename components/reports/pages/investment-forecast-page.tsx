@@ -1,6 +1,5 @@
 import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
-import { formatEur } from "@/lib/database.types"
 
 const PRIORITY_KEYS: Record<string, string> = {
   low: "reportContent.prioLow",
@@ -45,14 +44,13 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages, t
     )
   }
 
-  // Group by year for the bar chart
+  // Group actions by year for the timeline
   const byYear = rows.reduce<Record<number, number>>((acc, r) => {
-    acc[r.plan_year] = (acc[r.plan_year] ?? 0) + (r.planned_investment ?? 0)
+    acc[r.plan_year] = (acc[r.plan_year] ?? 0) + 1
     return acc
   }, {})
   const years = Object.keys(byYear).map(Number).sort()
   const maxVal = Math.max(...Object.values(byYear), 1)
-  const totalInvestment = rows.reduce((s, r) => s + (r.planned_investment ?? 0), 0)
 
   return (
     <ReportPage
@@ -66,7 +64,6 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages, t
       {/* Summary */}
       <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
         {[
-          { label: t("reportContent.investmentKpiTotal"), value: formatEur(totalInvestment) },
           { label: t("reportContent.investmentKpiRows"), value: String(rows.length) },
           {
             label: t("reportContent.investmentKpiTimespan"),
@@ -97,7 +94,7 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages, t
                 return (
                   <div key={yr} className="flex flex-1 flex-col items-center gap-1">
                     <span className="text-[9px] text-[#999]">
-                      {val > 0 ? formatEur(val) : ""}
+                      {val > 0 ? String(val) : ""}
                     </span>
                     <div
                       className="w-full rounded-t-sm bg-[#C8A84B]/70"
@@ -121,7 +118,6 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages, t
                 {[
                   t("reportContent.colYear"),
                   t("reportContent.colType"),
-                  t("reportContent.colInvestment"),
                   t("reportContent.colPriority"),
                   t("reportContent.colStatus"),
                 ].map((h) => (
@@ -146,9 +142,6 @@ export function InvestmentForecastPage({ config, data, pageNumber, totalPages, t
                 >
                   <td className="px-4 py-2 font-medium text-[#1a1a1a]">{r.plan_year}</td>
                   <td className="px-4 py-2 text-[#666]">{r.investment_type ?? "—"}</td>
-                  <td className="px-4 py-2 text-right text-[#666]">
-                    {r.planned_investment != null ? formatEur(r.planned_investment) : "—"}
-                  </td>
                   <td className="px-4 py-2 text-[#666]">
                     {translatePriority(r.priority, t)}
                   </td>

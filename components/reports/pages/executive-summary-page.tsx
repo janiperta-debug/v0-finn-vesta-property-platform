@@ -1,7 +1,6 @@
 import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
-import { derivePlanItems, overallCondition, repairItems, totalRepairCost } from "@/lib/building-plan"
-import { formatEur } from "@/lib/database.types"
+import { derivePlanItems, overallCondition, repairItems } from "@/lib/building-plan"
 
 function conditionLabel(s: number, t: (k: string) => string) {
   if (s >= 4.5) return t("reportContent.condExcellent")
@@ -21,7 +20,6 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
   const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const condition = overallCondition(planItems)
   const repairs = repairItems(planItems)
-  const debt = totalRepairCost(planItems)
   const completed = data.maintenanceTasks.filter((t) => t.status === "completed")
   const upcoming = data.maintenanceTasks.filter(
     (t) => t.status === "planned" || t.status === "in_progress",
@@ -35,9 +33,9 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
       color: condition > 0 ? conditionColor(condition) : "#aaa",
     },
     {
-      label: t("reportContent.execRepairDebt"),
-      value: debt > 0 ? formatEur(debt) : "—",
-      sub: t("reportContent.execRtStandard"),
+      label: t("reportContent.execNeedsAttention"),
+      value: String(repairs.length),
+      sub: t("reportContent.execComponentsUnit"),
       color: "#1a1a1a",
     },
     {
@@ -113,7 +111,7 @@ export function ExecutiveSummaryPage({ config, data, pageNumber, totalPages, t }
               >
                 <span className="font-medium text-[#1a1a1a]">{item.categoryName}</span>
                 <span className="text-[#999]">
-                  {t("reportContent.conditionWord")} {item.conditionScore.toFixed(1)} · {formatEur(item.cost)}
+                  {t("reportContent.conditionWord")} {item.conditionScore.toFixed(1)} · {item.remainingLifespan}
                 </span>
               </li>
             ))}

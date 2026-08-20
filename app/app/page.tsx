@@ -21,8 +21,6 @@ interface PortfolioStats {
   totalProperties: number
   totalSquareMeters: number
   avgCondition: number
-  totalValue: number
-  repairDebt: number
   urgentItems: number
   upcomingInspections: number
 }
@@ -31,25 +29,13 @@ const mockStats: PortfolioStats = {
   totalProperties: 0,
   totalSquareMeters: 0,
   avgCondition: 0,
-  totalValue: 0,
-  repairDebt: 0,
   urgentItems: 0,
   upcomingInspections: 0,
 }
 
-function formatEur(value: number, locale: string) {
-  if (value >= 1000000000) {
-    return `${(value / 1000000000).toFixed(2)} mrd €`
-  }
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)} M€`
-  }
-  return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-}
-
 export default async function AppPage() {
   const supabase = await createClient()
-  const { t, locale } = await getTranslation()
+  const { t } = await getTranslation()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -88,14 +74,11 @@ export default async function AppPage() {
       if (properties && properties.length > 0) {
         hasData = true
         const totalSqm = properties.reduce((sum, p) => sum + (p.area_m2 || 0), 0)
-        const totalValue = properties.reduce((sum, p) => sum + (p.cost_per_m2 || 0) * (p.area_m2 || 0), 0)
-
+        
         stats = {
           totalProperties: properties.length,
           totalSquareMeters: totalSqm,
           avgCondition: 77,
-          totalValue: totalValue || 1260000000,
-          repairDebt: 22400000,
           urgentItems: 3,
           upcomingInspections: 2,
         }
@@ -158,14 +141,7 @@ export default async function AppPage() {
           {/* Bottom: Key stats overlaid on image */}
           {hasData && (
             <div className="mt-auto grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-              <div className="rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md">
-                <p className="text-xs text-muted-foreground">{t("dashboard.portfolioValue")}</p>
-                <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{formatEur(stats.totalValue, locale)}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-emerald-500">
-                  <TrendingUp className="h-3 w-3" />
-                  +4,7%
-                </p>
-              </div>
+              
 
               <div className="rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md">
                 <p className="text-xs text-muted-foreground">{t("dashboard.propertiesCount")}</p>
@@ -191,14 +167,6 @@ export default async function AppPage() {
                 </p>
               </div>
 
-              <div className="hidden rounded-xl border border-border/30 bg-card/60 p-4 backdrop-blur-md lg:block">
-                <p className="text-xs text-muted-foreground">{t("dashboard.maintenanceDebt")}</p>
-                <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">{formatEur(stats.repairDebt, locale)}</p>
-                <p className="mt-1 flex items-center gap-1 text-xs text-red-400">
-                  <TrendingDown className="h-3 w-3" />
-                  -3,2 M€
-                </p>
-              </div>
             </div>
           )}
         </div>

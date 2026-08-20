@@ -50,9 +50,9 @@ const MODULE_PAGE_MAP: Record<string, PageComponent> = {
   "inspection-findings": InspectionFindingsPage,
   "photo-gallery": PhotoGalleryPage,
   "maintenance-history": MaintenanceHistoryPage,
-  "repair-debt": RepairDebtPage,
+  "maintenance-needs": RepairDebtPage,
   pts: PTSPage,
-  "investment-forecast": InvestmentForecastPage,
+  "action-plan": InvestmentForecastPage,
   recommendations: RecommendationsPage,
 }
 

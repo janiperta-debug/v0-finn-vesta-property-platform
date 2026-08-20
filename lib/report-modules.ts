@@ -154,7 +154,7 @@ export const REPORT_MODULES: ReportModuleConfig[] = [
     estimatedTables: 2,
   },
   {
-    id: "repair-debt",
+    id: "maintenance-needs",
     titleKey: "reports.modRepairDebtTitle",
     descriptionKey: "reports.modRepairDebtDesc",
     icon: TrendingDown,
@@ -184,19 +184,15 @@ export const REPORT_MODULES: ReportModuleConfig[] = [
         labelKey: "reports.optPlanningPeriod",
         choiceKeys: ["reports.opt5Years", "reports.opt10Years", "reports.opt15Years"],
       },
-      {
-        labelKey: "reports.optIncludeCosts",
-        choiceKeys: ["reports.optYes", "reports.optNo"],
-      },
     ],
   },
   // --- Financial ---
   {
-    id: "investment-forecast",
+    id: "action-plan",
     titleKey: "reports.modInvestmentForecastTitle",
     descriptionKey: "reports.modInvestmentForecastDesc",
     icon: LineChart,
-    group: "financial",
+    group: "maintenance",
     required: false,
     defaultSelected: false,
     expandable: true,

@@ -4,7 +4,6 @@ import {
   derivePlanItems,
   timelineBuckets,
 } from "@/lib/building-plan"
-import { formatEur } from "@/lib/database.types"
 
 export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
@@ -14,8 +13,8 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
   // Also include investment_plans rows from DB
   const investmentRows = data.investmentPlans.sort((a, b) => a.plan_year - b.plan_year)
 
-  // Bar chart: costs grouped by urgency bucket
-  const maxTotal = Math.max(...buckets.map((b) => b.total), 1)
+  // Bar chart: planned action counts grouped by urgency bucket
+  const maxTotal = Math.max(...buckets.map((b) => b.items.length), 1)
 
   return (
     <ReportPage
@@ -34,15 +33,15 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
         <>
           {/* Urgency bucket bars */}
           {buckets.length > 0 && (
-            <PageSection title={t("reportContent.ptsCostByUrgency")}>
+            <PageSection title={t("reportContent.urgencyDistribution")}>
               <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-6">
                 <div className="flex h-28 items-end gap-4">
                   {buckets.map((b) => {
-                    const pct = Math.round((b.total / maxTotal) * 100)
+                    const pct = Math.round((b.items.length / maxTotal) * 100)
                     return (
                       <div key={b.urgency} className="flex flex-1 flex-col items-center gap-1.5">
                         <span className="text-[10px] font-semibold text-[#555]">
-                          {formatEur(b.total)}
+                          {b.items.length}
                         </span>
                         <div
                           className="w-full rounded-t-sm bg-[#1e6fbf]/70"
@@ -63,7 +62,7 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
           {buckets.map((bucket) => (
             <PageSection
               key={bucket.urgency}
-              title={`${bucket.label} — ${formatEur(bucket.total)}`}
+              title={`${bucket.label} — ${bucket.items.length}`}
             >
               <div className="overflow-hidden rounded-lg border border-[#e5e5e5]">
                 <table className="w-full text-sm">
@@ -73,7 +72,6 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
                         t("reportContent.colComponent"),
                         t("reportContent.colCondition"),
                         t("reportContent.colRemainingYears"),
-                        t("reportContent.colCostEstimate"),
                       ].map(
                         (h) => (
                           <th
@@ -103,9 +101,6 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
                           {item.conditionScore.toFixed(1)} / 5
                         </td>
                         <td className="px-4 py-2 text-[#666]">{item.remainingLifespan}</td>
-                        <td className="px-4 py-2 text-right text-[#666]">
-                          {formatEur(item.cost)}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -124,7 +119,6 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
                       {[
                         t("reportContent.colYear"),
                         t("reportContent.colType"),
-                        t("reportContent.colInvestment"),
                         t("reportContent.colPriority"),
                         t("reportContent.colStatus"),
                       ].map((h) => (
@@ -151,11 +145,6 @@ export function PTSPage({ config, data, pageNumber, totalPages, t }: PageProps) 
                           {row.plan_year}
                         </td>
                         <td className="px-4 py-2 text-[#666]">{row.investment_type ?? "—"}</td>
-                        <td className="px-4 py-2 text-[#666]">
-                          {row.planned_investment != null
-                            ? formatEur(row.planned_investment)
-                            : "—"}
-                        </td>
                         <td className="px-4 py-2 text-[#666]">{row.priority ?? "—"}</td>
                         <td className="px-4 py-2 text-[#666]">{row.status ?? "—"}</td>
                       </tr>
