@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getTranslation } from "@/lib/i18n/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -40,6 +41,7 @@ interface PropertyComparison {
 }
 
 export default async function VertailuPage() {
+  const { locale, t } = await getTranslation()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -71,7 +73,7 @@ export default async function VertailuPage() {
           const repairDebt = replacementValue - technicalValue
           return {
             id: p.id,
-            name: p.name || 'Nimetön',
+            name: p.name || t("comparison.unnamed"),
             address: p.address || '',
             buildingType: p.building_type || 'muu',
             yearBuilt: p.construction_year || 0,
@@ -98,22 +100,22 @@ export default async function VertailuPage() {
     : 0
 
   function formatEur(value: number) {
-    return new Intl.NumberFormat("fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
   }
 
   function formatNumber(value: number) {
-    return new Intl.NumberFormat("fi-FI").format(value)
+    return new Intl.NumberFormat(locale).format(value)
   }
 
   const buildingTypeLabels: Record<string, string> = {
-    kerrostalo: 'Kerrostalo',
-    rivitalo: 'Rivitalo',
-    paritalo: 'Paritalo',
-    omakotitalo: 'Omakotitalo',
-    toimisto: 'Toimistorakennus',
-    varasto: 'Varastorakennus',
-    teollisuus: 'Teollisuusrakennus',
-    muu: 'Muu',
+    kerrostalo: t("propertyTypes.kerrostalo"),
+    rivitalo: t("propertyTypes.rivitalo"),
+    paritalo: t("propertyTypes.paritalo"),
+    omakotitalo: t("propertyTypes.omakotitalo"),
+    toimisto: t("propertyTypes.toimisto"),
+    varasto: t("comparison.varasto"),
+    teollisuus: t("propertyTypes.teollisuus"),
+    muu: t("propertyTypes.muu"),
   }
 
   return (
@@ -121,9 +123,9 @@ export default async function VertailuPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Vertailu</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t("comparison.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Vertaile kiinteistöjä keskenään ja analysoi portfoliota
+            {t("comparison.subtitle")}
           </p>
         </div>
       </div>
@@ -134,14 +136,14 @@ export default async function VertailuPage() {
             <div className="rounded-full bg-muted p-4 mb-4">
               <BarChart3 className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Ei vertailtavia kiinteistöjä</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t("comparison.emptyTitle")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-              Lisää kiinteistöjä portfolioosi nähdäksesi vertailutiedot.
+              {t("comparison.emptyDescription")}
             </p>
             <Button asChild>
               <Link href="/app/properties/new">
                 <Building2 className="mr-2 h-4 w-4" />
-                Lisää kiinteistö
+                {t("comparison.addProperty")}
               </Link>
             </Button>
           </CardContent>
@@ -152,7 +154,7 @@ export default async function VertailuPage() {
           <div className="grid gap-4 sm:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Kiinteistöjä</CardDescription>
+                <CardDescription>{t("comparison.propertiesLabel")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{properties.length}</div>
@@ -160,7 +162,7 @@ export default async function VertailuPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Keskimääräinen kuntoluokka</CardDescription>
+                <CardDescription>{t("comparison.avgConditionLabel")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2">
@@ -177,7 +179,7 @@ export default async function VertailuPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Korjausvelka/m² (keskim.)</CardDescription>
+                <CardDescription>{t("comparison.avgRepairDebtPerSqmLabel")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatEur(avgRepairDebtPerSqm)}</div>
@@ -185,7 +187,7 @@ export default async function VertailuPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Korjausvelka yhteensä</CardDescription>
+                <CardDescription>{t("comparison.totalRepairDebtLabel")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
