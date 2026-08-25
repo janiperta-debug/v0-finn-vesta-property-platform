@@ -200,8 +200,8 @@ export default async function VertailuPage() {
           {/* Comparison table */}
           <Card>
             <CardHeader>
-              <CardTitle>Kiinteistövertailu</CardTitle>
-              <CardDescription>Vertaa kiinteistöjen tunnuslukuja</CardDescription>
+              <CardTitle>{t("comparison.tableTitle")}</CardTitle>
+              <CardDescription>{t("comparison.tableDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -211,17 +211,17 @@ export default async function VertailuPage() {
                       <TableHead className="w-10">
                         <Checkbox />
                       </TableHead>
-                      <TableHead>Kiinteistö</TableHead>
-                      <TableHead>Tyyppi</TableHead>
+                      <TableHead>{t("comparison.colProperty")}</TableHead>
+                      <TableHead>{t("comparison.colType")}</TableHead>
                       <TableHead className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Ruler className="h-4 w-4" />
-                          Pinta-ala
+                          {t("comparison.colArea")}
                         </div>
                       </TableHead>
-                      <TableHead>Rakennettu</TableHead>
-                      <TableHead>Kuntoluokka</TableHead>
-                      <TableHead className="text-right">Korjausvelka</TableHead>
+                      <TableHead>{t("comparison.colBuilt")}</TableHead>
+                      <TableHead>{t("comparison.colCondition")}</TableHead>
+                      <TableHead className="text-right">{t("comparison.colRepairDebt")}</TableHead>
                       <TableHead className="text-right">€/m²</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -283,17 +283,17 @@ export default async function VertailuPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Kuntoluokkajakauma</CardTitle>
-                <CardDescription>Kiinteistöt kuntoluokan mukaan</CardDescription>
+                <CardTitle>{t("comparison.distributionTitle")}</CardTitle>
+                <CardDescription>{t("comparison.distributionDescription")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {[
-                    { label: 'Erinomainen (80-100%)', min: 80, max: 100, color: 'bg-emerald-500' },
-                    { label: 'Hyvä (60-79%)', min: 60, max: 79, color: 'bg-emerald-400' },
-                    { label: 'Tyydyttävä (40-59%)', min: 40, max: 59, color: 'bg-amber-500' },
-                    { label: 'Välttävä (20-39%)', min: 20, max: 39, color: 'bg-orange-500' },
-                    { label: 'Heikko (0-19%)', min: 0, max: 19, color: 'bg-red-500' },
+                    { label: t("comparison.condExcellentRange"), min: 80, max: 100, color: 'bg-emerald-500' },
+                    { label: t("comparison.condGoodRange"), min: 60, max: 79, color: 'bg-emerald-400' },
+                    { label: t("comparison.condSatisfactoryRange"), min: 40, max: 59, color: 'bg-amber-500' },
+                    { label: t("comparison.condPoorRange"), min: 20, max: 39, color: 'bg-orange-500' },
+                    { label: t("comparison.condWeakRange"), min: 0, max: 19, color: 'bg-red-500' },
                   ].map(({ label, min, max, color }) => {
                     const count = properties.filter(p => p.conditionClass >= min && p.conditionClass <= max).length
                     const percentage = properties.length > 0 ? (count / properties.length) * 100 : 0
@@ -301,7 +301,7 @@ export default async function VertailuPage() {
                       <div key={label} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
                           <span>{label}</span>
-                          <span className="font-medium">{count} kpl</span>
+                          <span className="font-medium">{count} {t("comparison.unitPcs")}</span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <div 
