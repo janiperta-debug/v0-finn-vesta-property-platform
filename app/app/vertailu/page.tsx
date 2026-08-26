@@ -318,8 +318,8 @@ export default async function VertailuPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Korjausvelka kiinteistöittäin</CardTitle>
-                <CardDescription>Suurimmat korjausvelat</CardDescription>
+                <CardTitle>{t("comparison.repairDebtByPropertyTitle")}</CardTitle>
+                <CardDescription>{t("comparison.largestRepairDebtsDescription")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
