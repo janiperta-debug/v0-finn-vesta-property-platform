@@ -83,16 +83,6 @@ export default async function VertailuPage() {
   const avgCondition = properties.length > 0 
     ? Math.round(properties.reduce((s, p) => s + p.conditionClass, 0) / properties.length)
     : 0
-<<<<<<< HEAD
-  const avgRepairDebtPerSqm = properties.length > 0
-    ? properties.reduce((s, p) => s + p.repairDebtPerSqm, 0) / properties.length
-    : 0
-
-  function formatEur(value: number) {
-    return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-  }
-=======
->>>>>>> origin/main
 
   function formatNumber(value: number) {
     return new Intl.NumberFormat(locale).format(value)
@@ -168,27 +158,6 @@ export default async function VertailuPage() {
                 </div>
               </CardContent>
             </Card>
-<<<<<<< HEAD
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>{t("comparison.avgRepairDebtPerSqmLabel")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatEur(avgRepairDebtPerSqm)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription>{t("comparison.totalRepairDebtLabel")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatEur(properties.reduce((s, p) => s + p.repairDebt, 0))}
-                </div>
-              </CardContent>
-            </Card>
-=======
->>>>>>> origin/main
           </div>
 
           {/* Comparison table */}
@@ -213,15 +182,8 @@ export default async function VertailuPage() {
                           {t("comparison.colArea")}
                         </div>
                       </TableHead>
-<<<<<<< HEAD
                       <TableHead>{t("comparison.colBuilt")}</TableHead>
                       <TableHead>{t("comparison.colCondition")}</TableHead>
-                      <TableHead className="text-right">{t("comparison.colRepairDebt")}</TableHead>
-                      <TableHead className="text-right">€/m²</TableHead>
-=======
-                      <TableHead>Rakennettu</TableHead>
-                      <TableHead>Kuntoluokka</TableHead>
->>>>>>> origin/main
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -309,40 +271,6 @@ export default async function VertailuPage() {
               </CardContent>
             </Card>
 
-<<<<<<< HEAD
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("comparison.repairDebtByPropertyTitle")}</CardTitle>
-                <CardDescription>{t("comparison.largestRepairDebtsDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[...properties]
-                    .sort((a, b) => b.repairDebt - a.repairDebt)
-                    .slice(0, 5)
-                    .map((property) => {
-                      const maxDebt = Math.max(...properties.map(p => p.repairDebt))
-                      const percentage = maxDebt > 0 ? (property.repairDebt / maxDebt) * 100 : 0
-                      return (
-                        <div key={property.id} className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium truncate max-w-[60%]">{property.name}</span>
-                            <span>{formatEur(property.repairDebt)}</span>
-                          </div>
-                          <div className="h-2 rounded-full bg-muted overflow-hidden">
-                            <div 
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </CardContent>
-            </Card>
-=======
->>>>>>> origin/main
           </div>
         </>
       )}
