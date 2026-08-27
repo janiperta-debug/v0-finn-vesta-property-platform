@@ -38,7 +38,6 @@ interface RecommendedItem {
   categoryName: string
   conditionScore: number
   urgency: UrgencyCode
-  cost: number
   fromInspection: boolean
 }
 
@@ -89,7 +88,7 @@ export default async function HuoltohistoriaPage() {
       // 1. All buildings in the org (basics for RT-derived baseline)
       const { data: buildings } = await supabase
         .from("buildings")
-        .select("id, name, construction_year, area_m2, building_type")
+        .select("id, name, construction_year, building_type")
         .eq("org_id", orgUser.org_id)
 
       // 2. Latest inspection per building
@@ -112,7 +111,7 @@ export default async function HuoltohistoriaPage() {
       if (inspectionIds.length > 0) {
         const { data: evals } = await supabase
           .from("category_evaluations")
-          .select("category_id, score, urgency, cost_estimate, inspection_id")
+          .select("category_id, score, urgency, inspection_id")
           .in("inspection_id", inspectionIds)
 
         const buildingByInspection = new Map<string, number>()
@@ -130,11 +129,10 @@ export default async function HuoltohistoriaPage() {
       // 4. Derive recommended maintenance across the whole portfolio
       for (const b of buildings || []) {
         const planItems: PlanItem[] = derivePlanItems(
-          {
-            construction_year: b.construction_year,
-            area_m2: b.area_m2,
-            building_type: b.building_type,
-          },
+  {
+    construction_year: b.construction_year,
+    building_type: b.building_type,
+  },
           evalsByBuilding.get(b.id) || [],
           t
         )
@@ -146,16 +144,15 @@ export default async function HuoltohistoriaPage() {
             categoryName: item.categoryName,
             conditionScore: item.conditionScore,
             urgency: item.urgency,
-            cost: item.cost,
             fromInspection: item.fromInspection,
           })
         }
       }
 
-      // Sort recommended by urgency then cost desc
+      // Sort recommended by urgency
       recommended.sort((a, b) => {
         const u = URGENCY_ORDER.indexOf(a.urgency) - URGENCY_ORDER.indexOf(b.urgency)
-        return u !== 0 ? u : b.cost - a.cost
+        return u
       })
 
       // 5. Actual completed / logged maintenance work
@@ -185,7 +182,6 @@ export default async function HuoltohistoriaPage() {
     console.log("[v0] Error building maintenance overview:", error)
   }
 
-  const totalRecommendedCost = recommended.reduce((sum, r) => sum + r.cost, 0)
   const criticalCount = recommended.filter(r => r.urgency === "valitom").length
   const completedCount = tasks.filter(task => task.status === "complete").length
 
@@ -254,14 +250,6 @@ export default async function HuoltohistoriaPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{t("maintenance.statEstimatedCost")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatEur(totalRecommendedCost, locale)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
             <CardDescription>{t("maintenance.statLoggedWorks")}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -306,9 +294,6 @@ export default async function HuoltohistoriaPage() {
                       <h4 className="font-heading text-sm font-semibold text-foreground">{group.label}</h4>
                       <Badge variant="secondary" className="text-xs">{group.items.length}</Badge>
                     </div>
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {formatEur(group.items.reduce((sum, i) => sum + i.cost, 0), locale)}
-                    </span>
                   </div>
                   <div className="space-y-2">
                     {group.items.map(item => (
@@ -331,7 +316,6 @@ export default async function HuoltohistoriaPage() {
                           <Badge variant="outline" className={urgencyBadge[item.urgency]}>
                             KL {item.conditionScore}
                           </Badge>
-                          <span className="text-sm font-medium">{formatEur(item.cost, locale)}</span>
                         </div>
                       </Link>
                     ))}

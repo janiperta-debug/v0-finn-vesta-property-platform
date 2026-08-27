@@ -20,7 +20,6 @@ import { useTranslation } from "@/lib/i18n"
 import {
   derivePlanItems,
   overallCondition,
-  totalRepairCost,
   urgencyLabel,
   type PlanItem,
 } from "@/lib/building-plan"
@@ -103,7 +102,6 @@ export default function KomponentitPage() {
         const planItems = derivePlanItems(
           {
             construction_year: prop.construction_year,
-            area_m2: prop.area_m2,
             building_type: prop.building_type,
           },
           evaluations,
@@ -122,11 +120,6 @@ export default function KomponentitPage() {
   // Stats derived from the plan
   const avgCondition = overallCondition(items)
   const urgentCount = items.filter(i => i.urgency === "valitom" || i.urgency === "1_3v").length
-  const totalEstimatedCost = totalRepairCost(items)
-
-  function formatEur(value: number) {
-    return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-  }
 
   if (loading) {
     return (
@@ -158,7 +151,7 @@ export default function KomponentitPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t("propertyComponents.avgCondition")}</CardDescription>
@@ -187,14 +180,6 @@ export default function KomponentitPage() {
             <p className="text-xs text-muted-foreground mt-1">
               {t("propertyComponents.urgentActionsSuffix")}
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>{t("propertyComponents.estimatedRepairCost")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatEur(totalEstimatedCost)}</div>
           </CardContent>
         </Card>
       </div>
@@ -267,9 +252,6 @@ export default function KomponentitPage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        {item.cost > 0 && (
-                          <p className="font-medium">{formatEur(item.cost)}</p>
-                        )}
                         <p className="text-xs text-muted-foreground">
                           {item.remainingLifespan > 0 ? `~${item.remainingLifespan}${t("propertyComponents.yearsRemainingSuffix")}` : t("propertyComponents.lifespanExceeded")}
                         </p>

@@ -1,13 +1,12 @@
 import type { PageProps } from "@/components/reports/report-engine"
 import { ReportPage, PageSection } from "./report-page"
-import { derivePlanItems, overallCondition, totalRepairCost } from "@/lib/building-plan"
-import { formatEur } from "@/lib/database.types"
+import { derivePlanItems, overallCondition, repairItems } from "@/lib/building-plan"
 
 export function ClosingPage({ config, data, pageNumber, totalPages, t }: PageProps) {
   const building = data.buildings[0] ?? null
   const planItems = building ? derivePlanItems(building, data.categoryEvaluations, t) : []
   const condition = overallCondition(planItems)
-  const debt = totalRepairCost(planItems)
+  const repairs = repairItems(planItems)
 
   // Report metadata
   const meta = [
@@ -34,7 +33,7 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
       <h2 className="mb-8 text-xl font-bold text-[#1a1a1a]">{t("reportContent.closingHeading")}</h2>
 
       {/* Key findings */}
-      {(condition > 0 || debt > 0) && (
+      {(condition > 0 || repairs.length > 0) && (
         <PageSection title={t("reportContent.closingKeyFindings")}>
           <div className="grid grid-cols-2 gap-4">
             {condition > 0 && (
@@ -45,10 +44,10 @@ export function ClosingPage({ config, data, pageNumber, totalPages, t }: PagePro
                 </p>
               </div>
             )}
-            {debt > 0 && (
+            {repairs.length > 0 && (
               <div className="rounded-lg border border-[#e5e5e5] bg-[#fafafa] p-4">
-                <p className="text-[10px] uppercase tracking-wider text-[#aaa]">{t("reportContent.execRepairDebt")}</p>
-                <p className="mt-1 text-2xl font-bold text-[#1a1a1a]">{formatEur(debt)}</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#aaa]">{t("reportContent.execNeedsAttention")}</p>
+                <p className="mt-1 text-2xl font-bold text-[#1a1a1a]">{repairs.length}</p>
               </div>
             )}
           </div>

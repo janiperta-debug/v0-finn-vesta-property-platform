@@ -1,8 +1,8 @@
 // Single source of truth for a building's condition & long-term plan (PTS).
 //
-// Derives per-category condition, urgency and repair cost from:
+// Derives per-category condition and urgency from:
 //   1. Building basics (construction year, area, type) + RT standards  -> baseline
-//   2. Stored category_evaluations (score/urgency/cost_estimate)        -> refinement
+//   2. Stored category_evaluations (score/urgency)                      -> refinement
 //
 // This lets a property show a meaningful baseline the moment it is added,
 // even before any inspection, and lets every inspection/investment refine it.
@@ -11,7 +11,6 @@ import { categories, buildingTypeTemplates } from "@/lib/kuntoarvio-data"
 import {
   categoryIdMapping,
   calculateConditionScore,
-  calculateRepairCost,
 } from "@/lib/rt-standards"
 
 // Urgency codes match the database CHECK constraint on category_evaluations.urgency
@@ -33,27 +32,27 @@ export function categoryName(stringId: string, t: Translator): string {
   return t(`kuntoarvioData.cat_${stringId}`)
 }
 
-// Representative RT/TALO 2000 lifespans (years) and full-replacement cost (€/m² of
-// building area) per category, plus a weight used for the overall condition average.
+// Representative RT/TALO 2000 lifespans (years) per category, plus a weight used
+// for the overall condition average.
 // Keyed by the string category id used in kuntoarvio-data.
-const CATEGORY_RT_DEFAULTS: Record<string, { lifespan: number; costPerSqm: number; weight: number }> = {
-  perustukset: { lifespan: 100, costPerSqm: 120, weight: 1.5 },
-  runko: { lifespan: 100, costPerSqm: 180, weight: 1.5 },
-  julkisivut: { lifespan: 45, costPerSqm: 100, weight: 1.2 },
-  ikkunat: { lifespan: 40, costPerSqm: 120, weight: 1.0 },
-  ovet: { lifespan: 40, costPerSqm: 40, weight: 0.6 },
-  katto: { lifespan: 50, costPerSqm: 60, weight: 1.3 },
-  vesikate: { lifespan: 35, costPerSqm: 55, weight: 1.3 },
-  "sisatilat-pinnat": { lifespan: 20, costPerSqm: 80, weight: 0.8 },
-  "sisatilat-kalusteet": { lifespan: 20, costPerSqm: 60, weight: 0.5 },
-  markatilat: { lifespan: 25, costPerSqm: 90, weight: 1.0 },
-  "lvi-lammitys": { lifespan: 25, costPerSqm: 60, weight: 1.1 },
-  "lvi-vesi": { lifespan: 45, costPerSqm: 45, weight: 1.2 },
-  "lvi-ilmanvaihto": { lifespan: 25, costPerSqm: 50, weight: 1.0 },
-  sahko: { lifespan: 45, costPerSqm: 55, weight: 1.0 },
-  hissi: { lifespan: 30, costPerSqm: 25, weight: 0.8 },
-  piha: { lifespan: 30, costPerSqm: 20, weight: 0.5 },
-  erityisrakenteet: { lifespan: 40, costPerSqm: 40, weight: 0.6 },
+const CATEGORY_RT_DEFAULTS: Record<string, { lifespan: number; weight: number }> = {
+  perustukset: { lifespan: 100, weight: 1.5 },
+  runko: { lifespan: 100, weight: 1.5 },
+  julkisivut: { lifespan: 45, weight: 1.2 },
+  ikkunat: { lifespan: 40, weight: 1.0 },
+  ovet: { lifespan: 40, weight: 0.6 },
+  katto: { lifespan: 50, weight: 1.3 },
+  vesikate: { lifespan: 35, weight: 1.3 },
+  "sisatilat-pinnat": { lifespan: 20, weight: 0.8 },
+  "sisatilat-kalusteet": { lifespan: 20, weight: 0.5 },
+  markatilat: { lifespan: 25, weight: 1.0 },
+  "lvi-lammitys": { lifespan: 25, weight: 1.1 },
+  "lvi-vesi": { lifespan: 45, weight: 1.2 },
+  "lvi-ilmanvaihto": { lifespan: 25, weight: 1.0 },
+  sahko: { lifespan: 45, weight: 1.0 },
+  hissi: { lifespan: 30, weight: 0.8 },
+  piha: { lifespan: 30, weight: 0.5 },
+  erityisrakenteet: { lifespan: 40, weight: 0.6 },
 }
 
 // numeric category_id -> string category id (reverse of categoryIdMapping)
@@ -63,7 +62,6 @@ const numericToStringId: Record<number, string> = Object.fromEntries(
 
 export interface BuildingBasics {
   construction_year?: number | null
-  area_m2?: number | null
   building_type?: string | null
 }
 
@@ -71,7 +69,6 @@ export interface StoredEvaluation {
   category_id: number | string
   score?: number | null
   urgency?: string | null
-  cost_estimate?: number | null
   comment?: string | null
 }
 
@@ -81,7 +78,6 @@ export interface PlanItem {
   categoryName: string
   conditionScore: number // 1-5 (5 = best), RT scale
   urgency: UrgencyCode
-  cost: number
   remainingLifespan: number
   fromInspection: boolean // true if a stored evaluation contributed
 }
@@ -115,7 +111,6 @@ export function derivePlanItems(
 ): PlanItem[] {
   const currentYear = new Date().getFullYear()
   const buildYear = basics.construction_year || currentYear - 25
-  const area = basics.area_m2 || 100
 
   // Index stored evaluations by string category id
   const evalByStringId = new Map<string, StoredEvaluation>()
@@ -148,19 +143,12 @@ export function derivePlanItems(
       ? (stored!.urgency as UrgencyCode)
       : deriveUrgency(conditionScore, remainingLifespan)
 
-    // Cost: stored positive estimate wins, otherwise computed from RT standards
-    const cost =
-      stored?.cost_estimate && stored.cost_estimate > 0
-        ? stored.cost_estimate
-        : calculateRepairCost(area, defaults.costPerSqm, conditionScore)
-
     items.push({
       categoryId: numericId,
       categoryStringId: stringId,
       categoryName: categoryName(stringId, t),
       conditionScore,
       urgency,
-      cost,
       remainingLifespan,
       fromInspection: !!stored,
     })
@@ -182,15 +170,10 @@ export function overallCondition(items: PlanItem[]): number {
   return Math.round((weightedSum / totalWeight) * 10) / 10
 }
 
-// Total repair debt (sum of all derived costs)
-export function totalRepairCost(items: PlanItem[]): number {
-  return items.reduce((sum, i) => sum + i.cost, 0)
-}
-
-// Items that need attention (condition 3 or worse and a real cost), sorted by urgency
+// Items that need attention (condition 3 or worse), sorted by urgency
 export function repairItems(items: PlanItem[]): PlanItem[] {
   return items
-    .filter(i => i.conditionScore <= 3 && i.cost > 0)
+    .filter(i => i.conditionScore <= 3)
     .sort((a, b) => URGENCY_ORDER.indexOf(a.urgency) - URGENCY_ORDER.indexOf(b.urgency))
 }
 
@@ -198,20 +181,18 @@ export interface TimelineBucket {
   urgency: UrgencyCode
   label: string
   items: PlanItem[]
-  total: number
 }
 
-// Group plan items into urgency timeline buckets (only buckets with cost)
+// Group plan items into urgency timeline buckets.
 export function timelineBuckets(items: PlanItem[], t: Translator): TimelineBucket[] {
   return URGENCY_ORDER.map(urgency => {
     const bucketItems = items
-      .filter(i => i.urgency === urgency && i.cost > 0)
+      .filter(i => i.urgency === urgency)
       .sort((a, b) => a.conditionScore - b.conditionScore)
     return {
       urgency,
       label: urgencyLabel(urgency, t),
       items: bucketItems,
-      total: bucketItems.reduce((sum, i) => sum + i.cost, 0),
     }
   }).filter(b => b.items.length > 0)
 }

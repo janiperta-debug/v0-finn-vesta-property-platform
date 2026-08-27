@@ -53,7 +53,6 @@ export interface SubItemEvaluation {
   urgency?: UrgencyClass
   notes?: string
   photos?: string[]
-  estimatedCost?: number
 }
 
 // Building type template
@@ -104,7 +103,6 @@ export interface PTSItem {
   subItemId?: string
   description: string
   urgency: UrgencyClass
-  estimatedCost: number
   scheduledYear: number
   status: 'planned' | 'in-progress' | 'completed'
   notes?: string
@@ -135,7 +133,6 @@ export interface ApartmentEvaluation {
     categoryId: 'sisatilat-pinnat' | 'sisatilat-kalusteet' | 'markatilat' | 'sahko' | 'ovet' | 'ikkunat'
     score: ConditionScore
     notes?: string
-    estimatedCost?: number
   }[]
   notes?: string
   photos?: string[]

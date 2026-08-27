@@ -4,11 +4,9 @@ import {
   derivePlanItems,
   overallCondition,
   repairItems,
-  totalRepairCost,
   URGENCY_ORDER,
   type UrgencyCode,
 } from "@/lib/building-plan"
-import { formatEur } from "@/lib/database.types"
 
 function urgencyShort(u: UrgencyCode, t: (k: string) => string): string {
   switch (u) {
@@ -50,7 +48,6 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
     : []
   const condition = overallCondition(planItems)
   const repairs = repairItems(planItems)
-  const debt = totalRepairCost(planItems)
 
   const urgencyCounts = URGENCY_ORDER.reduce<Record<string, number>>(
     (acc, u) => ({ ...acc, [u]: planItems.filter((i) => i.urgency === u).length }),
@@ -86,8 +83,7 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
               <ScoreBar score={condition} />
               <p className="mt-2 text-xs text-[#999]">
                 {repairs.length} {t("reportContent.conditionNeedsAttention")} ·{" "}
-                {planItems.filter((i) => i.fromInspection).length} {t("reportContent.conditionInspected")} ·{" "}
-                {t("reportContent.conditionRepairDebt")} {formatEur(debt)}
+                {planItems.filter((i) => i.fromInspection).length} {t("reportContent.conditionInspected")}
               </p>
             </div>
           </div>
@@ -121,7 +117,6 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
                       t("reportContent.colComponent"),
                       t("reportContent.colCondition"),
                       t("reportContent.colUrgency"),
-                      t("reportContent.colCostEstimate"),
                     ].map(
                       (h) => (
                         <th
@@ -148,9 +143,6 @@ export function ConditionOverviewPage({ config, data, pageNumber, totalPages, t 
                       </td>
                       <td className="px-4 py-2 text-[#666]">
                         {urgencyShort(item.urgency, t)}
-                      </td>
-                      <td className="px-4 py-2 text-right text-[#666]">
-                        {formatEur(item.cost)}
                       </td>
                     </tr>
                   ))}

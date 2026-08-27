@@ -45,7 +45,6 @@ export interface ComponentLifespan {
   options: {
     value: string
     lifespanYears: number // Typical lifespan in years
-    costPerSqm?: number // Estimated replacement cost €/m²
   }[]
 }
 
@@ -68,108 +67,108 @@ export const componentLifespans: ComponentLifespan[] = [
     id: 'foundation',
     categoryId: 'perustukset',
     options: [
-      { value: 'betoni', lifespanYears: 100, costPerSqm: 150 },
-      { value: 'pilari', lifespanYears: 100, costPerSqm: 120 },
-      { value: 'laatta', lifespanYears: 80, costPerSqm: 100 },
-      { value: 'puu', lifespanYears: 50, costPerSqm: 80 },
+      { value: 'betoni', lifespanYears: 100 },
+      { value: 'pilari', lifespanYears: 100 },
+      { value: 'laatta', lifespanYears: 80 },
+      { value: 'puu', lifespanYears: 50 },
     ]
   },
   {
     id: 'frame',
     categoryId: 'runko',
     options: [
-      { value: 'betoni', lifespanYears: 100, costPerSqm: 200 },
-      { value: 'teräs', lifespanYears: 100, costPerSqm: 180 },
-      { value: 'tiili', lifespanYears: 100, costPerSqm: 160 },
-      { value: 'puu', lifespanYears: 80, costPerSqm: 120 },
-      { value: 'hirsi', lifespanYears: 100, costPerSqm: 180 },
+      { value: 'betoni', lifespanYears: 100 },
+      { value: 'teräs', lifespanYears: 100 },
+      { value: 'tiili', lifespanYears: 100 },
+      { value: 'puu', lifespanYears: 80 },
+      { value: 'hirsi', lifespanYears: 100 },
     ]
   },
   {
     id: 'facade',
     categoryId: 'julkisivut',
     options: [
-      { value: 'tiili', lifespanYears: 60, costPerSqm: 150 },
-      { value: 'rappaus', lifespanYears: 35, costPerSqm: 80 },
-      { value: 'betoni', lifespanYears: 50, costPerSqm: 120 },
-      { value: 'puu', lifespanYears: 30, costPerSqm: 60 },
-      { value: 'levy', lifespanYears: 40, costPerSqm: 70 },
-      { value: 'metalli', lifespanYears: 45, costPerSqm: 90 },
+      { value: 'tiili', lifespanYears: 60 },
+      { value: 'rappaus', lifespanYears: 35 },
+      { value: 'betoni', lifespanYears: 50 },
+      { value: 'puu', lifespanYears: 30 },
+      { value: 'levy', lifespanYears: 40 },
+      { value: 'metalli', lifespanYears: 45 },
     ]
   },
   {
     id: 'roof',
     categoryId: 'vesikatto',
     options: [
-      { value: 'pelti', lifespanYears: 45, costPerSqm: 50 },
-      { value: 'tiili', lifespanYears: 50, costPerSqm: 60 },
-      { value: 'huopa', lifespanYears: 25, costPerSqm: 40 },
-      { value: 'konesauma', lifespanYears: 50, costPerSqm: 70 },
-      { value: 'betoni', lifespanYears: 40, costPerSqm: 55 },
+      { value: 'pelti', lifespanYears: 45 },
+      { value: 'tiili', lifespanYears: 50 },
+      { value: 'huopa', lifespanYears: 25 },
+      { value: 'konesauma', lifespanYears: 50 },
+      { value: 'betoni', lifespanYears: 40 },
     ]
   },
   {
     id: 'windows',
     categoryId: 'ikkunat',
     options: [
-      { value: 'puu2', lifespanYears: 35, costPerSqm: 400 },
-      { value: 'puu3', lifespanYears: 40, costPerSqm: 500 },
-      { value: 'alumiini', lifespanYears: 45, costPerSqm: 550 },
-      { value: 'puualu', lifespanYears: 50, costPerSqm: 600 },
-      { value: 'muovi', lifespanYears: 30, costPerSqm: 350 },
+      { value: 'puu2', lifespanYears: 35 },
+      { value: 'puu3', lifespanYears: 40 },
+      { value: 'alumiini', lifespanYears: 45 },
+      { value: 'puualu', lifespanYears: 50 },
+      { value: 'muovi', lifespanYears: 30 },
     ]
   },
   {
     id: 'heating',
     categoryId: 'lammitys',
     options: [
-      { value: 'kaukolampo', lifespanYears: 30, costPerSqm: 25 },
-      { value: 'oljy', lifespanYears: 25, costPerSqm: 30 },
-      { value: 'maalampö', lifespanYears: 25, costPerSqm: 80 },
-      { value: 'sahko', lifespanYears: 30, costPerSqm: 15 },
-      { value: 'ilmalampopumppu', lifespanYears: 15, costPerSqm: 20 },
-      { value: 'pelletti', lifespanYears: 20, costPerSqm: 35 },
+      { value: 'kaukolampo', lifespanYears: 30 },
+      { value: 'oljy', lifespanYears: 25 },
+      { value: 'maalampö', lifespanYears: 25 },
+      { value: 'sahko', lifespanYears: 30 },
+      { value: 'ilmalampopumppu', lifespanYears: 15 },
+      { value: 'pelletti', lifespanYears: 20 },
     ]
   },
   {
     id: 'ventilation',
     categoryId: 'ilmanvaihto',
     options: [
-      { value: 'painovoimainen', lifespanYears: 50, costPerSqm: 10 },
-      { value: 'koneellinen_poisto', lifespanYears: 25, costPerSqm: 30 },
-      { value: 'koneellinen_tulo_poisto', lifespanYears: 25, costPerSqm: 50 },
-      { value: 'lto', lifespanYears: 25, costPerSqm: 70 },
+      { value: 'painovoimainen', lifespanYears: 50 },
+      { value: 'koneellinen_poisto', lifespanYears: 25 },
+      { value: 'koneellinen_tulo_poisto', lifespanYears: 25 },
+      { value: 'lto', lifespanYears: 25 },
     ]
   },
   {
     id: 'plumbing',
     categoryId: 'vesi',
     options: [
-      { value: 'kupari', lifespanYears: 50, costPerSqm: 40 },
-      { value: 'muovi', lifespanYears: 50, costPerSqm: 35 },
-      { value: 'galvanoitu', lifespanYears: 30, costPerSqm: 30 },
-      { value: 'valurauta', lifespanYears: 50, costPerSqm: 45 },
-      { value: 'muoviviemari', lifespanYears: 50, costPerSqm: 35 },
+      { value: 'kupari', lifespanYears: 50 },
+      { value: 'muovi', lifespanYears: 50 },
+      { value: 'galvanoitu', lifespanYears: 30 },
+      { value: 'valurauta', lifespanYears: 50 },
+      { value: 'muoviviemari', lifespanYears: 50 },
     ]
   },
   {
     id: 'electrical',
     categoryId: 'sahko',
     options: [
-      { value: 'alkuperainen_60_70', lifespanYears: 40, costPerSqm: 50 },
-      { value: 'alkuperainen_80_90', lifespanYears: 45, costPerSqm: 50 },
-      { value: 'uusittu', lifespanYears: 50, costPerSqm: 60 },
-      { value: 'osittain_uusittu', lifespanYears: 40, costPerSqm: 55 },
+      { value: 'alkuperainen_60_70', lifespanYears: 40 },
+      { value: 'alkuperainen_80_90', lifespanYears: 45 },
+      { value: 'uusittu', lifespanYears: 50 },
+      { value: 'osittain_uusittu', lifespanYears: 40 },
     ]
   },
   {
     id: 'elevator',
     categoryId: 'hissit',
     options: [
-      { value: 'ei', lifespanYears: 999, costPerSqm: 0 },
-      { value: 'vanha', lifespanYears: 30, costPerSqm: 20 },
-      { value: 'modernisoitu', lifespanYears: 25, costPerSqm: 15 },
-      { value: 'uusi', lifespanYears: 30, costPerSqm: 25 },
+      { value: 'ei', lifespanYears: 999 },
+      { value: 'vanha', lifespanYears: 30 },
+      { value: 'modernisoitu', lifespanYears: 25 },
+      { value: 'uusi', lifespanYears: 30 },
     ]
   },
 ]
@@ -223,38 +222,19 @@ export function calculateUrgencyClass(
   return 4 // Seurattava
 }
 
-// Calculate estimated repair cost
-export function calculateRepairCost(
-  squareMeters: number,
-  componentCostPerSqm: number,
-  conditionScore: number
-): number {
-  // Lower condition = higher percentage of full replacement cost
-  const costMultiplier = {
-    5: 0, // No cost for excellent condition
-    4: 0.1, // 10% for good
-    3: 0.3, // 30% for satisfactory
-    2: 0.6, // 60% for fair
-    1: 1.0, // 100% for poor
-  }[conditionScore] || 0
-
-  return Math.round(squareMeters * componentCostPerSqm * costMultiplier)
-}
-
 // Generate initial building assessment based on RT standards
 export interface GeneratedAssessment {
   categoryId: number // Numeric ID matching inspection_categories table
   categoryName: string
   conditionScore: number
   urgencyClass: number
-  estimatedRepairCost: number
   remainingLifespan: number
   notes: string
 }
 
 export function generateInitialAssessment(
   buildYear: number,
-  squareMeters: number,
+  _squareMeters: number,
   structures: BuildingStructureData,
   t: Translator
 ): GeneratedAssessment[] {
@@ -275,12 +255,6 @@ export function generateInitialAssessment(
     const urgencyClass = calculateUrgencyClass(buildYear, option.lifespanYears)
     const age = currentYear - buildYear
     const remainingLifespan = Math.max(0, option.lifespanYears - age)
-    const estimatedRepairCost = calculateRepairCost(
-      squareMeters,
-      option.costPerSqm || 50,
-      conditionScore
-    )
-
     // Generate descriptive notes
     const optionLabel = getComponentOptionLabel(component.id, option.value, t)
     let notes = `${optionLabel}, ${t('kuntoarvioData.notesBuiltPrefix')} ${buildYear}. `
@@ -302,7 +276,6 @@ export function generateInitialAssessment(
       categoryName: getComponentName(component.id, t),
       conditionScore,
       urgencyClass,
-      estimatedRepairCost,
       remainingLifespan,
       notes: notes.trim(),
     })
@@ -339,9 +312,4 @@ export function calculateOverallCondition(assessments: GeneratedAssessment[]): n
   }
 
   return Math.round((weightedSum / totalWeight) * 10) / 10
-}
-
-// Calculate total repair debt
-export function calculateTotalRepairDebt(assessments: GeneratedAssessment[]): number {
-  return assessments.reduce((sum, a) => sum + a.estimatedRepairCost, 0)
 }

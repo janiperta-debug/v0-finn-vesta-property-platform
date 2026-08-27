@@ -101,7 +101,6 @@ export default function AddSpacePage() {
         area_m2: parseFloat(formData.squareMeters) || null,
         notes: formData.notes || null,
         construction_year: null,
-        cost_per_m2: null,
         status: "active",
         is_sub_building: true,
       }

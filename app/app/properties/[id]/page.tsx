@@ -6,7 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { categories } from "@/lib/kuntoarvio-data"
 import { categoryIdMapping } from "@/lib/rt-standards"
-import { derivePlanItems, overallCondition, totalRepairCost, repairItems, categoryName } from "@/lib/building-plan"
+import { derivePlanItems, overallCondition, repairItems, categoryName } from "@/lib/building-plan"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -50,7 +50,6 @@ interface Property {
   org_id: number
   property_id: number | null
   usage_category: string | null
-  cost_per_m2: number | null
   created_at: string
 }
 
@@ -85,7 +84,6 @@ interface CategoryEvaluation {
   score: number | null
   comment: string | null
   urgency: string | null
-  cost_estimate: number | null
 }
 
 const getKlaColor = (score: number) => {
@@ -299,23 +297,18 @@ export default function PropertyDetailPage() {
   const planItems = derivePlanItems(
     {
       construction_year: property.construction_year,
-      area_m2: property.area_m2,
       building_type: property.building_type,
     },
     categoryEvaluations.map(e => ({
       category_id: e.category_id,
       score: e.score,
       urgency: e.urgency,
-      cost_estimate: e.cost_estimate,
       comment: e.comment,
     })),
     t
   )
   const overallCond = overallCondition(planItems) // 1-5
   const kuntoluokka = overallCond > 0 ? Math.round(overallCond * 20) : 0 // percentage
-  const jalleenhankintaArvo = (property.area_m2 || 0) * (property.cost_per_m2 || 2500)
-  const korjausVelka = totalRepairCost(planItems)
-  const tekninenArvo = Math.max(0, jalleenhankintaArvo - korjausVelka)
   const planRepairItems = repairItems(planItems)
 
   // Group sub-spaces by floor
@@ -396,7 +389,7 @@ export default function PropertyDetailPage() {
         </div>
       </div>
 
-      {/* Key metrics - similar to demo */}
+      {/* Key metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -428,24 +421,19 @@ export default function PropertyDetailPage() {
 
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t("propertyDetail.replacementValueLabel")}
+            {t("propertyDetail.componentConditionTitle")}
           </div>
           <p className="font-heading text-2xl font-bold text-foreground">
-            {jalleenhankintaArvo > 0 ? formatEur(jalleenhankintaArvo) : "-"}
+            {planItems.length}
           </p>
-          {property.area_m2 && jalleenhankintaArvo > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {formatEur(jalleenhankintaArvo / property.area_m2)}/m²
-            </p>
-          )}
         </div>
 
         <div className="rounded-xl border border-border/50 bg-card p-5">
           <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t("propertyDetail.technicalValueLabel")}
+            {t("propertyDetail.conditionClassLabel")}
           </div>
           <p className={`font-heading text-2xl font-bold ${kuntoluokka > 0 ? getKlaColor(kuntoluokka) : ''}`}>
-            {tekninenArvo > 0 ? formatEur(tekninenArvo) : "-"}
+            {kuntoluokka > 0 ? `${kuntoluokka}%` : "-"}
           </p>
           {kuntoluokka > 0 && (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -455,7 +443,7 @@ export default function PropertyDetailPage() {
         </div>
       </div>
 
-      {/* Tabs for different views - similar to demo */}
+      {/* Tabs for different views */}
       <Tabs defaultValue="kuntoarvio" className="space-y-4">
         <TabsList className="bg-muted/50 w-full overflow-x-auto flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="kuntoarvio" className="gap-2">
@@ -546,11 +534,6 @@ export default function PropertyDetailPage() {
                                 )}
                               </div>
                             </div>
-                            {evaluation.cost_estimate && evaluation.cost_estimate > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                {(evaluation.cost_estimate / 1000).toFixed(0)}k€
-                              </span>
-                            )}
                           </div>
                         )
                       })}
@@ -853,31 +836,26 @@ export default function PropertyDetailPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-border/50 bg-card p-5">
               <h3 className="mb-4 font-heading text-base font-semibold text-foreground">{t("propertyDetail.repairDebtSummaryTitle")}</h3>
-              {korjausVelka > 0 ? (
+              {planRepairItems.length > 0 ? (
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("propertyDetail.totalRepairDebtLabel")}</span>
-                      <span className="font-heading font-bold text-amber-400">{formatEur(korjausVelka)}</span>
+                      <span className="font-heading font-bold text-amber-400">{planRepairItems.length}</span>
                     </div>
-                    {property.area_m2 && (
-                      <p className="mt-0.5 text-right text-xs text-muted-foreground">
-                        {formatEur(korjausVelka / property.area_m2)}/m²
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-2 border-t border-border/50 pt-4">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("propertyDetail.maintenanceNeedLabel")}</span>
-                      <span className="text-foreground">{formatEur(korjausVelka * 0.35)}</span>
+                      <span className="text-foreground">{planRepairItems.filter(item => item.urgency === "1_3v").length}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("propertyDetail.majorRepairNeedLabel")}</span>
-                      <span className="text-foreground">{formatEur(korjausVelka * 0.42)}</span>
+                      <span className="text-foreground">{planRepairItems.filter(item => item.urgency === "3_5v").length}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">{t("propertyDetail.developmentNeedLabel")}</span>
-                      <span className="text-foreground">{formatEur(korjausVelka * 0.23)}</span>
+                      <span className="text-foreground">{planRepairItems.filter(item => item.urgency === "5_10v").length}</span>
                     </div>
                   </div>
                 </div>
@@ -910,7 +888,6 @@ export default function PropertyDetailPage() {
                           <div className={`w-2 h-2 rounded-full ${getUrgencyDot(item.urgency)}`} />
                           <span className="text-sm">{item.categoryName}</span>
                         </div>
-                        <span className="text-sm font-medium">{formatEur(item.cost)}</span>
                       </div>
                     ))}
                   <Link href={`/app/properties/${property.id}/tavoitesuunnittelu`}>
@@ -943,11 +920,6 @@ export default function PropertyDetailPage() {
                       <Badge variant="outline" className={getUrgencyBadge(item.urgency)}>
                         {getUrgencyLabel(item.urgency)}
                       </Badge>
-                      {item.cost > 0 && (
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {formatEur(item.cost)}
-                        </span>
-                      )}
                     </div>
                   </div>
                 ))}

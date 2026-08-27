@@ -11,7 +11,6 @@ import {
   BarChart3,
   Building2,
   ArrowUpDown,
-  Euro,
   Ruler,
   TrendingUp,
   TrendingDown,
@@ -34,10 +33,6 @@ interface PropertyComparison {
   yearBuilt: number
   squareMeters: number
   conditionClass: number
-  repairDebt: number
-  repairDebtPerSqm: number
-  technicalValue: number
-  replacementValue: number
 }
 
 export default async function VertailuPage() {
@@ -68,9 +63,6 @@ export default async function VertailuPage() {
 
       if (propsData) {
         properties = propsData.map((p: any) => {
-          const replacementValue = (p.area_m2 || 0) * (p.cost_per_m2 || 2500)
-          const technicalValue = replacementValue * ((p.condition_class || 70) / 100)
-          const repairDebt = replacementValue - technicalValue
           return {
             id: p.id,
             name: p.name || t("comparison.unnamed"),
@@ -79,10 +71,6 @@ export default async function VertailuPage() {
             yearBuilt: p.construction_year || 0,
             squareMeters: p.area_m2 || 0,
             conditionClass: p.condition_class || 0,
-            repairDebt: repairDebt,
-            repairDebtPerSqm: p.area_m2 ? repairDebt / p.area_m2 : 0,
-            technicalValue: technicalValue,
-            replacementValue: replacementValue,
           }
         })
       }
@@ -95,6 +83,7 @@ export default async function VertailuPage() {
   const avgCondition = properties.length > 0 
     ? Math.round(properties.reduce((s, p) => s + p.conditionClass, 0) / properties.length)
     : 0
+<<<<<<< HEAD
   const avgRepairDebtPerSqm = properties.length > 0
     ? properties.reduce((s, p) => s + p.repairDebtPerSqm, 0) / properties.length
     : 0
@@ -102,6 +91,8 @@ export default async function VertailuPage() {
   function formatEur(value: number) {
     return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
   }
+=======
+>>>>>>> origin/main
 
   function formatNumber(value: number) {
     return new Intl.NumberFormat(locale).format(value)
@@ -177,6 +168,7 @@ export default async function VertailuPage() {
                 </div>
               </CardContent>
             </Card>
+<<<<<<< HEAD
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>{t("comparison.avgRepairDebtPerSqmLabel")}</CardDescription>
@@ -195,6 +187,8 @@ export default async function VertailuPage() {
                 </div>
               </CardContent>
             </Card>
+=======
+>>>>>>> origin/main
           </div>
 
           {/* Comparison table */}
@@ -219,10 +213,15 @@ export default async function VertailuPage() {
                           {t("comparison.colArea")}
                         </div>
                       </TableHead>
+<<<<<<< HEAD
                       <TableHead>{t("comparison.colBuilt")}</TableHead>
                       <TableHead>{t("comparison.colCondition")}</TableHead>
                       <TableHead className="text-right">{t("comparison.colRepairDebt")}</TableHead>
                       <TableHead className="text-right">€/m²</TableHead>
+=======
+                      <TableHead>Rakennettu</TableHead>
+                      <TableHead>Kuntoluokka</TableHead>
+>>>>>>> origin/main
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -264,12 +263,6 @@ export default async function VertailuPage() {
                               {property.conditionClass}%
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatEur(property.repairDebt)}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">
-                          {formatEur(property.repairDebtPerSqm)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -316,6 +309,7 @@ export default async function VertailuPage() {
               </CardContent>
             </Card>
 
+<<<<<<< HEAD
             <Card>
               <CardHeader>
                 <CardTitle>{t("comparison.repairDebtByPropertyTitle")}</CardTitle>
@@ -347,6 +341,8 @@ export default async function VertailuPage() {
                 </div>
               </CardContent>
             </Card>
+=======
+>>>>>>> origin/main
           </div>
         </>
       )}

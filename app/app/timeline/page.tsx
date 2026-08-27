@@ -24,7 +24,6 @@ interface InvestmentItem {
   propertyName: string
   title: string
   year: number
-  estimatedCost: number
   priority: 'low' | 'medium' | 'high' | 'critical'
   derived: boolean
 }
@@ -100,7 +99,7 @@ export default async function TimelinePage() {
       if (inspectionIds.length > 0) {
         const { data: evals } = await supabase
           .from('category_evaluations')
-          .select('category_id, score, urgency, cost_estimate, inspection_id')
+          .select('category_id, score, urgency, inspection_id')
           .in('inspection_id', inspectionIds)
 
         const buildingByInspection = new Map<string, number>()
@@ -120,7 +119,6 @@ export default async function TimelinePage() {
         const planItems = derivePlanItems(
           {
             construction_year: b.construction_year,
-            area_m2: b.area_m2,
             building_type: b.building_type,
           },
           evalsByBuilding.get(b.id) || [],
@@ -133,7 +131,6 @@ export default async function TimelinePage() {
             propertyName: b.name || t('maintenance.defaultPropertyName'),
             title: item.categoryName,
             year: currentYear + URGENCY_YEAR_OFFSET[item.urgency],
-            estimatedCost: item.cost,
             priority: URGENCY_PRIORITY[item.urgency],
             derived: true,
           })
@@ -157,7 +154,6 @@ export default async function TimelinePage() {
             propertyName: buildingMap.get(i.kiinteisto_id) || t('maintenance.unknownProperty'),
             title: i.otsikko || '-',
             year: i.vuosi || currentYear,
-            estimatedCost: i.arvioitu_kustannus || 0,
             priority: (i.prioriteetti as InvestmentItem['priority']) || 'medium',
             derived: false,
           })
@@ -173,17 +169,11 @@ export default async function TimelinePage() {
     year,
     items: investments
       .filter(i => i.year === year)
-      .sort((a, b) => b.estimatedCost - a.estimatedCost),
-    total: investments.filter(i => i.year === year).reduce((sum, i) => sum + i.estimatedCost, 0),
+      .sort((a, b) => a.priority.localeCompare(b.priority)),
   }))
 
-  const totalInvestment = investments.reduce((sum, i) => sum + i.estimatedCost, 0)
-  const next5 = investments.filter(i => i.year <= currentYear + 5).reduce((s, i) => s + i.estimatedCost, 0)
+  const next5Count = investments.filter(i => i.year <= currentYear + 5).length
   const criticalCount = investments.filter(i => i.priority === 'critical').length
-
-  function formatEur(value: number) {
-    return new Intl.NumberFormat(locale === "en" ? "en-US" : "fi-FI", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value)
-  }
 
   return (
     <div className="space-y-6">
@@ -213,10 +203,10 @@ export default async function TimelinePage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{t("timeline.totalInvestments15y")}</CardDescription>
+            <CardDescription>{t("targetPlanning.plannedActionsSuffix")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatEur(totalInvestment)}</div>
+            <div className="text-2xl font-bold">{investments.length}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {investments.length} {t("targetPlanning.plannedActionsSuffix")}
             </p>
@@ -227,7 +217,7 @@ export default async function TimelinePage() {
             <CardDescription>{t("targetPlanning.next5Years")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatEur(next5)}</div>
+            <div className="text-2xl font-bold">{next5Count}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {currentYear} - {currentYear + 5}
             </p>
@@ -267,7 +257,7 @@ export default async function TimelinePage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {investmentsByYear.filter(y => y.items.length > 0 || y.year <= currentYear + 5).map(({ year, items, total }) => (
+          {investmentsByYear.filter(y => y.items.length > 0 || y.year <= currentYear + 5).map(({ year, items }) => (
             <Card key={year} className={items.length === 0 ? 'opacity-50' : ''}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -279,7 +269,6 @@ export default async function TimelinePage() {
                       {items.length} {t("targetPlanning.actionsSuffix")}
                     </span>
                   </div>
-                  <span className="font-semibold">{formatEur(total)}</span>
                 </div>
               </CardHeader>
               {items.length > 0 && (
@@ -306,7 +295,6 @@ export default async function TimelinePage() {
                             <Badge variant="outline" className={priority.color}>
                               {priority.label}
                             </Badge>
-                            <span className="text-sm font-medium">{formatEur(item.estimatedCost)}</span>
                           </div>
                         </div>
                       )

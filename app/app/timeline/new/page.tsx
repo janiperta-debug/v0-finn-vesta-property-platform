@@ -45,7 +45,6 @@ function NewInvestointiForm() {
   // Read URL parameters from suggestion
   const preselectedBuildingId = searchParams.get("building") || searchParams.get("building_id") || ""
   const preselectedCategory = searchParams.get("category") || ""
-  const preselectedCost = searchParams.get("cost") || ""
   const preselectedTitle = searchParams.get("title") || ""
   
   const [isLoading, setIsLoading] = useState(false)
@@ -55,7 +54,6 @@ function NewInvestointiForm() {
     title: preselectedTitle,
     category: preselectedCategory,
     description: "",
-    estimated_cost: preselectedCost,
     priority: "medium",
     planned_year: new Date().getFullYear() + 1,
   })
@@ -125,7 +123,6 @@ function NewInvestointiForm() {
           otsikko: formData.title,
           kategoria: formData.category,
           kuvaus: formData.description,
-          arvioitu_kustannus: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null,
           prioriteetti: formData.priority,
           vuosi: formData.planned_year,
           tila: 'planned',
@@ -235,19 +232,7 @@ function NewInvestointiForm() {
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="cost">{t("timelineNew.costLabel")}</Label>
-                <Input
-                  id="cost"
-                  type="number"
-                  value={formData.estimated_cost}
-                  onChange={(e) => setFormData({...formData, estimated_cost: e.target.value})}
-                  placeholder="0"
-                  required
-                />
-              </div>
-
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="priority">{t("timelineNew.priorityLabel")}</Label>
                 <Select 
@@ -286,7 +271,7 @@ function NewInvestointiForm() {
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={isLoading || !formData.property_id || !formData.title || !formData.estimated_cost}>
+              <Button type="submit" disabled={isLoading || !formData.property_id || !formData.title}>
                 <Save className="mr-2 h-4 w-4" />
                 {isLoading ? t("maintenanceNew.saving") : t("timelineNew.saveButton")}
               </Button>

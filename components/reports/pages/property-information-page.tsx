@@ -49,12 +49,6 @@ export function PropertyInformationPage({ config, data, pageNumber, totalPages, 
                     ? `${b.area_m2.toLocaleString(config.language)} m²`
                     : "—",
                 },
-                {
-                  label: t("reportContent.fieldCostPerM2"),
-                  value: b.cost_per_m2
-                    ? `${b.cost_per_m2.toLocaleString(config.language)} €/m²`
-                    : "—",
-                },
                 { label: t("reportContent.fieldStatus"), value: translateStatus(b.status, t) },
               ].filter((r) => r.value !== "—")}
             />

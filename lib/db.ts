@@ -334,12 +334,6 @@ export async function getPortfolioStats(orgId: number) {
     .select('org_role')
     .eq('org_id', orgId)
 
-  // Get latest valuations for total values
-  const { data: valuations } = await supabase
-    .from('building_valuations')
-    .select('replacement_value, technical_value, repair_debt, buildings!inner(org_id)')
-    .eq('buildings.org_id', orgId)
-
   const stats = {
     buildingCount: buildings?.length || 0,
     smallBuildings: buildings?.filter(b => !b.is_sub_building && (b.area_m2 || 0) < 1000).length || 0,
@@ -349,9 +343,6 @@ export async function getPortfolioStats(orgId: number) {
     paakayttajat: users?.filter(u => u.org_role === 'paakayttaja').length || 0,
     kayttajat: users?.filter(u => u.org_role === 'kayttaja').length || 0,
     totalArea: buildings?.reduce((sum, b) => sum + (b.area_m2 || 0), 0) || 0,
-    totalReplacementValue: valuations?.reduce((sum, v) => sum + (v.replacement_value || 0), 0) || 0,
-    totalTechnicalValue: valuations?.reduce((sum, v) => sum + (v.technical_value || 0), 0) || 0,
-    totalRepairDebt: valuations?.reduce((sum, v) => sum + (v.repair_debt || 0), 0) || 0,
   }
 
   return stats

@@ -78,7 +78,6 @@ export const VISUAL_SETTINGS: CheckboxOptionConfig[] = [
   { id: "charts", labelKey: "reports.visualCharts", defaultChecked: true },
   { id: "lifecycleTimeline", labelKey: "reports.visualLifecycleTimeline", defaultChecked: true },
   { id: "maintenanceSchedule", labelKey: "reports.visualMaintenanceSchedule", defaultChecked: true },
-  { id: "costForecast", labelKey: "reports.visualCostForecast", defaultChecked: false },
   { id: "coverPage", labelKey: "reports.visualCoverPage", defaultChecked: true },
   { id: "toc", labelKey: "reports.visualToc", defaultChecked: true },
 ]
